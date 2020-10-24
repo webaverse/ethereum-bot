@@ -654,7 +654,7 @@ Help
               message.channel.send('unknown user');
             }
           } else if (split[0] === prefix + 'inventory') {
-            let addr, userLabel;
+            let address, userLabel;
             const _loadFromUserId = async userId => {
               const spec = await _getUser(userId);
               let mnemonic = spec.mnemonic;
@@ -662,14 +662,15 @@ Help
                 const spec = await _genKey(userId);
                 mnemonic = spec.mnemonic;
               }
-              
-              addr = '';
+
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              address = wallet.getAddressString();
 
               userLabel = '<@!' + userId + '>';
             };
-            const _loadFromAddress = address => {
-              addr = address;
-              userLabel = '`0x' + address + '`';
+            const _loadFromAddress = a => {
+              address = a;
+              userLabel = '`0x' + a + '`';
             };
             if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
               await _loadFromUserId(match[1]);
@@ -679,7 +680,33 @@ Help
               await _loadFromUserId(message.author.id);
             }
 
-            const contractSource = await blockchain.getContractSource('getHashes.cdc');
+            const nftBalance = await contracts.NFT.methods.balanceOf(testAddress).call();
+            const hashToIds = {};
+            for (let i = 0; i < nftBalance; i++) {
+              const id = await contracts.NFT.methods.tokenOfOwnerByIndex(testAddress, i).call();
+              const hash = await contracts.NFT.methods.getHash(id).call();
+              if (!hashToIds[hash]) {
+                hashToIds[hash] = [];
+              }
+              hashToCount[hash].push(id);
+            }
+            const entries = [];
+            for (const hash in hashToIds) {
+              const ids = hashToIds[hash];
+              const id = ids[0];
+              const filename = await contracts.NFT.methods.getNftMetadata(id, 'filename').call();
+              const balance = ids.length;
+              const totalSupply = await contracts.NFT.methods.totalSupplyOfHash(hash).call();
+              entries.push({
+                id,
+                hash,
+                filename,
+                balance,
+                totalSupply,
+              });
+            }
+
+            /* const contractSource = await blockchain.getContractSource('getHashes.cdc');
 
             const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
               method: 'POST',
@@ -699,7 +726,7 @@ Help
               const balance = parseInt(fields.find(field => field.name === 'balance').value.value, 10);
               const totalSupply = parseInt(fields.find(field => field.name === 'totalSupply').value.value, 10);
               return {id, hash, filename, balance, totalSupply};
-            });
+            }); */
 
             let s = userLabel + ':\n'
             if (entries.length > 0) {
