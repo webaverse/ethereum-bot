@@ -1,0 +1,29 @@
+{
+  "name": "flow-watch",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "sudo $(which node) $(which forever) start index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/avaer/flow-watch.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/avaer/flow-watch/issues"
+  },
+  "homepage": "https://github.com/avaer/flow-watch#readme",
+  "dependencies": {
+    "@onflow/sdk": "0.0.31",
+    "@onflow/types": "0.0.4",
+    "aws-sdk": "^2.760.0",
+    "bip39": "^3.0.2",
+    "discord.js": "^12.3.1",
+    "follow-redirects": "^1.13.0",
+    "node-fetch": "^2.6.1"
+  }
+}
