@@ -805,7 +805,11 @@ Help
           } else if (split[0] === prefix + 'preview' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const n = parseInt(split[1], 10);
 
-            const contractSource = await blockchain.getContractSource('getNft.cdc');
+            const hash = await contracts.NFT.methods.getHash(n).call();
+            const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
+            const match = filename.match(/^(.+)\.([^\.]+)$/);
+
+            /* const contractSource = await blockchain.getContractSource('getNft.cdc');
 
             const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
               method: 'POST',
@@ -818,7 +822,7 @@ Help
             });
             const response2 = await res.json();
             const [hash, filename] = response2.encodedData.value.map(value => value.value && value.value.value);
-            const match = filename.match(/^(.+)\.([^\.]+)$/);
+            const match = filename.match(/^(.+)\.([^\.]+)$/); */
 
             if (match) {
               const basename = match[1];
