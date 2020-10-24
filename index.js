@@ -7,13 +7,16 @@ const AWS = require('aws-sdk');
   types: require('@onflow/types'),
 }; */
 const Discord = require('discord.js');
-const blockchain = require('./blockchain.js');
+// const blockchain = require('./blockchain.js');
 const fetch = require('node-fetch');
 const wordList = require('./wordlist.json');
-const config = require('./config.json');
-const flowConstants = require('./flow-constants.js');
+// const config = require('./config.json');
+// const flowConstants = require('./flow-constants.js');
+const Web3 = require('web3');
+const bip39 = require('bip39');
+const {hdkey} = require('ethereumjs-wallet');
 
-const {accessKeyId, secretAccessKey, /*githubUsername, githubApiKey,*/ githubPagesDomain, githubClientId, githubClientSecret, stripeClientId, stripeClientSecret, discordApiToken} = config;
+const {accessKeyId, secretAccessKey, discordApiToken, infuraProjectId} = require('../exokit-backend/config.json');
 const awsConfig = new AWS.Config({
   credentials: new AWS.Credentials({
     accessKeyId,
@@ -26,7 +29,7 @@ const guildId = '433492168825634816';
 // const channelName = 'token-hax';
 const adminUserId = '284377201233887233';
 const tableName = 'users';
-const prefix = '.';
+const prefix = ',';
 const storageHost = 'https://storage.exokit.org';
 const previewHost = 'https://preview.exokit.org';
 const previewExt = 'png';
@@ -36,41 +39,6 @@ function getExt(fileName) {
   return match && match[1].toLowerCase();
 }
 
-const _runArray = async (userKeys, array) => {
-  const result = Array(array.length);
-  for (let i = 0; i < array.length; i++) {
-    result[i] = await _runSpec(userKeys, array[i]);
-  }
-  return result;
-};
-const _bakeContract = async (contractKeys, contractSource) => {
-  const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-    method: 'POST',
-    body: JSON.stringify({
-      address: contractKeys.address,
-      privateKey: contractKeys.privateKey,
-      publicKey: contractKeys.publicKey,
-      mnemonic: userKeys.mnemonic,
-
-      limit: 100,
-      transaction: `\
-        transaction(code: String) {
-          prepare(acct: AuthAccount) {
-            acct.setCode(code.decodeHex())
-          }
-        }
-      `,
-      args: [
-        {value: uint8Array2hex(new TextEncoder().encode(contractSource)), type: 'String'},
-      ],
-      wait: true,
-    }),
-  });
-  const response2 = await res.json();
-
-  // console.log('bake contract 2', response2);
-  return response2;
-};
 const _runTransaction = async (userKeys, transaction) => {
   const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
     method: 'POST',
@@ -139,7 +107,26 @@ const _readStorageHashAsBuffer = async hash => {
 };
 
 (async () => {
-  const {FungibleToken, NonFungibleToken, WebaverseToken, WebaverseNFT, WebaverseAccount, host} = await flowConstants.load();
+  const web3 = new Web3(new Web3.providers.HttpProvider('http://13.56.80.83:8545'));
+  const addresses = await fetch('https://contracts.webaverse.com/ethereum/address.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')).sidechain);
+  const abis = await fetch('https://contracts.webaverse.com/ethereum/abi.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')));
+  // const chainIds = await fetch('https://contracts.webaverse.com/ethereum/chain-id.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')).sidechain);
+  const contracts = await (async () => {
+    console.log('got addresses', addresses);
+    const result = {};
+    [
+      'Account',
+      'FT',
+      'NFT',
+      'FTProxy',
+      'NFTProxy',
+    ].forEach(contractName => {
+      result[contractName] = new web3.eth.Contract(abis[contractName], addresses[contractName]);
+    });
+    return result;
+  })();
+  // const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+  // const address = wallet.getAddressString();
 
   const client = new Discord.Client();
 
@@ -156,29 +143,24 @@ const _readStorageHashAsBuffer = async hash => {
           const tokenItem = await ddb.getItem({
             TableName: tableName,
             Key: {
-              email: {S: id + '.discord'},
+              email: {S: id + '.discordtoken'},
             }
           }).promise();
 
           let mnemonic = (tokenItem.Item && tokenItem.Item.mnemonic) ? tokenItem.Item.mnemonic.S : null;
-          let addr = (tokenItem.Item && tokenItem.Item.addr) ? tokenItem.Item.addr.S : null;
-          return {mnemonic, addr};
+          return {mnemonic};
         };
         const _genKey = async (id = message.author.id) => {
-          let userKeys = await blockchain.createAccount({
-            bake: true,
-          });
-          let {mnemonic, address: addr} = userKeys;
+          const mnemonic = bip39.generateMnemonic();
 
           await ddb.putItem({
             TableName: tableName,
             Item: {
-              email: {S: id + '.discord'},
+              email: {S: id + '.discordtoken'},
               mnemonic: {S: mnemonic},
-              addr: {S: addr},
             }
           }).promise();
-          return {mnemonic, addr};
+          return {mnemonic};
         };
         /* const _ensureBaked = async ({addr, mnemonic}) => {
           const contractSource = await blockchain.getContractSource('isUserAccountBaked.cdc');
@@ -258,16 +240,8 @@ Key Management (DM to bot)
 Help
 .help - show this info
 \`\`\``);
-          } else if (split[0] === prefix + 'dump' && split.length >= 4) {
-            // console.log('got', split[1]);
-            const match = split[1].match(/<@!([0-9]+)>/);
-            if (match) {
-              // console.log('got split 1', match[1]);
-              const member = client.guilds.cache.get(guildId).members.cache.get(match[1]);
-              // console.log('got split 2', member.user.send('woot'));
-            }
           } else if (split[0] === prefix + 'status') {
-            let userId, mnemonic, addr;
+            let userId, mnemonic;
             if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
               userId = match[1];
             } else {
@@ -275,15 +249,12 @@ Help
             }
             const spec = await _getUser(userId);
             mnemonic = spec.mnemonic;
-            addr = spec.addr;
             if (!mnemonic) {
               const spec = await _genKey(userId);
               mnemonic = spec.mnemonic;
-              addr = spec.addr;
             }
-            // await _ensureBaked({addr, mnemonic});
 
-            const contractSource = await blockchain.getContractSource('getUserData.cdc');
+            /* const contractSource = await blockchain.getContractSource('getUserData.cdc');
 
             const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
               method: 'POST',
@@ -294,15 +265,14 @@ Help
               }),
             });
             const response2 = await res.json();
-            const [name, avatarUrl] = response2.encodedData.value.map(value => value.value && value.value.value);
+            const [name, avatarUrl] = response2.encodedData.value.map(value => value.value && value.value.value); */
 
             message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nAvatar: ${avatarUrl}\n\`\`\``);
           } else if (split[0] === prefix + 'name') {
-            let {mnemonic, addr} = await _getUser();
+            let {mnemonic} = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
-              addr = spec.addr;
             }
 
             if (split[1]) {
@@ -342,11 +312,10 @@ Help
               message.channel.send('<@!' + message.author.id + '>: name is ' + JSON.stringify(name));
             }
           } else if (split[0] === prefix + 'avatar') {
-            let {mnemonic, addr} = await _getUser();
+            let {mnemonic} = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
-              addr = spec.addr;
             }
 
             if (split[1]) {
@@ -411,13 +380,11 @@ Help
             let match;
             if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
               const userId = match[1];
-              let {mnemonic, addr} = await _getUser(userId);
+              let {mnemonic} = await _getUser(userId);
               if (!mnemonic) {
                 const spec = await _genKey(userId);
                 mnemonic = spec.mnemonic;
-                addr = spec.addr;
               }
-              // await _ensureBaked({addr, mnemonic});
 
               {
                 const contractSource = await blockchain.getContractSource('getBalance.cdc');
@@ -439,13 +406,11 @@ Help
                 message.channel.send('<@!' + userId + '> is ' + balance + ' grease');
               }
             } else {
-              let {mnemonic, addr} = await _getUser();
+              let {mnemonic} = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
-                addr = spec.addr;
               }
-              // await _ensureBaked({addr, mnemonic});
 
               {
                 const contractSource = await blockchain.getContractSource('getBalance.cdc');
@@ -477,16 +442,19 @@ Help
               user = message.author;
             }
             if (user) {
-              let addr;
+              let mnemonic;
               const spec = await _getUser(user.id);
-              if (spec.addr) {
-                addr = spec.addr;
+              if (spec.mnemonic) {
+                mnemonic = spec.mnemonic;
               } else {
                 const spec = await _genKey();
-                addr = spec.addr;
+                mnemonic = spec.mnemonic;
               }
+              
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
 
-              message.channel.send('<@!' + user.id + '>\'s address: ```' + addr + '```');
+              message.channel.send('<@!' + user.id + '>\'s address: ```' + address + '```');
             } else {
               message.channel.send('no such user');
             }
@@ -496,13 +464,11 @@ Help
               amount = 1;
             }
 
-            let {mnemonic, addr} = await _getUser();
+            let {mnemonic} = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
-              addr = spec.addr;
             }
-            // await _ensureBaked({addr, mnemonic});
 
             {
               const contractSource = await blockchain.getContractSource('mintToken.cdc');
@@ -534,19 +500,19 @@ Help
               const member = message.channel.guild.members.cache.get(userId);
               const user = member ? member.user : null;
               if (user) {
-                let {mnemonic, addr} = await _getUser();
+                let {mnemonic} = await _getUser();
                 if (!mnemonic) {
                   const spec = await _genKey();
                   mnemonic = spec.mnemonic;
-                  addr = spec.addr;
                 }
 
-                let {mnemonic: mnemonic2, addr: addr2} = await _getUser(user.id);
+                let {mnemonic: mnemonic2} = await _getUser(user.id);
                 if (!mnemonic2) {
                   const spec = await _genKey(userId);
                   mnemonic2 = spec.mnemonic;
-                  addr2 = spec.addr;
                 }
+                
+                const addr2 = '';
 
                 const contractSource = await blockchain.getContractSource('transferToken.cdc');
                 const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
@@ -573,11 +539,10 @@ Help
                 message.channcel.send('unknown user');
               }
             } else if (match = split[1].match(/0x([0-9a-f]+)/i)) {
-              let {mnemonic, addr} = await _getUser();
+              let {mnemonic} = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
-                addr = spec.addr;
               }
 
               const addr2 = match[1];
@@ -617,18 +582,16 @@ Help
               const member = message.channel.guild.members.cache.get(userId);
               const user = member ? member.user : null;
               if (user) {
-                let {mnemonic, addr} = await _getUser();
+                let {mnemonic} = await _getUser();
                 if (!mnemonic) {
                   const spec = await _genKey();
                   mnemonic = spec.mnemonic;
-                  addr = spec.addr;
                 }
 
-                let {mnemonic: mnemonic2, addr: addr2} = await _getUser(user.id);
+                let {mnemonic: mnemonic2} = await _getUser(user.id);
                 if (!mnemonic2) {
                   const spec = await _genKey(userId);
                   mnemonic2 = spec.mnemonic;
-                  addr2 = spec.addr;
                 }
 
                 const contractSource = await blockchain.getContractSource('transferNft.cdc');
@@ -657,11 +620,10 @@ Help
                 message.channcel.send('unknown user');
               }
             } else if (match = split[1].match(/^0x([0-9a-f]+)$/i)) {
-              let {mnemonic, addr} = await _getUser();
+              let {mnemonic} = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
-                addr = spec.addr;
               }
 
               const addr2 = match[1];
@@ -695,13 +657,13 @@ Help
             let addr, userLabel;
             const _loadFromUserId = async userId => {
               const spec = await _getUser(userId);
-              // mnemonic = spec.mnemonic;
-              addr = spec.addr;
-              if (!addr) {
+              let mnemonic = spec.mnemonic;
+              if (!mnemonic) {
                 const spec = await _genKey(userId);
-                // mnemonic = spec.mnemonic;
-                addr = spec.addr;
+                mnemonic = spec.mnemonic;
               }
+              
+              addr = '';
 
               userLabel = '<@!' + userId + '>';
             };
@@ -722,9 +684,6 @@ Help
             const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
               method: 'POST',
               body: JSON.stringify({
-                /* address: addr,
-                mnemonic, */
-
                 limit: 100,
                 script: contractSource
                   .replace(/ARG0/g, '0x' + addr),
@@ -757,9 +716,6 @@ Help
             const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
               method: 'POST',
               body: JSON.stringify({
-                /* address: addr,
-                mnemonic, */
-
                 limit: 100,
                 script: contractSource
                   .replace(/ARG0/g, n),
@@ -824,16 +780,13 @@ Help
               message.channel.send('<@!' + message.author.id + '>: ' + n + ': no preivew available');
             }
           } else if (split[0] === prefix + 'key') {
-            let {mnemonic, addr} = await _getUser();
+            let {mnemonic} = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
-              addr = spec.addr;
             }
-            // await _ensureBaked({addr, mnemonic});
 
-            const key = mnemonic + ' ' + blockchain.hexToWordList(addr);
-            message.author.send('Key: ```' + key + '```');
+            message.author.send('Key: ```' + mnemonic + '```');
           } else if (split[0] === prefix + 'get' && split.length >= 3 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
             const key = split[2];
@@ -843,9 +796,6 @@ Help
             const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
               method: 'POST',
               body: JSON.stringify({
-                /* address: addr,
-                mnemonic, */
-
                 limit: 100,
                 script: contractSource
                   .replace(/ARG0/g, id)
@@ -862,13 +812,12 @@ Help
             const key = split[2];
             const value = split[3];
 
-            let {mnemonic, addr} = await _getUser();
+            let {mnemonic} = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
-              addr = spec.addr;
             }
-            // await _ensureBaked({addr, mnemonic});
+
 
             const contractSource = await blockchain.getContractSource('setNftMetadata.cdc');
 
@@ -922,11 +871,10 @@ Help
                 quantity = 1;
               }
 
-              let {mnemonic, addr} = await _getUser();
+              let {mnemonic} = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
-                addr = spec.addr;
               }
 
               for (const [key, attachment] of message.attachments) {
@@ -977,13 +925,6 @@ Help
                     });
                     req.on('error', reject);
                     proxyRes.pipe(req);
-                    /* console.log('headers', proxyRes.headers);
-                    proxyRes.on('data', d => {
-                      console.log('proxy data', d.length);
-                    });
-                    proxyRes.on('end', () => {
-                      console.log('proxy end');
-                    }); */
                   });
                   proxyReq.on('error', reject);
                   proxyReq.end();
@@ -992,27 +933,24 @@ Help
             }
           }
         } else if (message.channel.type === 'dm') {
-          let {mnemonic, addr} = await _getUser();
+          let {mnemonic} = await _getUser();
 
           const split = message.content.split(/\s+/);
           if (split[0] === prefix + 'key') {
-            if (split.length >= 31) {
+            if (split.length === 12) {
               const key = split.splice(1, 31);
               if (key.every(word => wordList.includes(word))) {
-                const mnemonic = key.slice(0, 24).join(' ');
-                const addr = blockchain.wordListToHex(key.slice(24).join(' '));
+                const mnemonic = key.slice(0, 12).join(' ');
 
                 await ddb.putItem({
                   TableName: tableName,
                   Item: {
                     email: {S: id + '.discord'},
                     mnemonic: {S: mnemonic},
-                    addr: {S: addr},
                   }
                 }).promise();
                 message.author.send('set key to ```' + JSON.stringify({
                   mnemonic,
-                  addr,
                 }) + '```');
               } else {
                 message.author.send('invalid key');
@@ -1021,12 +959,9 @@ Help
               if (!mnemonic || split[1] === 'reset') {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
-                addr = spec.addr;
               }
-              // await _ensureBaked({addr, mnemonic});
 
-              const key = mnemonic + ' ' + blockchain.hexToWordList(addr);
-              message.author.send('Key: ```' + key + '```');
+              message.author.send('Key: ```' + mnemonic + '```');
             }
           }
         }
