@@ -128,6 +128,47 @@ const _readStorageHashAsBuffer = async hash => {
   // const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
   // const address = wallet.getAddressString();
 
+  const runSidechainTransaction = mnemonic => async (contractName, method, ...args) => {
+    // console.log('run tx', contracts['sidechain'], [contractName, method]);
+    const txData = contracts[contractName].methods[method](...args);
+    const data = txData.encodeABI();
+    const gas = await txData.estimateGas({
+      from: testAddress,
+    });
+    let gasPrice = await web3.eth.getGasPrice();
+    gasPrice = parseInt(gasPrice, 10);
+
+    const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+    const address = wallet.getAddressString();
+    const privateKey = wallet.getPrivateKeyString();
+    const nonce = await web3.eth.getTransactionCount(address);
+    const privateKeyBytes = Uint8Array.from(web3.sidechain.utils.hexToBytes(privateKey));
+
+    let tx = Transaction.fromTxData({
+      to: contracts[contractName]._address,
+      nonce: '0x' + new web3.utils.BN(nonce).toString(16),
+      gas: '0x' + new web3.utils.BN(gasPrice).toString(16),
+      gasPrice: '0x' + new web3.utils.BN(gasPrice).toString(16),
+      gasLimit: '0x' + new web3.utils.BN(1000000).toString(16),
+      data,
+    }, {
+      common: Common.forCustomChain(
+        'mainnet',
+        {
+          name: 'geth',
+          networkId: 1,
+          chainId: 1337,
+        },
+        'petersburg',
+      ),
+    }).sign(privateKeyBytes);
+    const rawTx = '0x' + tx.serialize().toString('hex');
+    // console.log('signed tx', tx, rawTx);
+    const receipt = await web3.eth.sendSignedTransaction(rawTx);
+    // console.log('sent tx', receipt);
+    return receipt;
+  };
+
   const client = new Discord.Client();
 
   client.on('ready', async function() {
@@ -922,7 +963,11 @@ Help
                         const j = JSON.parse(s);
                         const {hash} = j;
 
-                        const contractSource = await blockchain.getContractSource('mintNft.cdc');
+                        const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                        const address = wallet.getAddressString();
+                        const result = await runSidechainTransaction(mnemonic)('NFT', 'mint', address, '0x' + hash, name, quantity);
+
+                        /* const contractSource = await blockchain.getContractSource('mintNft.cdc');
 
                         const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
                           method: 'POST',
@@ -938,7 +983,7 @@ Help
                             wait: true,
                           }),
                         });
-                        const response2 = await res.json();
+                        const response2 = await res.json(); */
 
                         if (!response2.transaction.errorMessage) {
                           message.channel.send('<@!' + message.author.id + '>: minted ' + hash + ' (' + storageHost + '/' + hash + ')');
