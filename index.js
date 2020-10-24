@@ -14,6 +14,8 @@ const wordList = require('./wordlist.json');
 // const flowConstants = require('./flow-constants.js');
 const Web3 = require('web3');
 const bip39 = require('bip39');
+const {Transaction} = require('@ethereumjs/tx');
+const {default: Common} = require('@ethereumjs/common');
 const {hdkey} = require('ethereumjs-wallet');
 
 const {accessKeyId, secretAccessKey, discordApiToken, infuraProjectId} = require('../exokit-backend/config.json');
@@ -128,45 +130,48 @@ const _readStorageHashAsBuffer = async hash => {
   // const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
   // const address = wallet.getAddressString();
 
-  const runSidechainTransaction = mnemonic => async (contractName, method, ...args) => {
-    // console.log('run tx', contracts['sidechain'], [contractName, method]);
-    const txData = contracts[contractName].methods[method](...args);
-    const data = txData.encodeABI();
-    const gas = await txData.estimateGas({
-      from: testAddress,
-    });
-    let gasPrice = await web3.eth.getGasPrice();
-    gasPrice = parseInt(gasPrice, 10);
-
+  const runSidechainTransaction = mnemonic => {
     const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
     const address = wallet.getAddressString();
-    const privateKey = wallet.getPrivateKeyString();
-    const nonce = await web3.eth.getTransactionCount(address);
-    const privateKeyBytes = Uint8Array.from(web3.sidechain.utils.hexToBytes(privateKey));
 
-    let tx = Transaction.fromTxData({
-      to: contracts[contractName]._address,
-      nonce: '0x' + new web3.utils.BN(nonce).toString(16),
-      gas: '0x' + new web3.utils.BN(gasPrice).toString(16),
-      gasPrice: '0x' + new web3.utils.BN(gasPrice).toString(16),
-      gasLimit: '0x' + new web3.utils.BN(1000000).toString(16),
-      data,
-    }, {
-      common: Common.forCustomChain(
-        'mainnet',
-        {
-          name: 'geth',
-          networkId: 1,
-          chainId: 1337,
-        },
-        'petersburg',
-      ),
-    }).sign(privateKeyBytes);
-    const rawTx = '0x' + tx.serialize().toString('hex');
-    // console.log('signed tx', tx, rawTx);
-    const receipt = await web3.eth.sendSignedTransaction(rawTx);
-    // console.log('sent tx', receipt);
-    return receipt;
+    return async (contractName, method, ...args) => {
+      // console.log('run tx', contracts['sidechain'], [contractName, method]);
+      const txData = contracts[contractName].methods[method](...args);
+      const data = txData.encodeABI();
+      const gas = await txData.estimateGas({
+        from: address,
+      });
+      let gasPrice = await web3.eth.getGasPrice();
+      gasPrice = parseInt(gasPrice, 10);
+
+      const privateKey = wallet.getPrivateKeyString();
+      const nonce = await web3.eth.getTransactionCount(address);
+      const privateKeyBytes = Uint8Array.from(web3.utils.hexToBytes(privateKey));
+
+      let tx = Transaction.fromTxData({
+        to: contracts[contractName]._address,
+        nonce: '0x' + new web3.utils.BN(nonce).toString(16),
+        gas: '0x' + new web3.utils.BN(gasPrice).toString(16),
+        gasPrice: '0x' + new web3.utils.BN(gasPrice).toString(16),
+        gasLimit: '0x' + new web3.utils.BN(1000000).toString(16),
+        data,
+      }, {
+        common: Common.forCustomChain(
+          'mainnet',
+          {
+            name: 'geth',
+            networkId: 1,
+            chainId: 1337,
+          },
+          'petersburg',
+        ),
+      }).sign(privateKeyBytes);
+      const rawTx = '0x' + tx.serialize().toString('hex');
+      // console.log('signed tx', tx, rawTx);
+      const receipt = await web3.eth.sendSignedTransaction(rawTx);
+      // console.log('sent tx', receipt);
+      return receipt;
+    };
   };
 
   const client = new Discord.Client();
@@ -721,21 +726,21 @@ Help
               await _loadFromUserId(message.author.id);
             }
 
-            const nftBalance = await contracts.NFT.methods.balanceOf(testAddress).call();
+            const nftBalance = await contracts.NFT.methods.balanceOf(address).call();
             const hashToIds = {};
             for (let i = 0; i < nftBalance; i++) {
-              const id = await contracts.NFT.methods.tokenOfOwnerByIndex(testAddress, i).call();
+              const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
               const hash = await contracts.NFT.methods.getHash(id).call();
               if (!hashToIds[hash]) {
                 hashToIds[hash] = [];
               }
-              hashToCount[hash].push(id);
+              hashToIds[hash].push(id);
             }
             const entries = [];
             for (const hash in hashToIds) {
               const ids = hashToIds[hash];
               const id = ids[0];
-              const filename = await contracts.NFT.methods.getNftMetadata(id, 'filename').call();
+              const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
               const balance = ids.length;
               const totalSupply = await contracts.NFT.methods.totalSupplyOfHash(hash).call();
               entries.push({
@@ -985,15 +990,18 @@ Help
                         });
                         const response2 = await res.json(); */
 
-                        if (!response2.transaction.errorMessage) {
+                        if (result.status) {
                           message.channel.send('<@!' + message.author.id + '>: minted ' + hash + ' (' + storageHost + '/' + hash + ')');
                         } else {
-                          message.channel.send('<@!' + message.author.id + '>: could not mint: ' + response2.transaction.errorMessage);
+                          message.channel.send('<@!' + message.author.id + '>: mint transaction failed: ' + result.transactionHash);
                         }
 
                         accept();
                       });
-                      res.on('error', reject);
+                      res.on('error', err => {
+                        console.warn(err.stack);
+                        message.channel.send('<@!' + message.author.id + '>: mint failed: ' + err.message);
+                      });
                     });
                     req.on('error', reject);
                     proxyRes.pipe(req);

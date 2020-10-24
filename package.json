@@ -18,6 +18,8 @@
   },
   "homepage": "https://github.com/avaer/flow-watch#readme",
   "dependencies": {
+    "@ethereumjs/common": "^2.0.0-beta.1",
+    "@ethereumjs/tx": "^3.0.0-beta.1",
     "@onflow/sdk": "0.0.31",
     "@onflow/types": "0.0.4",
     "aws-sdk": "^2.760.0",
