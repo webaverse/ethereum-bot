@@ -1044,6 +1044,7 @@ Help
                           status = result.status;
                           transactionHash = result.transactionHash;
                         } catch(err) {
+                          console.warn(err.stack);
                           status = false;
                           transactionHash = '0x0';
                         }
