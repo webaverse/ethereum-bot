@@ -129,6 +129,8 @@ const _readStorageHashAsBuffer = async hash => {
   })();
   // const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
   // const address = wallet.getAddressString();
+  
+  const trades = [];
 
   const runSidechainTransaction = mnemonic => {
     const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
@@ -638,6 +640,21 @@ Help
               }
             } else {
               message.channcel.send('unknown user');
+            }
+          } else if (split[0] === prefix + 'trade' && split.length >= 2) {
+            if (match = split[1].match(/<@!([0-9]+)>/)) {
+              const userId = match[1];
+              const member = message.channel.guild.members.cache.get(userId);
+              const user = member ? member.user : null;
+              if (user) {
+                const header = 'Trade #' + trades.length + ' ' + message.author.username + ' | ' + user.username;
+                const m = await message.channel.send('```' + header + '\n' + Array(header.length+1).join('-') + '```');
+                trades.push(m);
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: cannot find peer');
+              }
+            } else {
+              message.channel.send('<@!' + message.author.id + '>: invalid trade peer: ' + split[1]);
             }
           } else if (split[0] === prefix + 'transfer' && split.length >= 3 && !isNaN(parseInt(split[2], 10))) {
             const id = parseInt(split[2], 10);
