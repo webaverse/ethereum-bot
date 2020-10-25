@@ -1030,6 +1030,7 @@ Help
 
                         const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                         const address = wallet.getAddressString();
+                        // console.log('minting', ['NFT', 'mint', address, '0x' + hash, name, quantity]);
                         const result = await runSidechainTransaction(mnemonic)('NFT', 'mint', address, '0x' + hash, name, quantity);
 
                         /* const contractSource = await blockchain.getContractSource('mintNft.cdc');
