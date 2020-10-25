@@ -754,6 +754,16 @@ Help
             if (trade) {
               const item = split[2];
               trade.add(message.author.id, item);
+
+              const userId = message.author.id;
+              const userReactions = trade.reactions.cache.filter(reaction => reaction.users.cache.has(userId));
+              try {
+                for (const reaction of userReactions.values()) {
+                  await reaction.users.remove(userId);
+                }
+              } catch (error) {
+                console.error('Failed to remove reactions.', error.stack);
+              }
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
             }
@@ -763,6 +773,16 @@ Help
             if (trade) {
               const itemNumber = parseInt(split[2], 10);
               trade.remove(message.author.id, itemNumber);
+              
+              const userId = message.author.id;
+              const userReactions = trade.reactions.cache.filter(reaction => reaction.users.cache.has(userId));
+              try {
+                for (const reaction of userReactions.values()) {
+                  await reaction.users.remove(userId);
+                }
+              } catch (error) {
+                console.error('Failed to remove reactions.', error.stack);
+              }
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
             }
