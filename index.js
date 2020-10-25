@@ -188,29 +188,68 @@ const _readStorageHashAsBuffer = async hash => {
 
     client.on('messageReactionAdd', (reaction, user) => {
       const {data, message, emoji} = reaction;
-      if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') {
+      console.log('emoji identifier', emoji.identifier);
+      if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
         const trade = trades.find(trade => trade.id === message.id);
-        console.log('got reaction add', {data, message}, user.username, user.id, trade);
+        // console.log('got reaction add', {data, message}, user.username, user.id, trade);
         if (trade) {
           const index = trade.userIds.indexOf(user.id);
           if (index >= 0) {
             trade.confirmations[index] = true;
             trade.render();
+ 
+            if (trade.confirmations.every(confirmation => !!confirmation)) {
+              if (trade.confirmations2.every(confirmation => !!confirmation)) {
+                trade.finish();
+                trades.splice(trades.indexOf(trade), 1);
+              } else {
+                trade.react('💞');
+              }
+            }
           }
-          console.log('check emoji 2', index);
-          console.log('check emoji 3', emoji, [emoji.name, emoji.id, emoji.identifier, emoji.toString(), JSON.stringify(emoji.toString())]);
+          // console.log('check emoji 2', index);
+          // console.log('check emoji 3', emoji, [emoji.name, emoji.id, emoji.identifier, emoji.toString(), JSON.stringify(emoji.toString())]);
+        }
+      } else if (user.id !== client.user.id && emoji.identifier === '%F0%9F%92%9E') { // rotating hearts
+        const trade = trades.find(trade => trade.id === message.id);
+        // console.log('got reaction add', {data, message}, user.username, user.id, trade);
+        if (trade) {
+          const index = trade.userIds.indexOf(user.id);
+          if (index >= 0) {
+            trade.confirmations2[index] = true;
+            trade.render();
+ 
+            if (trade.confirmations.every(confirmation => !!confirmation) && trade.confirmations2.every(confirmation => !!confirmation)) {
+              trade.finish();
+              trades.splice(trades.indexOf(trade), 1);
+            }
+          }
+          // console.log('check emoji 2', index);
+          // console.log('check emoji 3', emoji, [emoji.name, emoji.id, emoji.identifier, emoji.toString(), JSON.stringify(emoji.toString())]);
         }
       }
     });
-    client.on('messageReactionRemove', (reaction, user) => {
+    client.on('messageReactionRemove', async (reaction, user) => {
       const {data, message, emoji} = reaction;
-      if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') {
+      if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
         const trade = trades.find(trade => trade.id === message.id);
         if (trade) {
           const index = trade.userIds.indexOf(user.id);
           if (index >= 0) {
             trade.confirmations[index] = false;
             trade.render();
+            
+            const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%F0%9F%92%9E');
+            try {
+              for (const reaction of doneReactions.values()) {
+                const users = Arra.from(reaction.users.values());
+                for (const user of users) {
+                  await reaction.users.remove(user.id);
+                }
+              }
+            } catch (error) {
+              console.error('Failed to remove reactions.', error.stack);
+            }
           }
         }
         console.log('got reaction remove', {data, message}, user.username, trade);
@@ -685,7 +724,9 @@ Help
                 const header = headerLeft + headerMiddle + headerRight;
                 const items = [[], []];
                 const confirmations = [false, false];
+                const confirmations2 = [false, false];
                 const cancelledSpec = {cancelled: false};
+                const finishedSpec = {finished: false};
                 const _renderItems = () => {
                   let s = '';
                   const maxNumItems = Math.max(items[0].length, items[1].length);
@@ -705,11 +746,11 @@ Help
                     ((confirmations[1] ? 'OK' : '') + Array(headerRight.length+1).join(' ')).slice(0, headerLeft.length) +
                     '\n';
                 };
-                const _renderCancelled = () => {
-                  return cancelledSpec.cancelled ? 'CANCELLED' : '';
+                const _renderStatus = () => {
+                  return (cancelledSpec.cancelled ? 'CANCELLED\n' : '') + (finishedSpec.finished ? 'FINISHED\n' : '');
                 };
                 const _render = () => {
-                  return '```' + header + '\n' + Array(header.length+1).join('-') + '\n' + _renderItems() + _renderConfirmations() + _renderCancelled() + '```'
+                  return '```' + header + '\n' + Array(header.length+1).join('-') + '\n' + _renderItems() + _renderConfirmations() + _renderStatus() + '```'
                 };
                 const m = await message.channel.send(_render());
                 m.react('✅')
@@ -719,7 +760,9 @@ Help
                 m.userIds = [message.author.id, userId];
                 m.items = items;
                 m.confirmations = confirmations;
+                m.confirmations2 = confirmations2;
                 m.cancelledSpec = cancelledSpec;
+                m.finishedSpec = finishedSpec;
                 m.add = (userId, item) => {
                   const index = m.userIds.indexOf(userId);
                   if (index >= 0) {
@@ -739,6 +782,10 @@ Help
                 };
                 m.cancel = () => {
                   cancelledSpec.cancelled = true;
+                  m.render();
+                };
+                m.finish = () => {
+                  finishedSpec.finished = true;
                   m.render();
                 };
                 trades.push(m);
