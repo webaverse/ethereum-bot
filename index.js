@@ -559,8 +559,15 @@ Help
                 
                 const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                 const address2 = wallet2.getAddressString();
-
-                const result = await runSidechainTransaction(mnemonic)('FT', 'transfer', address2, amount);
+ 
+                let status;
+                try {
+                  const result = await runSidechainTransaction(mnemonic)('FT', 'transfer', address2, amount);
+                  status = result.status;
+                } catch(err) {
+                  console.warn(err.stack);
+                  status = false;
+                }
 
                 /* const contractSource = await blockchain.getContractSource('transferToken.cdc');
                 const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
@@ -595,7 +602,14 @@ Help
 
               const address2 = match[1];
 
-              const result = await runSidechainTransaction(mnemonic)('FT', 'transfer', address2, amount);
+              let status;
+              try {
+                const result = await runSidechainTransaction(mnemonic)('FT', 'transfer', address2, amount);
+                status = result.status;
+              } catch(err) {
+                console.warn(err.stack);
+                status = false;
+              }
 
               /* const contractSource = await blockchain.getContractSource('transferToken.cdc');
               const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
@@ -613,7 +627,7 @@ Help
               });
               const response2 = await res.json(); */
 
-              if (result.status) {
+              if (status) {
                 message.channel.send('<@!' + message.author.id + '>: greased ' + amount + ' to 0x' + addr2);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: could not send: ' + result.transactionHash);
@@ -649,8 +663,16 @@ Help
                 const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                 const address2 = wallet2.getAddressString();
 
+                let status = true;
                 for (let i = 0; i < quantity; i++) {
-                  const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
+                  try {
+                    const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
+                    status = status && result.status;
+                  } catch(err) {
+                    console.warn(err.stack);
+                    status = false;
+                    break;
+                  }
                 }
 
                 /* const contractSource = await blockchain.getContractSource('transferNft.cdc');
@@ -670,7 +692,7 @@ Help
                 });
                 const response2 = await res.json(); */
 
-                if (result.status) {
+                if (status) {
                   message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to <@!' + userId + '>');
                 } else {
                   message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + result.transactionHash);
@@ -690,8 +712,16 @@ Help
               
               const address2 = match[1];
 
+              let status = true;
               for (let i = 0; i < quantity; i++) {
-                const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
+                try {
+                  const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
+                  status = status && result.status;
+                } catch(err) {
+                  console.warn(err.stack);
+                  status = false;
+                  break;
+                }
               }
 
               /* const contractSource = await blockchain.getContractSource('transferNft.cdc');
@@ -711,7 +741,7 @@ Help
               });
               const response2 = await res.json(); */
 
-              if (!response2.transaction.errorMessage) {
+              if (status) {
                 message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to 0x' + addr2);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + response2.transaction.errorMessage);
