@@ -805,7 +805,7 @@ Help
               const item = split[2];
               trade.add(message.author.id, item);
 
-              const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%F0%9F%92%9E');
+              const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
               // console.log('got done reactions', Array.from(doneReactions.values()).length);
               try {
                 for (const reaction of doneReactions.values()) {
@@ -828,7 +828,7 @@ Help
               const itemNumber = parseInt(split[2], 10);
               trade.remove(message.author.id, itemNumber);
               
-              const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%F0%9F%92%9E');
+              const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
               // console.log('got done reactions', Array.from(doneReactions.values()).length);
               try {
                 for (const reaction of doneReactions.values()) {
