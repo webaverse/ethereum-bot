@@ -783,9 +783,13 @@ Help
             }
             message.channel.send(s);
           } else if (split[0] === prefix + 'upload' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
-            const n = parseInt(split[1], 10);
+            const id = parseInt(split[1], 10);
 
-            const contractSource = await blockchain.getContractSource('getNft.cdc');
+            const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+            const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
+
+            /* const contractSource = await blockchain.getContractSource('getNft.cdc');
 
             const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
               method: 'POST',
@@ -797,12 +801,12 @@ Help
               }),
             });
             const response2 = await res.json();
-            const [hash, filename] = response2.encodedData.value.map(value => value.value && value.value.value);
+            const [hash, filename] = response2.encodedData.value.map(value => value.value && value.value.value); */
 
-            const buffer = await _readStorageHashAsBuffer(hash);
+            const buffer = await _readStorageHashAsBuffer(hash.slice(2));
             const attachment = new Discord.MessageAttachment(buffer, filename);
 
-            message.channel.send('<@!' + message.author.id + '>: ' + n + ' is this', attachment);
+            message.channel.send('<@!' + message.author.id + '>: ' + id + ' is this', attachment);
           } else if (split[0] === prefix + 'preview' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
 
