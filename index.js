@@ -812,7 +812,9 @@ Help
                   const users = Array.from(reaction.users.cache.values());
                   // console.log('got reaction users', users.map(u => u.id));
                   for (const user of users) {
-                    await reaction.users.remove(user.id);
+                    if (user.id !== client.user.id) {
+                      await reaction.users.remove(user.id);
+                    }
                   }
                 }
               } catch (error) {
@@ -835,7 +837,9 @@ Help
                   const users = Array.from(reaction.users.cache.values());
                   // console.log('got reaction users', users.map(u => u.id));
                   for (const user of users) {
-                    await reaction.users.remove(user.id);
+                    if (user.id !== client.user.id) {
+                      await reaction.users.remove(user.id);
+                    }
                   }
                 }
               } catch (error) {
