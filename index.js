@@ -186,6 +186,36 @@ const _readStorageHashAsBuffer = async hash => {
 
     // console.log('got', client.guilds.cache.get(guildId).members.cache);
 
+    client.on('messageReactionAdd', (reaction, user) => {
+      const {data, message, emoji} = reaction;
+      if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') {
+        const trade = trades.find(trade => trade.id === message.id);
+        console.log('got reaction add', {data, message}, user.username, user.id, trade);
+        if (trade) {
+          const index = trade.userIds.indexOf(user.id);
+          if (index >= 0) {
+            trade.confirmations[index] = true;
+            trade.render();
+          }
+          console.log('check emoji 2', index);
+          console.log('check emoji 3', emoji, [emoji.name, emoji.id, emoji.identifier, emoji.toString(), JSON.stringify(emoji.toString())]);
+        }
+      }
+    });
+    client.on('messageReactionRemove', (reaction, user) => {
+      const {data, message, emoji} = reaction;
+      if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') {
+        const trade = trades.find(trade => trade.id === message.id);
+        if (trade) {
+          const index = trade.userIds.indexOf(user.id);
+          if (index >= 0) {
+            trade.confirmations[index] = false;
+            trade.render();
+          }
+        }
+        console.log('got reaction remove', {data, message}, user.username, trade);
+      }
+    });
     client.on('message', async message => {
       if (!message.author.bot) {
         const _getUser = async (id = message.author.id) => {
@@ -654,6 +684,8 @@ Help
                 const headerRight = user.username;
                 const header = headerLeft + headerMiddle + headerRight;
                 const items = [[], []];
+                const confirmations = [false, false];
+                const cancelledSpec = {cancelled: false};
                 const _renderItems = () => {
                   let s = '';
                   const maxNumItems = Math.max(items[0].length, items[1].length);
@@ -662,17 +694,32 @@ Help
                     const label = (i + '.  ').slice(0, 3);
                     s += (label + (rowItems[0] || '') + Array(headerLeft.length+1).join(' ')).slice(0, headerLeft.length) +
                       headerMiddle + ((rowItems[1] || '') +
-                      Array(headerLeft.length+1).join(' ')).slice(0, headerLeft.length) + '\n';
+                      Array(headerLeft.length+1).join(' ')).slice(0, headerLeft.length) +
+                      '\n';
                   }
                   return s;
                 };
+                const _renderConfirmations = () => {
+                  return ((confirmations[0] ? 'OK' : '') + Array(headerLeft.length+1).join(' ')).slice(0, headerLeft.length) +
+                    Array(headerMiddle.length+1).join(' ') +
+                    ((confirmations[1] ? 'OK' : '') + Array(headerRight.length+1).join(' ')).slice(0, headerLeft.length) +
+                    '\n';
+                };
+                const _renderCancelled = () => {
+                  return cancelledSpec.cancelled ? 'CANCELLED' : '';
+                };
                 const _render = () => {
-                  return '```' + header + '\n' + Array(header.length+1).join('-') + '\n' + _renderItems() + '```'
+                  return '```' + header + '\n' + Array(header.length+1).join('-') + '\n' + _renderItems() + _renderConfirmations() + _renderCancelled() + '```'
                 };
                 const m = await message.channel.send(_render());
+                m.react('✅')
+                  // .then(() => m.react('🍊'))
+                  // .then(() => m.react('🍇'));
                 m.tradeId = tradeId;
                 m.userIds = [message.author.id, userId];
                 m.items = items;
+                m.confirmations = confirmations;
+                m.cancelledSpec = cancelledSpec;
                 m.add = (userId, item) => {
                   const index = m.userIds.indexOf(userId);
                   if (index >= 0) {
@@ -690,6 +737,10 @@ Help
                 m.render = () => {
                   m.edit(_render());
                 };
+                m.cancel = () => {
+                  cancelledSpec.cancelled = true;
+                  m.render();
+                };
                 trades.push(m);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: cannot find peer');
@@ -704,7 +755,6 @@ Help
               const item = split[2];
               trade.add(message.author.id, item);
             } else {
-              console.log('no trade');
               message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
             }
           } else if (split[0] === prefix + 'remove' && split.length >= 3) {
@@ -719,8 +769,15 @@ Help
           } else if (split[0] === prefix + 'cancel' && split.length >= 2) {
             const tradeId = parseInt(split[1], 10);
             const index = trades.findIndex(trade => trade.tradeId === tradeId);
-            if (index) {
-              trades.splice(index, 1);
+            // console.log('got index', tradeId, trades.map(t => t.tradeId), index);
+            if (index !== -1) {
+              const trade = trades[index];
+              if (trade.userIds.includes(message.author.id)) {
+                trade.cancel();
+                trades.splice(index, 1);
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: not your trade: ' + split[1]);
+              }
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
             }
