@@ -557,9 +557,12 @@ Help
                   mnemonic2 = spec.mnemonic;
                 }
                 
-                const addr2 = '';
+                const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                const address2 = wallet2.getAddressString();
 
-                const contractSource = await blockchain.getContractSource('transferToken.cdc');
+                const result = await runSidechainTransaction(mnemonic)('FT', 'transfer', address2, amount);
+
+                /* const contractSource = await blockchain.getContractSource('transferToken.cdc');
                 const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
                   method: 'POST',
                   body: JSON.stringify({
@@ -573,12 +576,12 @@ Help
                     wait: true,
                   }),
                 });
-                const response2 = await res.json();
+                const response2 = await res.json(); */
 
-                if (!response2.transaction.errorMessage) {
+                if (result.status) {
                   message.channel.send('<@!' + message.author.id + '>: greased ' + amount + ' to <@!' + userId + '>');
                 } else {
-                  message.channel.send('<@!' + message.author.id + '>: could not send: ' + response2.transaction.errorMessage);
+                  message.channel.send('<@!' + message.author.id + '>: could not send: ' + result.transactionHash);
                 }
               } else {
                 message.channcel.send('unknown user');
@@ -590,9 +593,11 @@ Help
                 mnemonic = spec.mnemonic;
               }
 
-              const addr2 = match[1];
+              const address2 = match[1];
 
-              const contractSource = await blockchain.getContractSource('transferToken.cdc');
+              const result = await runSidechainTransaction(mnemonic)('FT', 'transfer', address2, amount);
+
+              /* const contractSource = await blockchain.getContractSource('transferToken.cdc');
               const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -606,12 +611,12 @@ Help
                   wait: true,
                 }),
               });
-              const response2 = await res.json();
+              const response2 = await res.json(); */
 
-              if (!response2.transaction.errorMessage) {
+              if (result.status) {
                 message.channel.send('<@!' + message.author.id + '>: greased ' + amount + ' to 0x' + addr2);
               } else {
-                message.channel.send('<@!' + message.author.id + '>: could not send: ' + response2.transaction.errorMessage);
+                message.channel.send('<@!' + message.author.id + '>: could not send: ' + result.transactionHash);
               }
             } else {
               message.channcel.send('unknown user');
@@ -632,14 +637,23 @@ Help
                   const spec = await _genKey();
                   mnemonic = spec.mnemonic;
                 }
-
                 let {mnemonic: mnemonic2} = await _getUser(user.id);
                 if (!mnemonic2) {
                   const spec = await _genKey(userId);
                   mnemonic2 = spec.mnemonic;
                 }
+                
+                const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                const address = wallet.getAddressString();
+                
+                const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                const address2 = wallet2.getAddressString();
 
-                const contractSource = await blockchain.getContractSource('transferNft.cdc');
+                for (let i = 0; i < quantity; i++) {
+                  const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
+                }
+
+                /* const contractSource = await blockchain.getContractSource('transferNft.cdc');
                 const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
                   method: 'POST',
                   body: JSON.stringify({
@@ -654,12 +668,12 @@ Help
                     wait: true,
                   }),
                 });
-                const response2 = await res.json();
+                const response2 = await res.json(); */
 
-                if (!response2.transaction.errorMessage) {
+                if (result.status) {
                   message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to <@!' + userId + '>');
                 } else {
-                  message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + response2.transaction.errorMessage);
+                  message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + result.transactionHash);
                 }
               } else {
                 message.channcel.send('unknown user');
@@ -671,9 +685,16 @@ Help
                 mnemonic = spec.mnemonic;
               }
 
-              const addr2 = match[1];
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+              
+              const address2 = match[1];
 
-              const contractSource = await blockchain.getContractSource('transferNft.cdc');
+              for (let i = 0; i < quantity; i++) {
+                const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
+              }
+
+              /* const contractSource = await blockchain.getContractSource('transferNft.cdc');
               const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -688,7 +709,7 @@ Help
                   wait: true,
                 }),
               });
-              const response2 = await res.json();
+              const response2 = await res.json(); */
 
               if (!response2.transaction.errorMessage) {
                 message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to 0x' + addr2);
