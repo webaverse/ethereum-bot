@@ -730,7 +730,8 @@ Help
             const hashToIds = {};
             for (let i = 0; i < nftBalance; i++) {
               const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
-              const hash = await contracts.NFT.methods.getHash(id).call();
+              const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+              const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
               if (!hashToIds[hash]) {
                 hashToIds[hash] = [];
               }
@@ -745,7 +746,7 @@ Help
               const totalSupply = await contracts.NFT.methods.totalSupplyOfHash(hash).call();
               entries.push({
                 id,
-                hash,
+                hash: hash.slice(2),
                 filename,
                 balance,
                 totalSupply,
@@ -803,9 +804,10 @@ Help
 
             message.channel.send('<@!' + message.author.id + '>: ' + n + ' is this', attachment);
           } else if (split[0] === prefix + 'preview' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
-            const n = parseInt(split[1], 10);
+            const id = parseInt(split[1], 10);
 
-            const hash = await contracts.NFT.methods.getHash(n).call();
+            const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
             const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
             const match = filename.match(/^(.+)\.([^\.]+)$/);
 
@@ -827,9 +829,9 @@ Help
             if (match) {
               const basename = match[1];
               const ext = match[2];
-              message.channel.send('<@!' + message.author.id + '>: ' + n + ': https://preview.exokit.org/' + hash + '.' + ext + '/' + basename + '.png');
+              message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash.slice(2) + '.' + ext + '/' + basename + '.png');
             } else {
-              message.channel.send('<@!' + message.author.id + '>: ' + n + ': no preivew available');
+              message.channel.send('<@!' + message.author.id + '>: ' + id + ': no preivew available');
             }
           } else if (split[0] === prefix + 'gif' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const n = parseInt(split[1], 10);
