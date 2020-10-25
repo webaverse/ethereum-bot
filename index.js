@@ -243,7 +243,7 @@ const _readStorageHashAsBuffer = async hash => {
             trade.render();
             
             const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%F0%9F%92%9E');
-            console.log('got done reactions', Array.from(doneReactions.values()).length);
+            // console.log('got done reactions', Array.from(doneReactions.values()).length);
             try {
               for (const reaction of doneReactions.values()) {
                 const users = Array.from(reaction.users.cache.values());
@@ -805,11 +805,15 @@ Help
               const item = split[2];
               trade.add(message.author.id, item);
 
-              const userId = message.author.id;
-              const userReactions = trade.reactions.cache.filter(reaction => reaction.users.cache.has(userId));
+              const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%F0%9F%92%9E');
+              // console.log('got done reactions', Array.from(doneReactions.values()).length);
               try {
-                for (const reaction of userReactions.values()) {
-                  await reaction.users.remove(userId);
+                for (const reaction of doneReactions.values()) {
+                  const users = Array.from(reaction.users.cache.values());
+                  console.log('got reaction users', users.map(u => u.id));
+                  for (const user of users) {
+                    await reaction.users.remove(user.id);
+                  }
                 }
               } catch (error) {
                 console.error('Failed to remove reactions.', error.stack);
@@ -824,11 +828,15 @@ Help
               const itemNumber = parseInt(split[2], 10);
               trade.remove(message.author.id, itemNumber);
               
-              const userId = message.author.id;
-              const userReactions = trade.reactions.cache.filter(reaction => reaction.users.cache.has(userId));
+              const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%F0%9F%92%9E');
+              // console.log('got done reactions', Array.from(doneReactions.values()).length);
               try {
-                for (const reaction of userReactions.values()) {
-                  await reaction.users.remove(userId);
+                for (const reaction of doneReactions.values()) {
+                  const users = Array.from(reaction.users.cache.values());
+                  console.log('got reaction users', users.map(u => u.id));
+                  for (const user of users) {
+                    await reaction.users.remove(user.id);
+                  }
                 }
               } catch (error) {
                 console.error('Failed to remove reactions.', error.stack);
