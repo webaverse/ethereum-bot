@@ -227,6 +227,15 @@ const _readStorageHashAsBuffer = async hash => {
           // console.log('check emoji 2', index);
           // console.log('check emoji 3', emoji, [emoji.name, emoji.id, emoji.identifier, emoji.toString(), JSON.stringify(emoji.toString())]);
         }
+      } else if (user.id !== client.user.id && emoji.identifier === '%E2%9D%8C') { // x
+        const trade = trades.find(trade => trade.id === message.id);
+        if (trade) {
+          const index = trade.userIds.indexOf(user.id);
+          if (index >= 0) {
+            trade.cancel();
+            trades.splice(trades.indexOf(trade), 1);
+          }
+        }
       }
     });
     client.on('messageReactionRemove', async (reaction, user) => {
@@ -240,9 +249,11 @@ const _readStorageHashAsBuffer = async hash => {
             trade.render();
             
             const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%F0%9F%92%9E');
+            console.log('got done reactions', Array.from(doneReactions.values()).length);
             try {
               for (const reaction of doneReactions.values()) {
-                const users = Arra.from(reaction.users.values());
+                const users = Array.from(reaction.users.cache.values());
+                console.log('got reaction users', users.map(u => u.id));
                 for (const user of users) {
                   await reaction.users.remove(user.id);
                 }
@@ -252,7 +263,7 @@ const _readStorageHashAsBuffer = async hash => {
             }
           }
         }
-        console.log('got reaction remove', {data, message}, user.username, trade);
+        // console.log('got reaction remove', {data, message}, user.username, trade);
       }
     });
     client.on('message', async message => {
@@ -747,15 +758,14 @@ Help
                     '\n';
                 };
                 const _renderStatus = () => {
-                  return (cancelledSpec.cancelled ? 'CANCELLED\n' : '') + (finishedSpec.finished ? 'FINISHED\n' : '');
+                  return (cancelledSpec.cancelled ? '[CANCELLED]\n' : '') + (finishedSpec.finished ? '[FINISHED]\n' : '');
                 };
                 const _render = () => {
                   return '```' + header + '\n' + Array(header.length+1).join('-') + '\n' + _renderItems() + _renderConfirmations() + _renderStatus() + '```'
                 };
                 const m = await message.channel.send(_render());
                 m.react('✅')
-                  // .then(() => m.react('🍊'))
-                  // .then(() => m.react('🍇'));
+                  .then(() => m.react('❌'));
                 m.tradeId = tradeId;
                 m.userIds = [message.author.id, userId];
                 m.items = items;
@@ -829,21 +839,6 @@ Help
                 }
               } catch (error) {
                 console.error('Failed to remove reactions.', error.stack);
-              }
-            } else {
-              message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
-            }
-          } else if (split[0] === prefix + 'cancel' && split.length >= 2) {
-            const tradeId = parseInt(split[1], 10);
-            const index = trades.findIndex(trade => trade.tradeId === tradeId);
-            // console.log('got index', tradeId, trades.map(t => t.tradeId), index);
-            if (index !== -1) {
-              const trade = trades[index];
-              if (trade.userIds.includes(message.author.id)) {
-                trade.cancel();
-                trades.splice(index, 1);
-              } else {
-                message.channel.send('<@!' + message.author.id + '>: not your trade: ' + split[1]);
               }
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
