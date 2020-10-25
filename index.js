@@ -151,9 +151,9 @@ const _readStorageHashAsBuffer = async hash => {
       let tx = Transaction.fromTxData({
         to: contracts[contractName]._address,
         nonce: '0x' + new web3.utils.BN(nonce).toString(16),
-        gas: '0x' + new web3.utils.BN(gasPrice).toString(16),
+        // gas: '0x' + new web3.utils.BN(gasPrice).toString(16),
         gasPrice: '0x' + new web3.utils.BN(gasPrice).toString(16),
-        gasLimit: '0x' + new web3.utils.BN(10000000).toString(16),
+        gasLimit: '0x' + new web3.utils.BN(8000000).toString(16),
         data,
       }, {
         common: Common.forCustomChain(
