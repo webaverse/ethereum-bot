@@ -188,10 +188,9 @@ const _readStorageHashAsBuffer = async hash => {
 
     client.on('messageReactionAdd', (reaction, user) => {
       const {data, message, emoji} = reaction;
-      console.log('emoji identifier', emoji.identifier);
+      // console.log('emoji identifier', emoji.identifier);
       if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
         const trade = trades.find(trade => trade.id === message.id);
-        // console.log('got reaction add', {data, message}, user.username, user.id, trade);
         if (trade) {
           const index = trade.userIds.indexOf(user.id);
           if (index >= 0) {
@@ -207,12 +206,9 @@ const _readStorageHashAsBuffer = async hash => {
               }
             }
           }
-          // console.log('check emoji 2', index);
-          // console.log('check emoji 3', emoji, [emoji.name, emoji.id, emoji.identifier, emoji.toString(), JSON.stringify(emoji.toString())]);
         }
       } else if (user.id !== client.user.id && emoji.identifier === '%F0%9F%92%9E') { // rotating hearts
         const trade = trades.find(trade => trade.id === message.id);
-        // console.log('got reaction add', {data, message}, user.username, user.id, trade);
         if (trade) {
           const index = trade.userIds.indexOf(user.id);
           if (index >= 0) {
@@ -224,8 +220,6 @@ const _readStorageHashAsBuffer = async hash => {
               trades.splice(trades.indexOf(trade), 1);
             }
           }
-          // console.log('check emoji 2', index);
-          // console.log('check emoji 3', emoji, [emoji.name, emoji.id, emoji.identifier, emoji.toString(), JSON.stringify(emoji.toString())]);
         }
       } else if (user.id !== client.user.id && emoji.identifier === '%E2%9D%8C') { // x
         const trade = trades.find(trade => trade.id === message.id);
@@ -263,7 +257,6 @@ const _readStorageHashAsBuffer = async hash => {
             }
           }
         }
-        // console.log('got reaction remove', {data, message}, user.username, trade);
       }
     });
     client.on('message', async message => {
