@@ -560,13 +560,15 @@ Help
                 const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                 const address2 = wallet2.getAddressString();
  
-                let status;
+                let status, transactionHash;
                 try {
                   const result = await runSidechainTransaction(mnemonic)('FT', 'transfer', address2, amount);
                   status = result.status;
+                  transactionHash = result.transactionHash;
                 } catch(err) {
                   console.warn(err.stack);
                   status = false;
+                  transactionHash = '0x0';
                 }
 
                 /* const contractSource = await blockchain.getContractSource('transferToken.cdc');
@@ -588,7 +590,7 @@ Help
                 if (result.status) {
                   message.channel.send('<@!' + message.author.id + '>: greased ' + amount + ' to <@!' + userId + '>');
                 } else {
-                  message.channel.send('<@!' + message.author.id + '>: could not send: ' + result.transactionHash);
+                  message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
                 }
               } else {
                 message.channcel.send('unknown user');
@@ -602,13 +604,15 @@ Help
 
               const address2 = match[1];
 
-              let status;
+              let status, transactionHash;
               try {
                 const result = await runSidechainTransaction(mnemonic)('FT', 'transfer', address2, amount);
                 status = result.status;
+                transactionHash = result.transactionHash;
               } catch(err) {
                 console.warn(err.stack);
                 status = false;
+                transactionHash = '0x0';
               }
 
               /* const contractSource = await blockchain.getContractSource('transferToken.cdc');
@@ -630,7 +634,7 @@ Help
               if (status) {
                 message.channel.send('<@!' + message.author.id + '>: greased ' + amount + ' to 0x' + addr2);
               } else {
-                message.channel.send('<@!' + message.author.id + '>: could not send: ' + result.transactionHash);
+                message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
               }
             } else {
               message.channcel.send('unknown user');
@@ -663,14 +667,16 @@ Help
                 const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                 const address2 = wallet2.getAddressString();
 
-                let status = true;
+                let status = true, transactionHash;
                 for (let i = 0; i < quantity; i++) {
                   try {
                     const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
                     status = status && result.status;
+                    transactionHash = result.transactionHash;
                   } catch(err) {
                     console.warn(err.stack);
                     status = false;
+                    transactionHash = '0x0'
                     break;
                   }
                 }
@@ -695,7 +701,7 @@ Help
                 if (status) {
                   message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to <@!' + userId + '>');
                 } else {
-                  message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + result.transactionHash);
+                  message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + transactionHash);
                 }
               } else {
                 message.channcel.send('unknown user');
@@ -1030,8 +1036,17 @@ Help
 
                         const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                         const address = wallet.getAddressString();
-                        // console.log('minting', ['NFT', 'mint', address, '0x' + hash, name, quantity]);
-                        const result = await runSidechainTransaction(mnemonic)('NFT', 'mint', address, '0x' + hash, name, quantity);
+                        
+                        let status, transactionHash;
+                        try {
+                          // console.log('minting', ['NFT', 'mint', address, '0x' + hash, name, quantity]);
+                          const result = await runSidechainTransaction(mnemonic)('NFT', 'mint', address, '0x' + hash, name, quantity);
+                          status = result.status;
+                          transactionHash = result.transactionHash;
+                        } catch(err) {
+                          status = false;
+                          transactionHash = '0x0';
+                        }
 
                         /* const contractSource = await blockchain.getContractSource('mintNft.cdc');
 
@@ -1051,10 +1066,10 @@ Help
                         });
                         const response2 = await res.json(); */
 
-                        if (result.status) {
+                        if (status) {
                           message.channel.send('<@!' + message.author.id + '>: minted ' + hash + ' (' + storageHost + '/' + hash + ')');
                         } else {
-                          message.channel.send('<@!' + message.author.id + '>: mint transaction failed: ' + result.transactionHash);
+                          message.channel.send('<@!' + message.author.id + '>: mint transaction failed: ' + transactionHash);
                         }
 
                         accept();
