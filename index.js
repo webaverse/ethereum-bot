@@ -153,7 +153,7 @@ const _readStorageHashAsBuffer = async hash => {
         nonce: '0x' + new web3.utils.BN(nonce).toString(16),
         gas: '0x' + new web3.utils.BN(gasPrice).toString(16),
         gasPrice: '0x' + new web3.utils.BN(gasPrice).toString(16),
-        gasLimit: '0x' + new web3.utils.BN(1000000).toString(16),
+        gasLimit: '0x' + new web3.utils.BN(10000000).toString(16),
         data,
       }, {
         common: Common.forCustomChain(
