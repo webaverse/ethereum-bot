@@ -131,6 +131,7 @@ const _readStorageHashAsBuffer = async hash => {
   // const address = wallet.getAddressString();
   
   const trades = [];
+  let nextTradeId = 0;
 
   const runSidechainTransaction = mnemonic => {
     const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
@@ -647,14 +648,81 @@ Help
               const member = message.channel.guild.members.cache.get(userId);
               const user = member ? member.user : null;
               if (user) {
-                const header = 'Trade #' + trades.length + ' ' + message.author.username + ' | ' + user.username;
-                const m = await message.channel.send('```' + header + '\n' + Array(header.length+1).join('-') + '```');
+                const tradeId = nextTradeId++;
+                const headerLeft = '   Trade #' + tradeId + ' ' + message.author.username;
+                const headerMiddle = ' | ';
+                const headerRight = user.username;
+                const header = headerLeft + headerMiddle + headerRight;
+                const items = [[], []];
+                const _renderItems = () => {
+                  let s = '';
+                  const maxNumItems = Math.max(items[0].length, items[1].length);
+                  for (let i = 0; i < maxNumItems; i++) {
+                    const rowItems = [items[0][i], items[1][i]];
+                    const label = (i + '.  ').slice(0, 3);
+                    s += (label + (rowItems[0] || '') + Array(headerLeft.length+1).join(' ')).slice(0, headerLeft.length) +
+                      headerMiddle + ((rowItems[1] || '') +
+                      Array(headerLeft.length+1).join(' ')).slice(0, headerLeft.length) + '\n';
+                  }
+                  return s;
+                };
+                const _render = () => {
+                  return '```' + header + '\n' + Array(header.length+1).join('-') + '\n' + _renderItems() + '```'
+                };
+                const m = await message.channel.send(_render());
+                m.tradeId = tradeId;
+                m.userIds = [message.author.id, userId];
+                m.items = items;
+                m.add = (userId, item) => {
+                  const index = m.userIds.indexOf(userId);
+                  if (index >= 0) {
+                    m.items[index].push(item);
+                    m.render();
+                  }
+                };
+                m.remove = (userId, itemNumber) => {
+                  const index = m.userIds.indexOf(userId);
+                  if (index >= 0) {
+                    m.items[index].splice(itemNumber, 1);
+                    m.render();
+                  }
+                };
+                m.render = () => {
+                  m.edit(_render());
+                };
                 trades.push(m);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: cannot find peer');
               }
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade peer: ' + split[1]);
+            }
+          } else if (split[0] === prefix + 'add' && split.length >= 3) {
+            const tradeId = parseInt(split[1], 10);
+            const trade = trades.find(trade => trade.tradeId === tradeId);
+            if (trade) {
+              const item = split[2];
+              trade.add(message.author.id, item);
+            } else {
+              console.log('no trade');
+              message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
+            }
+          } else if (split[0] === prefix + 'remove' && split.length >= 3) {
+            const tradeId = parseInt(split[1], 10);
+            const trade = trades.find(trade => trade.tradeId === tradeId);
+            if (trade) {
+              const itemNumber = parseInt(split[2], 10);
+              trade.remove(message.author.id, itemNumber);
+            } else {
+              message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
+            }
+          } else if (split[0] === prefix + 'cancel' && split.length >= 2) {
+            const tradeId = parseInt(split[1], 10);
+            const index = trades.findIndex(trade => trade.tradeId === tradeId);
+            if (index) {
+              trades.splice(index, 1);
+            } else {
+              message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
             }
           } else if (split[0] === prefix + 'transfer' && split.length >= 3 && !isNaN(parseInt(split[2], 10))) {
             const id = parseInt(split[2], 10);
