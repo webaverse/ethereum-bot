@@ -300,6 +300,11 @@ Help
               mnemonic = spec.mnemonic;
             }
 
+            const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+            const address = wallet.getAddressString();
+            const name = await contracts.Account.methods.getMetadata(address, 'name').call();
+            const avatarUrl = await contracts.Account.methods.getMetadata(address, 'avatarUrl').call();
+
             /* const contractSource = await blockchain.getContractSource('getUserData.cdc');
 
             const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
@@ -322,9 +327,13 @@ Help
             }
 
             if (split[1]) {
-              const contractSource = await blockchain.getContractSource('setUserData.cdc');
-
               const name = split[1];
+
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+              const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', name);
+              
+              /* const contractSource = await blockchain.getContractSource('setUserData.cdc');
               const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -338,7 +347,7 @@ Help
                   wait: true,
                 }),
               });
-              const response2 = await res.json();
+              const response2 = await res.json(); */
 
               message.channel.send('<@!' + message.author.id + '>: set name to ' + JSON.stringify(name));
             } else {
@@ -431,52 +440,56 @@ Help
                 const spec = await _genKey(userId);
                 mnemonic = spec.mnemonic;
               }
+              
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+              const balance = await contracts.FT.methods.balanceOf(address).call();
 
-              {
-                const contractSource = await blockchain.getContractSource('getBalance.cdc');
+              /* const contractSource = await blockchain.getContractSource('getBalance.cdc');
 
-                const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    address: addr,
-                    mnemonic,
+              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
+                method: 'POST',
+                body: JSON.stringify({
+                  address: addr,
+                  mnemonic,
 
-                    limit: 100,
-                    script: contractSource.replace(/ARG0/g, '0x' + addr),
-                    wait: true,
-                  }),
-                });
-                const response2 = await res.json();
-                const balance = parseFloat(response2.encodedData.value);
+                  limit: 100,
+                  script: contractSource.replace(/ARG0/g, '0x' + addr),
+                  wait: true,
+                }),
+              });
+              const response2 = await res.json();
+              const balance = parseFloat(response2.encodedData.value); */
 
-                message.channel.send('<@!' + userId + '> is ' + balance + ' grease');
-              }
+              message.channel.send('<@!' + userId + '> is ' + balance + ' grease');
             } else {
               let {mnemonic} = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
               }
+              
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+              const balance = await contracts.FT.methods.balanceOf(address).call();
 
-              {
-                const contractSource = await blockchain.getContractSource('getBalance.cdc');
+              /* const contractSource = await blockchain.getContractSource('getBalance.cdc');
 
-                const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    address: addr,
-                    mnemonic,
+              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
+                method: 'POST',
+                body: JSON.stringify({
+                  address: addr,
+                  mnemonic,
 
-                    limit: 100,
-                    script: contractSource.replace(/ARG0/g, '0x' + addr),
-                    wait: true,
-                  }),
-                });
-                const response2 = await res.json();
-                const balance = parseFloat(response2.encodedData.value);
+                  limit: 100,
+                  script: contractSource.replace(/ARG0/g, '0x' + addr),
+                  wait: true,
+                }),
+              });
+              const response2 = await res.json();
+              const balance = parseFloat(response2.encodedData.value); */
 
-                message.channel.send('<@!' + message.author.id + '> is ' + balance + ' grease');
-              }
+              message.channel.send('<@!' + message.author.id + '> is ' + balance + ' grease');
             }
           } else if (split[0] === prefix + 'address') {
             let user;
