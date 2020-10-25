@@ -779,7 +779,7 @@ Help
             if (entries.length > 0) {
               s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.filename} ${entry.hash} (${entry.balance}/${entry.totalSupply})`).join('\n') + '```';
             } else {
-              s += '```inventory empty```'
+              s += '```inventory empty```';
             }
             message.channel.send(s);
           } else if (split[0] === prefix + 'upload' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
