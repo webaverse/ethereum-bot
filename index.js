@@ -522,35 +522,21 @@ Help
             if (isNaN(amount)) {
               amount = 1;
             }
-
             let {mnemonic} = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
             }
+            
+            const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+            const address = wallet.getAddressString();
+            // const balance = await contracts.FT.methods.balanceOf(address).call();
+            const result = await runSidechainTransaction(mnemonic)('FT', 'mint', address, amount);
 
-            {
-              const contractSource = await blockchain.getContractSource('mintToken.cdc');
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  address: config.webaverseToken.address,
-                  mnemonic: config.webaverseToken.mnemonic,
-
-                  limit: 100,
-                  transaction: contractSource
-                    .replace(/ARG0/g, '0x' + addr)
-                    .replace(/ARG1/g, amount.toFixed(8)),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json();
-
-              if (!response2.transaction.errorMessage) {
-                message.channel.send('<@!' + message.author.id + '>: minted ' + amount);
-              } else {
-                message.channel.send('<@!' + message.author.id + '>: could not mint: ' + response2.transaction.errorMessage);
-              }
+            if (!response2.transaction.errorMessage) {
+              message.channel.send('<@!' + message.author.id + '>: minted ' + amount);
+            } else {
+              message.channel.send('<@!' + message.author.id + '>: could not mint: ' + response2.transaction.errorMessage);
             }
           } else if (split[0] === prefix + 'send' && split.length >= 3 && !isNaN(parseFloat(split[2]))) {
             const amount = parseFloat(split[2]);
