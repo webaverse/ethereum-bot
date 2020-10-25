@@ -810,7 +810,7 @@ Help
               try {
                 for (const reaction of doneReactions.values()) {
                   const users = Array.from(reaction.users.cache.values());
-                  console.log('got reaction users', users.map(u => u.id));
+                  // console.log('got reaction users', users.map(u => u.id));
                   for (const user of users) {
                     await reaction.users.remove(user.id);
                   }
@@ -833,7 +833,7 @@ Help
               try {
                 for (const reaction of doneReactions.values()) {
                   const users = Array.from(reaction.users.cache.values());
-                  console.log('got reaction users', users.map(u => u.id));
+                  // console.log('got reaction users', users.map(u => u.id));
                   for (const user of users) {
                     await reaction.users.remove(user.id);
                   }
