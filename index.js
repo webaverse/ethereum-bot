@@ -726,20 +726,31 @@ Help
                 const headerMiddle = ' | ';
                 const headerRight = user.username;
                 const header = headerLeft + headerMiddle + headerRight;
-                const items = [[], []];
+                const fts = [0, 0];
+                const nfts = [[], []];
                 const confirmations = [false, false];
                 const confirmations2 = [false, false];
                 const cancelledSpec = {cancelled: false};
                 const finishedSpec = {finished: false};
-                const _renderItems = () => {
+                const _renderFts = () => {
                   let s = '';
-                  const maxNumItems = Math.max(items[0].length, items[1].length);
+                  if (fts.some(ft => ft > 0)) {
+                    s += ((fts[0] ? ('+ ' + fts[0]) : '') + Array(headerLeft.length+1).join(' ')).slice(0, headerLeft.length) +
+                      headerMiddle +
+                      ((fts[1] ? ('+ ' + fts[1]) : '') + Array(headerRight.length+1).join(' ')).slice(0, headerRight.length) +
+                      '\n';
+                  }
+                  return s;
+                };
+                const _renderNfts = () => {
+                  let s = '';
+                  const maxNumItems = Math.max(nfts[0].length, nfts[1].length);
                   for (let i = 0; i < maxNumItems; i++) {
-                    const rowItems = [items[0][i], items[1][i]];
+                    const rowItems = [nfts[0][i], nfts[1][i]];
                     const label = (i + '.  ').slice(0, 3);
                     s += (label + (rowItems[0] || '') + Array(headerLeft.length+1).join(' ')).slice(0, headerLeft.length) +
-                      headerMiddle + ((rowItems[1] || '') +
-                      Array(headerLeft.length+1).join(' ')).slice(0, headerLeft.length) +
+                      headerMiddle +
+                      ((rowItems[1] || '') + Array(headerRight.length+1).join(' ')).slice(0, headerRight.length) +
                       '\n';
                   }
                   return s;
@@ -754,29 +765,38 @@ Help
                   return (cancelledSpec.cancelled ? '[CANCELLED]\n' : '') + (finishedSpec.finished ? '[FINISHED]\n' : '');
                 };
                 const _render = () => {
-                  return '```' + header + '\n' + Array(header.length+1).join('-') + '\n' + _renderItems() + _renderConfirmations() + _renderStatus() + '```'
+                  return '```' + header + '\n' + Array(header.length+1).join('-') + '\n' + _renderFts() + _renderNfts() + _renderConfirmations() + _renderStatus() + '```'
                 };
                 const m = await message.channel.send(_render());
                 m.react('✅')
                   .then(() => m.react('❌'));
                 m.tradeId = tradeId;
                 m.userIds = [message.author.id, userId];
-                m.items = items;
+                m.fts = fts;
+                m.nfts = nfts;
                 m.confirmations = confirmations;
                 m.confirmations2 = confirmations2;
                 m.cancelledSpec = cancelledSpec;
                 m.finishedSpec = finishedSpec;
-                m.add = (userId, item) => {
+                m.addFt = (userId, amount) => {
                   const index = m.userIds.indexOf(userId);
+                  console.log('add ft index', userId, amount, index);
                   if (index >= 0) {
-                    m.items[index].push(item);
+                    m.fts[index] = amount;
                     m.render();
                   }
                 };
-                m.remove = (userId, itemNumber) => {
+                m.addNft = (userId, item) => {
                   const index = m.userIds.indexOf(userId);
                   if (index >= 0) {
-                    m.items[index].splice(itemNumber, 1);
+                    m.nfts[index].push(item);
+                    m.render();
+                  }
+                };
+                m.removeNft = (userId, itemNumber) => {
+                  const index = m.userIds.indexOf(userId);
+                  if (index >= 0) {
+                    m.nfts[index].splice(itemNumber, 1);
                     m.render();
                   }
                 };
@@ -797,9 +817,16 @@ Help
                       .mul(new web3.utils.BN(1e9))
                       .mul(new web3.utils.BN(1e9)),
                   };
-                  await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
-                  await runSidechainTransaction(mnemonic)('NFT', 'setApprovedForAll', contracts['Trade']._address, true);
-                  // XXX actually trade here
+                  for (const userId of m.userIds) {
+                    let {mnemonic} = await _getUser(userId);
+                    if (!mnemonic) {
+                      const spec = await _genKey(userId);
+                      mnemonic = spec.mnemonic;
+                    }
+                    await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
+                    await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                    // XXX actually trade here
+                  }
                 };
                 trades.push(m);
               } else {
@@ -813,14 +840,12 @@ Help
             const trade = trades.find(trade => trade.tradeId === tradeId);
             if (trade) {
               const item = split[2];
-              trade.add(message.author.id, item);
+              trade.addNft(message.author.id, item);
 
               const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
-              // console.log('got done reactions', Array.from(doneReactions.values()).length);
               try {
                 for (const reaction of doneReactions.values()) {
                   const users = Array.from(reaction.users.cache.values());
-                  // console.log('got reaction users', users.map(u => u.id));
                   for (const user of users) {
                     if (user.id !== client.user.id) {
                       await reaction.users.remove(user.id);
@@ -838,14 +863,12 @@ Help
             const trade = trades.find(trade => trade.tradeId === tradeId);
             if (trade) {
               const itemNumber = parseInt(split[2], 10);
-              trade.remove(message.author.id, itemNumber);
+              trade.removeNft(message.author.id, itemNumber);
               
               const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
-              // console.log('got done reactions', Array.from(doneReactions.values()).length);
               try {
                 for (const reaction of doneReactions.values()) {
                   const users = Array.from(reaction.users.cache.values());
-                  // console.log('got reaction users', users.map(u => u.id));
                   for (const user of users) {
                     if (user.id !== client.user.id) {
                       await reaction.users.remove(user.id);
@@ -854,6 +877,33 @@ Help
                 }
               } catch (error) {
                 console.error('Failed to remove reactions.', error.stack);
+              }
+            } else {
+              message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
+            }
+          } else if (split[0] === prefix + 'addft' && split.length >= 3) {
+            const tradeId = parseInt(split[1], 10);
+            const trade = trades.find(trade => trade.tradeId === tradeId);
+            if (trade) {
+              const amount = parseFloat(split[2]);
+              if (!isNaN(amount)) {
+                trade.addFt(message.author.id, amount);
+
+                const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
+                try {
+                  for (const reaction of doneReactions.values()) {
+                    const users = Array.from(reaction.users.cache.values());
+                    for (const user of users) {
+                      if (user.id !== client.user.id) {
+                        await reaction.users.remove(user.id);
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.error('Failed to remove reactions.', error.stack);
+                }
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: invalid amount: ' + split[2]);
               }
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
