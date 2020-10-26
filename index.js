@@ -790,6 +790,15 @@ Help
                 m.finish = async () => {
                   finishedSpec.finished = true;
                   m.render();
+                  
+                  const fullAmount = {
+                    t: 'uint256',
+                    v: new web3.utils.BN(1e9)
+                      .mul(new web3.utils.BN(1e9))
+                      .mul(new web3.utils.BN(1e9)),
+                  };
+                  await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
+                  await runSidechainTransaction(mnemonic)('NFT', 'setApprovedForAll', contracts['Trade']._address, true);
                 };
                 trades.push(m);
               } else {
