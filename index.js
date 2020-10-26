@@ -200,7 +200,7 @@ const _readStorageHashAsBuffer = async hash => {
  
             if (trade.confirmations.every(confirmation => !!confirmation)) {
               if (trade.confirmations2.every(confirmation => !!confirmation)) {
-                await trade.finish();
+                trade.finish();
                 trades.splice(trades.indexOf(trade), 1);
               } else {
                 trade.react('💞');
@@ -217,7 +217,7 @@ const _readStorageHashAsBuffer = async hash => {
             trade.render();
  
             if (trade.confirmations.every(confirmation => !!confirmation) && trade.confirmations2.every(confirmation => !!confirmation)) {
-              await trade.finish();
+              trade.finish();
               trades.splice(trades.indexOf(trade), 1);
             }
           }
@@ -742,6 +742,7 @@ Help
                 const confirmations = [false, false];
                 const confirmations2 = [false, false];
                 const cancelledSpec = {cancelled: false};
+                const tradingSpec = {trading: false};
                 const finishedSpec = {finished: false};
                 const _renderFts = () => {
                   let s = '';
@@ -773,7 +774,9 @@ Help
                     '\n';
                 };
                 const _renderStatus = () => {
-                  return (cancelledSpec.cancelled ? '[CANCELLED]\n' : '') + (finishedSpec.finished ? '[FINISHED]\n' : '');
+                  return (cancelledSpec.cancelled ? '[CANCELLED]\n' : '') +
+                    (tradingSpec.trading ? '[TRADING...]\n' : '') +
+                    (finishedSpec.finished ? '[FINISHED]\n' : '');
                 };
                 const _render = () => {
                   return '```' + header + '\n' + Array(header.length+1).join('-') + '\n' + _renderFts() + _renderNfts() + _renderConfirmations() + _renderStatus() + '```'
@@ -788,6 +791,7 @@ Help
                 m.confirmations = confirmations;
                 m.confirmations2 = confirmations2;
                 m.cancelledSpec = cancelledSpec;
+                m.tradingSpec = tradingSpec;
                 m.finishedSpec = finishedSpec;
                 m.addFt = (userId, amount) => {
                   const index = userIds.indexOf(userId);
@@ -818,7 +822,7 @@ Help
                   m.render();
                 };
                 m.finish = async () => {
-                  finishedSpec.finished = true;
+                  tradingSpec.trading = true;
                   m.render();
                   
                   const fullAmount = {
@@ -858,6 +862,12 @@ Help
                     nfts[0][2] !== undefined ? nfts[0][2] : 0,
                     nfts[1][2] !== undefined ? nfts[1][2] : 0
                   );
+                  
+                  tradingSpec.trading = false;
+                  finishedSpec.finished = true;
+                  m.render();
+                  
+                  message.channel.send('trade #' + tradeId + ' complete! enjoy!');
                 };
                 trades.push(m);
               } else {
