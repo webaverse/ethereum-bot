@@ -910,42 +910,123 @@ Help
             }
           } else if (split[0] === prefix + 'transfer' && split.length >= 3 && !isNaN(parseInt(split[2], 10))) {
             const id = parseInt(split[2], 10);
-            let quantity = parseInt(split[3], 10);
-            if (isNaN(quantity)) {
-              quantity = 1;
-            }
-            if (match = split[1].match(/<@!([0-9]+)>/)) {
-              const userId = match[1];
-              const member = message.channel.guild.members.cache.get(userId);
-              const user = member ? member.user : null;
-              if (user) {
+            let quantity = split[3] ? parseInt(split[3], 10) : 1;
+            if (!isNaN(quantity)) {
+              if (match = split[1].match(/<@!([0-9]+)>/)) {
+                const userId = match[1];
+                const member = message.channel.guild.members.cache.get(userId);
+                const user = member ? member.user : null;
+                if (user) {
+                  let {mnemonic} = await _getUser();
+                  if (!mnemonic) {
+                    const spec = await _genKey();
+                    mnemonic = spec.mnemonic;
+                  }
+                  let {mnemonic: mnemonic2} = await _getUser(user.id);
+                  if (!mnemonic2) {
+                    const spec = await _genKey(userId);
+                    mnemonic2 = spec.mnemonic;
+                  }
+                  
+                  const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                  const address = wallet.getAddressString();
+                  
+                  const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                  const address2 = wallet2.getAddressString();
+                  
+                  /* const nftBalance = await contracts.NFT.methods.balanceOf(address).call();
+                  const hashToIds = {};
+                  for (let i = 0; i < nftBalance; i++) {
+                    const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
+                    const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+                    const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+                    if (!hashToIds[hash]) {
+                      hashToIds[hash] = [];
+                    }
+                    hashToIds[hash].push(id);
+                  } */
+
+                  let status = true, transactionHash;
+                  try {
+                    const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+                    const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+
+                    const ids = [];
+                    const nftBalance = await contracts.NFT.methods.balanceOf(address).call();
+                    for (let i = 0; i < nftBalance; i++) {
+                      const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
+                      const hashNumberString2 = await contracts.NFT.methods.getHash(id).call();
+                      const hash2 = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString2, 10).toString(16), 32);
+                      if (hash2 === hash) {
+                        ids.push(id);
+                      }
+                    }
+                    ids.sort();
+                    
+                    if (ids.length >= quantity) {
+                      await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+
+                      for (let i = 0; i < quantity; i++) {
+                        const id = ids[i];
+                        const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
+                        status = status && result.status;
+                        transactionHash = result.transactionHash;
+                      }
+                    } else {
+                      status = false;
+                      transactionHash = 'insufficient nft balance';
+                    }
+                  } catch(err) {
+                    console.warn(err.stack);
+                    status = false;
+                    transactionHash = '0x0'
+                  }
+
+                  /* const contractSource = await blockchain.getContractSource('transferNft.cdc');
+                  const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                      address: addr,
+                      mnemonic,
+
+                      limit: 1000,
+                      transaction: contractSource
+                        .replace(/ARG0/g, id)
+                        .replace(/ARG1/g, '0x' + addr2)
+                        .replace(/ARG2/g, quantity),
+                      wait: true,
+                    }),
+                  });
+                  const response2 = await res.json(); */
+
+                  if (status) {
+                    message.channel.send('<@!' + message.author.id + '>: transferred ' + id + (quantity > 1 ? `(x${quantity})` : '') + ' to <@!' + userId + '>');
+                  } else {
+                    message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + transactionHash);
+                  }
+                } else {
+                  message.channcel.send('unknown user');
+                }
+              } else if (match = split[1].match(/^0x([0-9a-f]+)$/i)) {
                 let {mnemonic} = await _getUser();
                 if (!mnemonic) {
                   const spec = await _genKey();
                   mnemonic = spec.mnemonic;
                 }
-                let {mnemonic: mnemonic2} = await _getUser(user.id);
-                if (!mnemonic2) {
-                  const spec = await _genKey(userId);
-                  mnemonic2 = spec.mnemonic;
-                }
-                
+
                 const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                 const address = wallet.getAddressString();
                 
-                const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                const address2 = wallet2.getAddressString();
+                const address2 = match[1];
 
-                let status = true, transactionHash;
+                let status = true;
                 for (let i = 0; i < quantity; i++) {
                   try {
                     const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
                     status = status && result.status;
-                    transactionHash = result.transactionHash;
                   } catch(err) {
                     console.warn(err.stack);
                     status = false;
-                    transactionHash = '0x0'
                     break;
                   }
                 }
@@ -957,7 +1038,7 @@ Help
                     address: addr,
                     mnemonic,
 
-                    limit: 1000,
+                    limit: 100,
                     transaction: contractSource
                       .replace(/ARG0/g, id)
                       .replace(/ARG1/g, '0x' + addr2)
@@ -968,61 +1049,15 @@ Help
                 const response2 = await res.json(); */
 
                 if (status) {
-                  message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to <@!' + userId + '>');
+                  message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to 0x' + addr2);
                 } else {
-                  message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + transactionHash);
+                  message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + response2.transaction.errorMessage);
                 }
               } else {
-                message.channcel.send('unknown user');
-              }
-            } else if (match = split[1].match(/^0x([0-9a-f]+)$/i)) {
-              let {mnemonic} = await _getUser();
-              if (!mnemonic) {
-                const spec = await _genKey();
-                mnemonic = spec.mnemonic;
-              }
-
-              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-              const address = wallet.getAddressString();
-              
-              const address2 = match[1];
-
-              let status = true;
-              for (let i = 0; i < quantity; i++) {
-                try {
-                  const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
-                  status = status && result.status;
-                } catch(err) {
-                  console.warn(err.stack);
-                  status = false;
-                  break;
-                }
-              }
-
-              /* const contractSource = await blockchain.getContractSource('transferNft.cdc');
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  address: addr,
-                  mnemonic,
-
-                  limit: 100,
-                  transaction: contractSource
-                    .replace(/ARG0/g, id)
-                    .replace(/ARG1/g, '0x' + addr2)
-                    .replace(/ARG2/g, quantity),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json(); */
-
-              if (status) {
-                message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to 0x' + addr2);
-              } else {
-                message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + response2.transaction.errorMessage);
+                message.channel.send('unknown user');
               }
             } else {
-              message.channel.send('unknown user');
+              message.channel.send('<@!' + message.author.id + '>: invalid quantity: ' + split[3]);
             }
           } else if (split[0] === prefix + 'inventory') {
             let address, userLabel;
