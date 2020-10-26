@@ -867,7 +867,6 @@ Help
                 const amount = 1;
                 
                 const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-                // console.log('got hash', hashNumberString);
                 if (hashNumberString !== '0') {
                   const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
                   
