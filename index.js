@@ -849,45 +849,54 @@ Help
             const tradeId = parseInt(split[1], 10);
             const trade = trades.find(trade => trade.tradeId === tradeId);
             if (trade) {
-              const id = split[2];
-              const amount = 1;
-              
-              const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-              console.log('got hash', hashNumberString);
-              if (hashNumberString !== '0') {
-                const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+              const index = trade.userIds.indexOf(message.author.id);
+              if (index >= 0) {
+                const id = split[2];
+                const amount = 1;
                 
-                let {mnemonic} = await _getUser();
-                if (!mnemonic) {
-                  const spec = await _genKey();
-                  mnemonic = spec.mnemonic;
-                }
+                const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+                console.log('got hash', hashNumberString);
+                if (hashNumberString !== '0') {
+                  const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+                  
+                  let {mnemonic} = await _getUser();
+                  if (!mnemonic) {
+                    const spec = await _genKey();
+                    mnemonic = spec.mnemonic;
+                  }
 
-                const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                const address = wallet.getAddressString();
-                const balance = await contracts.NFT.methods.balanceOfHash(address, hash).call();
+                  const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                  const address = wallet.getAddressString();
+                  const balance = await contracts.NFT.methods.balanceOfHash(address, hash).call();
 
-                if (balance >= amount) {
-                  trade.addNft(message.author.id, id);
+                  if (balance >= amount) {
+                    if (trade.nfts[index].length < 3) {
+                      trade.addNft(message.author.id, id);
 
-                  const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
-                  try {
-                    for (const reaction of doneReactions.values()) {
-                      const users = Array.from(reaction.users.cache.values());
-                      for (const user of users) {
-                        if (user.id !== client.user.id) {
-                          await reaction.users.remove(user.id);
+                      const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
+                      try {
+                        for (const reaction of doneReactions.values()) {
+                          const users = Array.from(reaction.users.cache.values());
+                          for (const user of users) {
+                            if (user.id !== client.user.id) {
+                              await reaction.users.remove(user.id);
+                            }
+                          }
                         }
+                      } catch (error) {
+                        console.error('Failed to remove reactions.', error.stack);
                       }
+                    } else {
+                      message.channel.send('<@!' + message.author.id + '>: too many nfts in trade: ' + split[1]);
                     }
-                  } catch (error) {
-                    console.error('Failed to remove reactions.', error.stack);
+                  } else {
+                    message.channel.send('<@!' + message.author.id + '>: insufficient nft balance: ' + split[2]);
                   }
                 } else {
-                  message.channel.send('<@!' + message.author.id + '>: insufficient nft balance: ' + split[2]);
+                  message.channel.send('<@!' + message.author.id + '>: invalid nft: ' + id);
                 }
               } else {
-                message.channel.send('<@!' + message.author.id + '>: invalid nft: ' + id);
+                message.channel.send('<@!' + message.author.id + '>: not your trade: ' + split[1]);
               }
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
@@ -896,48 +905,12 @@ Help
             const tradeId = parseInt(split[1], 10);
             const trade = trades.find(trade => trade.tradeId === tradeId);
             if (trade) {
-              const itemNumber = parseInt(split[2], 10);
-              if (itemNumber >= 0 && itemNumber < trade.nfts.length) {
-                trade.removeNft(message.author.id, itemNumber);
-                
-                const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
-                try {
-                  for (const reaction of doneReactions.values()) {
-                    const users = Array.from(reaction.users.cache.values());
-                    for (const user of users) {
-                      if (user.id !== client.user.id) {
-                        await reaction.users.remove(user.id);
-                      }
-                    }
-                  }
-                } catch (error) {
-                  console.error('Failed to remove reactions.', error.stack);
-                }
-              } else {
-                message.channel.send('<@!' + message.author.id + '>: invalid trade nft index: ' + split[2]);
-              }
-            } else {
-              message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
-            }
-          } else if (split[0] === prefix + 'addft' && split.length >= 3) {
-            const tradeId = parseInt(split[1], 10);
-            const trade = trades.find(trade => trade.tradeId === tradeId);
-            if (trade) {
-              const amount = parseFloat(split[2]);
-              if (!isNaN(amount)) {
-                let {mnemonic} = await _getUser();
-                if (!mnemonic) {
-                  const spec = await _genKey();
-                  mnemonic = spec.mnemonic;
-                }
-                
-                const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                const address = wallet.getAddressString();
-                const balance = await contracts.FT.methods.balanceOf(address).call();
-
-                if (balance >= amount) {
-                  trade.addFt(message.author.id, amount);
-
+              const index = trade.userIds.indexOf(message.author.id);
+              if (index >= 0) {
+                const itemNumber = parseInt(split[2], 10);
+                if (itemNumber >= 0 && itemNumber < trade.nfts.length) {
+                  trade.removeNft(message.author.id, itemNumber);
+                  
                   const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
                   try {
                     for (const reaction of doneReactions.values()) {
@@ -952,10 +925,56 @@ Help
                     console.error('Failed to remove reactions.', error.stack);
                   }
                 } else {
-                  message.channel.send('<@!' + message.author.id + '>: insufficient ft balance: ' + split[2]);
+                  message.channel.send('<@!' + message.author.id + '>: invalid trade nft index: ' + split[2]);
                 }
               } else {
-                message.channel.send('<@!' + message.author.id + '>: invalid amount: ' + split[2]);
+                message.channel.send('<@!' + message.author.id + '>: not your trade: ' + split[1]);
+              }
+            } else {
+              message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
+            }
+          } else if (split[0] === prefix + 'addft' && split.length >= 3) {
+            const tradeId = parseInt(split[1], 10);
+            const trade = trades.find(trade => trade.tradeId === tradeId);
+            if (trade) {
+              const index = trade.userIds.indexOf(message.author.id);
+              if (index >= 0) {
+                const amount = parseFloat(split[2]);
+                if (!isNaN(amount)) {
+                  let {mnemonic} = await _getUser();
+                  if (!mnemonic) {
+                    const spec = await _genKey();
+                    mnemonic = spec.mnemonic;
+                  }
+                  
+                  const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                  const address = wallet.getAddressString();
+                  const balance = await contracts.FT.methods.balanceOf(address).call();
+
+                  if (balance >= amount) {
+                    trade.addFt(message.author.id, amount);
+
+                    const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
+                    try {
+                      for (const reaction of doneReactions.values()) {
+                        const users = Array.from(reaction.users.cache.values());
+                        for (const user of users) {
+                          if (user.id !== client.user.id) {
+                            await reaction.users.remove(user.id);
+                          }
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Failed to remove reactions.', error.stack);
+                    }
+                  } else {
+                    message.channel.send('<@!' + message.author.id + '>: insufficient ft balance: ' + split[2]);
+                  }
+                } else {
+                  message.channel.send('<@!' + message.author.id + '>: invalid amount: ' + split[2]);
+                }
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: not your trade: ' + split[1]);
               }
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
@@ -1151,13 +1170,14 @@ Help
             }
             const entries = [];
             for (const hash in hashToIds) {
-              const ids = hashToIds[hash];
+              const ids = hashToIds[hash].sort();
               const id = ids[0];
               const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
               const balance = ids.length;
               const totalSupply = await contracts.NFT.methods.totalSupplyOfHash(hash).call();
               entries.push({
                 id,
+                ids,
                 hash: hash.slice(2),
                 filename,
                 balance,
@@ -1189,7 +1209,7 @@ Help
 
             let s = userLabel + ':\n';
             if (entries.length > 0) {
-              s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.filename} ${entry.hash} (${entry.balance}/${entry.totalSupply})`).join('\n') + '```';
+              s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.filename} ${entry.hash} (${entry.balance}/${entry.totalSupply})${entry.ids.length > 1 ? ` [${entry.ids.join(',')}]` : ''}`).join('\n') + '```';
             } else {
               s += '```inventory empty```';
             }
