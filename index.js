@@ -808,7 +808,7 @@ Help
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade peer: ' + split[1]);
             }
-          } else if (split[0] === prefix + 'add' && split.length >= 3) {
+          } else if (split[0] === prefix + 'addnft' && split.length >= 3) {
             const tradeId = parseInt(split[1], 10);
             const trade = trades.find(trade => trade.tradeId === tradeId);
             if (trade) {
@@ -833,7 +833,7 @@ Help
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
             }
-          } else if (split[0] === prefix + 'remove' && split.length >= 3) {
+          } else if (split[0] === prefix + 'removenft' && split.length >= 3) {
             const tradeId = parseInt(split[1], 10);
             const trade = trades.find(trade => trade.tradeId === tradeId);
             if (trade) {
