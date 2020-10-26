@@ -736,6 +736,7 @@ Help
                 const headerMiddle = ' | ';
                 const headerRight = user.username;
                 const header = headerLeft + headerMiddle + headerRight;
+                const userIds = [message.author.id, userId];
                 const fts = [0, 0];
                 const nfts = [[], []];
                 const confirmations = [false, false];
@@ -781,7 +782,7 @@ Help
                 m.react('✅')
                   .then(() => m.react('❌'));
                 m.tradeId = tradeId;
-                m.userIds = [message.author.id, userId];
+                m.userIds = userIds;
                 m.fts = fts;
                 m.nfts = nfts;
                 m.confirmations = confirmations;
@@ -789,21 +790,21 @@ Help
                 m.cancelledSpec = cancelledSpec;
                 m.finishedSpec = finishedSpec;
                 m.addFt = (userId, amount) => {
-                  const index = m.userIds.indexOf(userId);
+                  const index = userIds.indexOf(userId);
                   if (index >= 0) {
                     m.fts[index] = amount;
                     m.render();
                   }
                 };
                 m.addNft = (userId, item) => {
-                  const index = m.userIds.indexOf(userId);
+                  const index = userIds.indexOf(userId);
                   if (index >= 0) {
                     m.nfts[index].push(item);
                     m.render();
                   }
                 };
                 m.removeNft = (userId, itemNumber) => {
-                  const index = m.userIds.indexOf(userId);
+                  const index = userIds.indexOf(userId);
                   if (index >= 0) {
                     m.nfts[index].splice(itemNumber, 1);
                     m.render();
@@ -826,7 +827,9 @@ Help
                       .mul(new web3.utils.BN(1e9))
                       .mul(new web3.utils.BN(1e9)),
                   };
-                  for (const userId of m.userIds) {
+                  const mnemonics = [];
+                  const addresses = [];
+                  for (const userId of userIds) {
                     let {mnemonic} = await _getUser(userId);
                     if (!mnemonic) {
                       const spec = await _genKey(userId);
@@ -836,19 +839,25 @@ Help
                     await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
                     await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
                     
-                    await runSidechainTransaction(mnemonic)(
-                      'Trade',
-                      'trade',
-                      fts[0] !== undefined ? fts[0] : 0,
-                      fts[1] !== undefined ? fts[1] : 0,
-                      nfts[0][0] !== undefined ? nfts[0][0] : 0,
-                      nfts[1][0] !== undefined ? nfts[1][0] : 0,
-                      nfts[0][1] !== undefined ? nfts[0][1] : 0,
-                      nfts[1][1] !== undefined ? nfts[1][1] : 0,
-                      nfts[0][2] !== undefined ? nfts[0][2] : 0,
-                      nfts[1][2] !== undefined ? nfts[1][2] : 0
-                    );
+                    mnemonics.push(mnemonic);
+                    const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                    const address = wallet.getAddressString();
+                    addresses.push(address);
                   }
+                  
+                  await runSidechainTransaction(mnemonics[0])(
+                    'Trade',
+                    'trade',
+                    addresses[0], addresses[1],
+                    fts[0] !== undefined ? fts[0] : 0,
+                    fts[1] !== undefined ? fts[1] : 0,
+                    nfts[0][0] !== undefined ? nfts[0][0] : 0,
+                    nfts[1][0] !== undefined ? nfts[1][0] : 0,
+                    nfts[0][1] !== undefined ? nfts[0][1] : 0,
+                    nfts[1][1] !== undefined ? nfts[1][1] : 0,
+                    nfts[0][2] !== undefined ? nfts[0][2] : 0,
+                    nfts[1][2] !== undefined ? nfts[1][2] : 0
+                  );
                 };
                 trades.push(m);
               } else {
@@ -945,6 +954,7 @@ Help
               const index = trade.userIds.indexOf(message.author.id);
               if (index >= 0) {
                 const amount = parseFloat(split[2]);
+                console.log('got amount', amount);
                 if (!isNaN(amount)) {
                   let {mnemonic} = await _getUser();
                   if (!mnemonic) {
@@ -955,6 +965,8 @@ Help
                   const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                   const address = wallet.getAddressString();
                   const balance = await contracts.FT.methods.balanceOf(address).call();
+                  
+                  console.log('got balance', balance);
 
                   if (balance >= amount) {
                     trade.addFt(message.author.id, amount);
