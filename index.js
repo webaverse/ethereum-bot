@@ -122,6 +122,7 @@ const _readStorageHashAsBuffer = async hash => {
       'NFT',
       'FTProxy',
       'NFTProxy',
+      'Trade',
     ].forEach(contractName => {
       result[contractName] = new web3.eth.Contract(abis[contractName], addresses[contractName]);
     });
