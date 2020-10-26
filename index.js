@@ -823,6 +823,7 @@ Help
                       const spec = await _genKey(userId);
                       mnemonic = spec.mnemonic;
                     }
+
                     await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
                     await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
                     // XXX actually trade here
@@ -839,21 +840,45 @@ Help
             const tradeId = parseInt(split[1], 10);
             const trade = trades.find(trade => trade.tradeId === tradeId);
             if (trade) {
-              const item = split[2];
-              trade.addNft(message.author.id, item);
-
-              const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
-              try {
-                for (const reaction of doneReactions.values()) {
-                  const users = Array.from(reaction.users.cache.values());
-                  for (const user of users) {
-                    if (user.id !== client.user.id) {
-                      await reaction.users.remove(user.id);
-                    }
-                  }
+              const id = split[2];
+              const amount = 1;
+              
+              const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+              console.log('got hash', hashNumberString);
+              if (hashNumberString !== '0') {
+                const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+                
+                let {mnemonic} = await _getUser();
+                if (!mnemonic) {
+                  const spec = await _genKey();
+                  mnemonic = spec.mnemonic;
                 }
-              } catch (error) {
-                console.error('Failed to remove reactions.', error.stack);
+
+                const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                const address = wallet.getAddressString();
+                const balance = await contracts.NFT.methods.balanceOfHash(address, hash).call();
+
+                if (balance >= amount) {
+                  trade.addNft(message.author.id, id);
+
+                  const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
+                  try {
+                    for (const reaction of doneReactions.values()) {
+                      const users = Array.from(reaction.users.cache.values());
+                      for (const user of users) {
+                        if (user.id !== client.user.id) {
+                          await reaction.users.remove(user.id);
+                        }
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Failed to remove reactions.', error.stack);
+                  }
+                } else {
+                  message.channel.send('<@!' + message.author.id + '>: insufficient nft balance: ' + split[2]);
+                }
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: invalid nft: ' + id);
               }
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
@@ -863,20 +888,24 @@ Help
             const trade = trades.find(trade => trade.tradeId === tradeId);
             if (trade) {
               const itemNumber = parseInt(split[2], 10);
-              trade.removeNft(message.author.id, itemNumber);
-              
-              const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
-              try {
-                for (const reaction of doneReactions.values()) {
-                  const users = Array.from(reaction.users.cache.values());
-                  for (const user of users) {
-                    if (user.id !== client.user.id) {
-                      await reaction.users.remove(user.id);
+              if (itemNumber >= 0 && itemNumber < trade.nfts.length) {
+                trade.removeNft(message.author.id, itemNumber);
+                
+                const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
+                try {
+                  for (const reaction of doneReactions.values()) {
+                    const users = Array.from(reaction.users.cache.values());
+                    for (const user of users) {
+                      if (user.id !== client.user.id) {
+                        await reaction.users.remove(user.id);
+                      }
                     }
                   }
+                } catch (error) {
+                  console.error('Failed to remove reactions.', error.stack);
                 }
-              } catch (error) {
-                console.error('Failed to remove reactions.', error.stack);
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: invalid trade nft index: ' + split[2]);
               }
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
