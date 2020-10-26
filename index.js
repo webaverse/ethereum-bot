@@ -349,7 +349,7 @@ Account
 .avatar [id] - set your avatar to [id] on the chain
 
 Minting
-.mint [count]? (in the file upload comment) - mint [count] NFT from file upload
+.mint [count]? (in the file upload comment) - mint [count] NFTs from file upload
 
 Trade
 .trade [@user|0xaddr] - start a trade with user/address
