@@ -187,7 +187,7 @@ const _readStorageHashAsBuffer = async hash => {
 
     // console.log('got', client.guilds.cache.get(guildId).members.cache);
 
-    client.on('messageReactionAdd', (reaction, user) => {
+    client.on('messageReactionAdd', async (reaction, user) => {
       const {data, message, emoji} = reaction;
       // console.log('emoji identifier', emoji.identifier);
       if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
@@ -200,7 +200,7 @@ const _readStorageHashAsBuffer = async hash => {
  
             if (trade.confirmations.every(confirmation => !!confirmation)) {
               if (trade.confirmations2.every(confirmation => !!confirmation)) {
-                trade.finish();
+                await trade.finish();
                 trades.splice(trades.indexOf(trade), 1);
               } else {
                 trade.react('💞');
@@ -217,7 +217,7 @@ const _readStorageHashAsBuffer = async hash => {
             trade.render();
  
             if (trade.confirmations.every(confirmation => !!confirmation) && trade.confirmations2.every(confirmation => !!confirmation)) {
-              trade.finish();
+              await trade.finish();
               trades.splice(trades.indexOf(trade), 1);
             }
           }
@@ -787,7 +787,7 @@ Help
                   cancelledSpec.cancelled = true;
                   m.render();
                 };
-                m.finish = () => {
+                m.finish = async () => {
                   finishedSpec.finished = true;
                   m.render();
                 };
