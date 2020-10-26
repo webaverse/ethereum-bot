@@ -835,7 +835,19 @@ Help
 
                     await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
                     await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
-                    // XXX actually trade here
+                    
+                    await runSidechainTransaction(mnemonic)(
+                      'Trade',
+                      'trade',
+                      fts[0] !== undefined ? fts[0] : 0,
+                      fts[1] !== undefined ? fts[1] : 0,
+                      nfts[0][0] !== undefined ? nfts[0][0] : 0,
+                      nfts[1][0] !== undefined ? nfts[1][0] : 0,
+                      nfts[0][1] !== undefined ? nfts[0][1] : 0,
+                      nfts[1][1] !== undefined ? nfts[1][1] : 0,
+                      nfts[0][2] !== undefined ? nfts[0][2] : 0,
+                      nfts[1][2] !== undefined ? nfts[1][2] : 0
+                    );
                   }
                 };
                 trades.push(m);
