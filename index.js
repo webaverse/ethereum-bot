@@ -790,7 +790,6 @@ Help
                 m.finishedSpec = finishedSpec;
                 m.addFt = (userId, amount) => {
                   const index = m.userIds.indexOf(userId);
-                  console.log('add ft index', userId, amount, index);
                   if (index >= 0) {
                     m.fts[index] = amount;
                     m.render();
