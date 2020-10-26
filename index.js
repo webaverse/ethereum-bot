@@ -433,7 +433,11 @@ Help
 
               message.channel.send('<@!' + message.author.id + '>: set name to ' + JSON.stringify(name));
             } else {
-              const contractSource = await blockchain.getContractSource('getUserData.cdc');
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+              const name = await contracts.Account.methods.getMetadata(address, 'name').call();
+              
+              /* const contractSource = await blockchain.getContractSource('getUserData.cdc');
 
               const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
                 method: 'POST',
@@ -444,7 +448,7 @@ Help
                 }),
               });
               const response2 = await res.json();
-              const [name, avatarUrl] = response2.encodedData.value.map(value => value.value && value.value.value);
+              const [name, avatarUrl] = response2.encodedData.value.map(value => value.value && value.value.value); */
 
               message.channel.send('<@!' + message.author.id + '>: name is ' + JSON.stringify(name));
             }
