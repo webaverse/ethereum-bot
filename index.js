@@ -1384,7 +1384,7 @@ Help
             } else {
               message.channel.send('<@!' + message.author.id + '>: could not set: ' + response2.transaction.errorMessage);
             }
-          } else if (split[0] === prefix + 'createworld') {
+          /* } else if (split[0] === prefix + 'createworld') {
             const res = await fetch('https://worlds.exokit.org/create', {
               method: 'POST',
             });
@@ -1405,7 +1405,7 @@ Help
               message.channel.send('<@!' + message.author.id + '>: destroyed world: ```' + id + '```');
             } else {
               message.channel.send('<@!' + message.author.id + '>: failed to destroy world: ' + res.statusCode);
-            }
+            } */
           } else {
             if (split[0] === prefix + 'mint' && message.attachments.size > 0) {
               let quantity = parseInt(split[1], 10);
