@@ -916,20 +916,34 @@ Help
             if (trade) {
               const amount = parseFloat(split[2]);
               if (!isNaN(amount)) {
-                trade.addFt(message.author.id, amount);
+                let {mnemonic} = await _getUser();
+                if (!mnemonic) {
+                  const spec = await _genKey();
+                  mnemonic = spec.mnemonic;
+                }
+                
+                const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                const address = wallet.getAddressString();
+                const balance = await contracts.FT.methods.balanceOf(address).call();
 
-                const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
-                try {
-                  for (const reaction of doneReactions.values()) {
-                    const users = Array.from(reaction.users.cache.values());
-                    for (const user of users) {
-                      if (user.id !== client.user.id) {
-                        await reaction.users.remove(user.id);
+                if (balance >= amount) {
+                  trade.addFt(message.author.id, amount);
+
+                  const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
+                  try {
+                    for (const reaction of doneReactions.values()) {
+                      const users = Array.from(reaction.users.cache.values());
+                      for (const user of users) {
+                        if (user.id !== client.user.id) {
+                          await reaction.users.remove(user.id);
+                        }
                       }
                     }
+                  } catch (error) {
+                    console.error('Failed to remove reactions.', error.stack);
                   }
-                } catch (error) {
-                  console.error('Failed to remove reactions.', error.stack);
+                } else {
+                  message.channel.send('<@!' + message.author.id + '>: insufficient ft balance: ' + split[2]);
                 }
               } else {
                 message.channel.send('<@!' + message.author.id + '>: invalid amount: ' + split[2]);
