@@ -348,7 +348,6 @@ Account
 .avatar [id] - set your avatar to [id] on the chain
 
 Minting
-.mint [count]? - mint [count] FT to yourself (admin only)
 .mint [count]? (in the file upload comment) - mint [count] NFT from file upload
 
 Worlds
