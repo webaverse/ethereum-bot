@@ -351,6 +351,12 @@ Account
 Minting
 .mint [count]? (in the file upload comment) - mint [count] NFT from file upload
 
+Trade
+.trade [@user|0xaddr] - start a trade with user/address
+.addnft [tradeid] [nftid] - add nonfungible token to trade [tradeid]
+.removenft [tradeid] [index] - remove nonfungible token at [index] from trade [tradeid]
+.addft [tradeid] [amount] - add fungible tokens to trade [tradeid]
+
 Worlds
 .createworld - create a world and print its details
 .destroyworld [worldID] - destroy world with id [worldId]
