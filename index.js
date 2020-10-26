@@ -866,45 +866,49 @@ Help
                 const id = split[2];
                 const amount = 1;
                 
-                const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-                if (hashNumberString !== '0') {
-                  const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
-                  
-                  let {mnemonic} = await _getUser();
-                  if (!mnemonic) {
-                    const spec = await _genKey();
-                    mnemonic = spec.mnemonic;
-                  }
+                if (!trade.nfts[index].includes(id)) {
+                  const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+                  if (hashNumberString !== '0') {
+                    const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+                    
+                    let {mnemonic} = await _getUser();
+                    if (!mnemonic) {
+                      const spec = await _genKey();
+                      mnemonic = spec.mnemonic;
+                    }
 
-                  const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                  const address = wallet.getAddressString();
-                  const balance = await contracts.NFT.methods.balanceOfHash(address, hash).call();
+                    const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                    const address = wallet.getAddressString();
+                    const balance = await contracts.NFT.methods.balanceOfHash(address, hash).call();
 
-                  if (balance >= amount) {
-                    if (trade.nfts[index].length < 3) {
-                      trade.addNft(message.author.id, id);
+                    if (balance >= amount) {
+                      if (trade.nfts[index].length < 3) {
+                        trade.addNft(message.author.id, id);
 
-                      const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
-                      try {
-                        for (const reaction of doneReactions.values()) {
-                          const users = Array.from(reaction.users.cache.values());
-                          for (const user of users) {
-                            if (user.id !== client.user.id) {
-                              await reaction.users.remove(user.id);
+                        const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
+                        try {
+                          for (const reaction of doneReactions.values()) {
+                            const users = Array.from(reaction.users.cache.values());
+                            for (const user of users) {
+                              if (user.id !== client.user.id) {
+                                await reaction.users.remove(user.id);
+                              }
                             }
                           }
+                        } catch (error) {
+                          console.error('Failed to remove reactions.', error.stack);
                         }
-                      } catch (error) {
-                        console.error('Failed to remove reactions.', error.stack);
+                      } else {
+                        message.channel.send('<@!' + message.author.id + '>: too many nfts in trade: ' + split[1]);
                       }
                     } else {
-                      message.channel.send('<@!' + message.author.id + '>: too many nfts in trade: ' + split[1]);
+                      message.channel.send('<@!' + message.author.id + '>: insufficient nft balance: ' + split[2]);
                     }
                   } else {
-                    message.channel.send('<@!' + message.author.id + '>: insufficient nft balance: ' + split[2]);
+                    message.channel.send('<@!' + message.author.id + '>: invalid nft: ' + id);
                   }
                 } else {
-                  message.channel.send('<@!' + message.author.id + '>: invalid nft: ' + id);
+                  message.channel.send('<@!' + message.author.id + '>: already trading nft: ' + id);
                 }
               } else {
                 message.channel.send('<@!' + message.author.id + '>: not your trade: ' + split[1]);
