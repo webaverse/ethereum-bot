@@ -867,7 +867,7 @@ Help
                   finishedSpec.finished = true;
                   m.render();
                   
-                  message.channel.send('trade #' + tradeId + ' complete! enjoy!');
+                  message.channel.send('```trade #' + tradeId + ' complete! enjoy!```');
                 };
                 trades.push(m);
               } else {
