@@ -581,7 +581,7 @@ Help
             let user;
             if (split[1] && (match = split[1].match(/<@!([0-9]+)>/))) {
               const userId = match[1];
-              const member = message.channel.guild.members.cache.get(userId);
+              const member = await message.channel.guild.members.fetch(userId);
               user = member ? member.user : null;
             } else {
               user = message.author;
@@ -628,7 +628,7 @@ Help
             const amount = parseFloat(split[2]);
             if (match = split[1].match(/<@!([0-9]+)>/)) {
               const userId = match[1];
-              const member = message.channel.guild.members.cache.get(userId);
+              const member = await message.channel.guild.members.fetch(userId);
               const user = member ? member.user : null;
               if (user) {
                 let {mnemonic} = await _getUser();
@@ -728,7 +728,7 @@ Help
           } else if (split[0] === prefix + 'trade' && split.length >= 2) {
             if (match = split[1].match(/<@!([0-9]+)>/)) {
               const userId = match[1];
-              const member = message.channel.guild.members.cache.get(userId);
+              const member = await message.channel.guild.members.fetch(userId);
               const user = member ? member.user : null;
               if (user) {
                 const tradeId = nextTradeId++;
@@ -1012,7 +1012,7 @@ Help
             if (!isNaN(quantity)) {
               if (match = split[1].match(/<@!([0-9]+)>/)) {
                 const userId = match[1];
-                const member = message.channel.guild.members.cache.get(userId);
+                const member = await message.channel.guild.members.fetch(userId);
                 const user = member ? member.user : null;
                 if (user) {
                   let {mnemonic} = await _getUser();
