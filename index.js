@@ -9,7 +9,7 @@ const AWS = require('aws-sdk');
 const Discord = require('discord.js');
 // const blockchain = require('./blockchain.js');
 const fetch = require('node-fetch');
-const wordList = require('./wordlist.json');
+// const wordList = require('./wordlist.json');
 // const config = require('./config.json');
 // const flowConstants = require('./flow-constants.js');
 const Web3 = require('web3');
@@ -1503,10 +1503,8 @@ Help
           const split = message.content.split(/\s+/);
           if (split[0] === prefix + 'key') {
             if (split.length === 12) {
-              const key = split.splice(1, 31);
-              if (key.every(word => wordList.includes(word))) {
-                const mnemonic = key.slice(0, 12).join(' ');
-
+              const mnemonic = split.join(' ');
+              if (bip39.validateMnemonic(mnemonic)) {
                 await ddb.putItem({
                   TableName: tableName,
                   Item: {
