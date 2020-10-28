@@ -1322,9 +1322,9 @@ Help
             if (match) {
               const basename = match[1];
               const ext = match[2];
-              message.channel.send('<@!' + message.author.id + '>: ' + n + ': https://preview.exokit.org/' + hash + '.' + ext + '/' + basename + '.gif');
+              message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash + '.' + ext + '/' + basename + '.gif');
             } else {
-              message.channel.send('<@!' + message.author.id + '>: ' + n + ': no preivew available');
+              message.channel.send('<@!' + message.author.id + '>: ' + id + ': no preivew available');
             }
           } else if (split[0] === prefix + 'key') {
             let {mnemonic} = await _getUser();
