@@ -1337,8 +1337,12 @@ Help
           } else if (split[0] === prefix + 'get' && split.length >= 3 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
             const key = split[2];
+            
+            const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+            const value = await contracts.NFT.methods.getMetadata(hash, key).call();
 
-            const contractSource = await blockchain.getContractSource('getNftMetadata.cdc');
+            /* const contractSource = await blockchain.getContractSource('getNftMetadata.cdc');
 
             const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
               method: 'POST',
@@ -1351,7 +1355,7 @@ Help
               }),
             });
             const response2 = await res.json();
-            const value = response2.encodedData.value && response2.encodedData.value.value;
+            const value = response2.encodedData.value && response2.encodedData.value.value; */
 
             message.channel.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ': ' + value + '```');
           } else if (split[0] === prefix + 'set' && split.length >= 4 && !isNaN(parseInt(split[1], 10))) {
@@ -1364,9 +1368,23 @@ Help
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
             }
+            
+            const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
 
+            let status, transactionHash;
+            try {
+              // console.log('minting', ['NFT', 'mint', address, '0x' + hash, name, quantity]);
+              const result = await runSidechainTransaction(mnemonic)('setMetadata', hash, key, value);
+              status = result.status;
+              transactionHash = result.transactionHash;
+            } catch(err) {
+              console.warn(err.stack);
+              status = false;
+              transactionHash = '0x0';
+            }
 
-            const contractSource = await blockchain.getContractSource('setNftMetadata.cdc');
+            /* const contractSource = await blockchain.getContractSource('setNftMetadata.cdc');
 
             const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
               method: 'POST',
@@ -1382,12 +1400,12 @@ Help
                 wait: true,
               }),
             });
-            const response2 = await res.json();
+            const response2 = await res.json(); */
 
-            if (!response2.transaction.errorMessage) {
+            if (status) {
               message.channel.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ' = ' + value + '```');
             } else {
-              message.channel.send('<@!' + message.author.id + '>: could not set: ' + response2.transaction.errorMessage);
+              message.channel.send('<@!' + message.author.id + '>: could not set: ' + transactionHash);
             }
           /* } else if (split[0] === prefix + 'createworld') {
             const res = await fetch('https://worlds.exokit.org/create', {
