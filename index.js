@@ -723,7 +723,7 @@ Help
                 message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
               }
             } else {
-              message.channcel.send('unknown user');
+              message.channel.send('unknown user');
             }
           } else if (split[0] === prefix + 'trade' && split.length >= 2) {
             if (match = split[1].match(/<@!([0-9]+)>/)) {
