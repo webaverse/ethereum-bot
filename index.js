@@ -18,7 +18,7 @@ const {Transaction} = require('@ethereumjs/tx');
 const {default: Common} = require('@ethereumjs/common');
 const {hdkey} = require('ethereumjs-wallet');
 
-const {accessKeyId, secretAccessKey, discordApiToken, infuraProjectId} = require('../exokit-backend/config.json');
+const {accessKeyId, secretAccessKey, discordApiToken, mnemonic, infuraProjectId} = require('../exokit-backend/config.json');
 const awsConfig = new AWS.Config({
   credentials: new AWS.Credentials({
     accessKeyId,
@@ -132,7 +132,9 @@ const _readStorageHashAsBuffer = async hash => {
   // const address = wallet.getAddressString();
   
   const trades = [];
+  const stores = [];
   let nextTradeId = 0;
+  let nextBuyId = 0;
 
   const runSidechainTransaction = mnemonic => {
     const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
@@ -875,6 +877,178 @@ Help
               }
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade peer: ' + split[1]);
+            }
+          } else if (split[0] === prefix + 'store') {
+            let userId;
+            if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
+              userId = match[1];
+            } else {
+              userId = message.author.id;
+            }
+            const spec = await _getUser(userId);
+            let mnemonic = spec.mnemonic;
+            if (!mnemonic) {
+              const spec = await _genKey(userId);
+              mnemonic = spec.mnemonic;
+            }
+
+            const store = stores.find(store => store.userId === userId);
+            const entries = store ? store.entries : [];
+
+            const userLabel = '<@!' + userId + '>';
+            let s = userLabel + '\'s store:\n';
+            if (entries.length > 0) {
+              s += '```' + entries.map((entry, i) => `#${entry.id}: ${entry.tokenId} for ${entry.price} FT`).join('\n') + '```';
+            } else {
+              s += '```store empty```';
+            }
+            message.channel.send(s);
+          } else if (split[0] === prefix + 'sell' && split.length >= 3) {
+            const tokenId = split[1];
+            let price = parseInt(split[2], 10);
+            if (!isNaN(price)) {
+              let {mnemonic} = await _getUser();
+              if (!mnemonic) {
+                const spec = await _genKey();
+                mnemonic = spec.mnemonic;
+              }
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+
+              const ownTokenIds = [];
+              const nftBalance = await contracts.NFT.methods.balanceOf(address).call();
+              for (let i = 0; i < nftBalance; i++) {
+                const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
+                ownTokenIds.push(id);
+              }
+
+              if (ownTokenIds.includes(tokenId)) {
+                let store = stores.find(store => store.userId === message.author.id);
+                if (!store) {
+                  store = {
+                    userId: message.author.id,
+                    entries: [],
+                  };
+                  stores.push(store);
+                }
+                if (!store.entries.some(entry => entry.tokenId === tokenId)) {
+                  const buyId = ++nextBuyId;
+                  store.entries.push({
+                    id: buyId,
+                    tokenId,
+                    price,
+                  });
+                  message.channel.send('<@!' + message.author.id + '>: sale #' + buyId + ': ' + tokenId + ' for ' + price);
+                } else {
+                  message.channel.send('<@!' + message.author.id + '>: already selling nft: ' + tokenId);
+                }
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: not your nft: ' + tokenId);
+              }
+            } else {
+              message.channel.send('<@!' + message.author.id + '>: invalid price: ' + split[2]);
+            }
+          } else if (split[0] === prefix + 'unsell' && split.length >= 2) {
+            const buyId = parseInt(split[1], 10);
+            if (!isNaN(buyId)) {
+              const store = stores.find(store => store.userId === message.author.id);
+              const entryIndex = store ? store.entries.findIndex(entry => entry.id === buyId) : -1;
+              if (entryIndex !== -1) {
+                entries.splice(entryIndex, 1);
+                
+                message.channel.send('<@!' + message.author.id + '>: unlisted sell ' + buyIn);
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: unknown sell id: ' + buyIn);
+              }
+            } else {
+              message.channel.send('<@!' + message.author.id + '>: invalid sell id: ' + split[1]);
+            }
+          } else if (split[0] === prefix + 'buy' && split.length >= 3) {
+            if (match = split[1].match(/<@!([0-9]+)>/)) {
+              const userId = match[1];
+              if (userId !== message.author.id) {
+                const member = await message.channel.guild.members.fetch(userId);
+                const user = member ? member.user : null;
+                if (user) {
+                  const buyId = parseInt(split[2], 10);
+                  const store = stores.find(store => store.userId === user.id);
+                  const entries = store ? store.entries : [];
+                  const entry = entries.find(entry => entry.id === buyId);
+                  if (entry) {
+                    const {tokenId, price} = entry;
+                    
+                    console.log('got entry', entry);
+
+                    const fullAmount = {
+                      t: 'uint256',
+                      v: new web3.utils.BN(1e9)
+                        .mul(new web3.utils.BN(1e9))
+                        .mul(new web3.utils.BN(1e9)),
+                    };
+                    const userIds = [message.author.id, user.id];
+                    const addresses = [];
+                    for (const userId of userIds) {
+                      let {mnemonic} = await _getUser(userId);
+                      if (!mnemonic) {
+                        const spec = await _genKey(userId);
+                        mnemonic = spec.mnemonic;
+                      }
+
+                      await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
+                      await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+
+                      const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                      const address = wallet.getAddressString();
+                      addresses.push(address);
+                    }
+                    
+                    console.log('got addresses', addresses[0], addresses[1]);
+                    
+                    console.log('transferring', [
+                        'Trade',
+                        'trade',
+                        addresses[0], addresses[1],
+                        price, 0,
+                        0, tokenId,
+                        0, 0,
+                        0, 0,]);
+                    
+                    let status;
+                    try {
+                      await runSidechainTransaction(mnemonic)(
+                        'Trade',
+                        'trade',
+                        addresses[0], addresses[1],
+                        price, 0,
+                        0, tokenId,
+                        0, 0,
+                        0, 0,
+                      );
+                      
+                      entries.splice(entries.indexOf(entry), 1);
+                      
+                      status = true;
+                    } catch (err) {
+                      console.warn(err.stack);
+                      status = false;
+                    }
+
+                    if (status) {
+                      message.channel.send('<@!' + message.author.id + '>: got ' + tokenId + ' for ' + price + '. noice!');
+                    } else {
+                      message.channel.send('<@!' + message.author.id + '>: buy failed');
+                    }
+                  } else {
+                    message.channel.send('no such sale for user: ' + buyId);
+                  }
+                } else {
+                  message.channel.send('unknown user');
+                }
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: cannot buy from yourself');
+              }
+            } else {
+              message.channel.send('invalid user');
             }
           } else if (split[0] === prefix + 'addnft' && split.length >= 3) {
             const tradeId = parseInt(split[1], 10);
