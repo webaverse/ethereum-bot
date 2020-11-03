@@ -679,7 +679,7 @@ Help
                   message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
                 }
               } else {
-                message.channcel.send('unknown user');
+                message.channel.send('unknown user');
               }
             } else if (match = split[1].match(/0x([0-9a-f]+)/i)) {
               let {mnemonic} = await _getUser();
