@@ -731,7 +731,7 @@ Help
               const member = await message.channel.guild.members.fetch(userId);
               const user = member ? member.user : null;
               if (user) {
-                const tradeId = nextTradeId++;
+                const tradeId = ++nextTradeId;
                 const headerLeft = '   Trade #' + tradeId + ' ' + message.author.username;
                 const headerMiddle = ' | ';
                 const headerRight = user.username;
