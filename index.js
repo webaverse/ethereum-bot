@@ -359,6 +359,12 @@ Trade
 .removenft [tradeid] [index] - remove nonfungible token at [index] from trade [tradeid]
 .addft [tradeid] [amount] - add fungible tokens to trade [tradeid]
 
+Store
+.store [@user]? - show your store listings, or that of a user
+.sell [nftid] [price] - list [nftid] for sale at [price]
+.unsell [saleid] - unlist [saleid] from the store
+.buy [@user] [saleid] - buy the [saleid] from [@user]
+
 Worlds
 .createworld - create a world and print its details
 .destroyworld [worldID] - destroy world with id [worldId]
