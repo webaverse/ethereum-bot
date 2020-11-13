@@ -27,7 +27,7 @@ const awsConfig = new AWS.Config({
   region: 'us-west-1',
 });
 const ddb = new AWS.DynamoDB(awsConfig);
-const guildId = '433492168825634816';
+// const guildId = '433492168825634816';
 // const channelName = 'token-hax';
 const adminUserId = '284377201233887233';
 const tableName = 'users';
