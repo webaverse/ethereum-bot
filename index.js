@@ -132,7 +132,7 @@ const _readStorageHashAsBuffer = async hash => {
   // const address = wallet.getAddressString();
   
   const trades = [];
-  const stores = [];
+  const store = [];
   let nextTradeId = 0;
   let nextBuyId = 0;
 
@@ -898,13 +898,10 @@ Help
               mnemonic = spec.mnemonic;
             }
 
-            const store = stores.find(store => store.userId === userId);
-            const entries = store ? store.entries : [];
-
             const userLabel = '<@!' + userId + '>';
             let s = userLabel + '\'s store:\n';
-            if (entries.length > 0) {
-              s += '```' + entries.map((entry, i) => `#${entry.id}: ${entry.tokenId} for ${entry.price} FT`).join('\n') + '```';
+            if (store.length > 0) {
+              s += '```' + store.map((entry, i) => `#${entry.id}: ${entry.tokenId} for ${entry.price} FT`).join('\n') + '```';
             } else {
               s += '```store empty```';
             }
@@ -929,17 +926,10 @@ Help
               }
 
               if (ownTokenIds.includes(tokenId)) {
-                let store = stores.find(store => store.userId === message.author.id);
-                if (!store) {
-                  store = {
-                    userId: message.author.id,
-                    entries: [],
-                  };
-                  stores.push(store);
-                }
-                if (!store.entries.some(entry => entry.tokenId === tokenId)) {
+                if (!store.some(entry => entry.tokenId === tokenId)) {
                   const buyId = ++nextBuyId;
-                  store.entries.push({
+                  store.push({
+                    userId: message.author.id,
                     id: buyId,
                     tokenId,
                     price,
@@ -957,14 +947,18 @@ Help
           } else if (split[0] === prefix + 'unsell' && split.length >= 2) {
             const buyId = parseInt(split[1], 10);
             if (!isNaN(buyId)) {
-              const store = stores.find(store => store.userId === message.author.id);
-              const entryIndex = store ? store.entries.findIndex(entry => entry.id === buyId) : -1;
+              const entryIndex = store.findIndex(entry => entry.id === buyId);
               if (entryIndex !== -1) {
-                entries.splice(entryIndex, 1);
-                
-                message.channel.send('<@!' + message.author.id + '>: unlisted sell ' + buyIn);
+                const entry = store[entryIndex];
+                if (entry && entry.userId === message.author.id) {
+                  store.splice(entryIndex, 1);
+
+                  message.channel.send('<@!' + message.author.id + '>: unlisted sell ' + buyId);
+                } else {
+                  message.channel.send('<@!' + message.author.id + '>: not your sale: ' + buyId);
+                }
               } else {
-                message.channel.send('<@!' + message.author.id + '>: unknown sell id: ' + buyIn);
+                message.channel.send('<@!' + message.author.id + '>: unknown sell id: ' + buyId);
               }
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid sell id: ' + split[1]);
@@ -977,9 +971,7 @@ Help
                 const user = member ? member.user : null;
                 if (user) {
                   const buyId = parseInt(split[2], 10);
-                  const store = stores.find(store => store.userId === user.id);
-                  const entries = store ? store.entries : [];
-                  const entry = entries.find(entry => entry.id === buyId);
+                  const entry = store.find(entry => entry.id === buyId);
                   if (entry) {
                     const {tokenId, price} = entry;
                     
