@@ -18,7 +18,7 @@ const {Transaction} = require('@ethereumjs/tx');
 const {default: Common} = require('@ethereumjs/common');
 const {hdkey} = require('ethereumjs-wallet');
 
-const {accessKeyId, secretAccessKey, discordApiToken, mnemonic, infuraProjectId} = require('../exokit-backend/config.json');
+const {accessKeyId, secretAccessKey, discordApiToken, mnemonic, infuraProjectId, treasuryMnemonic} = require('../exokit-backend/config.json');
 const awsConfig = new AWS.Config({
   credentials: new AWS.Credentials({
     accessKeyId,
@@ -132,7 +132,7 @@ const _readStorageHashAsBuffer = async hash => {
   // const address = wallet.getAddressString();
   
   const trades = [];
-  const store = [];
+  const stores = [];
   let nextTradeId = 0;
   let nextBuyId = 0;
 
@@ -556,6 +556,28 @@ Help
               const balance = parseFloat(response2.encodedData.value); */
 
               message.channel.send('<@!' + userId + '> is ' + balance + ' grease');
+            } else if (split[1] === 'treasury') {
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+              const balance = await contracts.FT.methods.balanceOf(address).call();
+
+              /* const contractSource = await blockchain.getContractSource('getBalance.cdc');
+
+              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
+                method: 'POST',
+                body: JSON.stringify({
+                  address: addr,
+                  mnemonic,
+
+                  limit: 100,
+                  script: contractSource.replace(/ARG0/g, '0x' + addr),
+                  wait: true,
+                }),
+              });
+              const response2 = await res.json();
+              const balance = parseFloat(response2.encodedData.value); */
+
+              message.channel.send('treasury is ' + balance + ' grease');
             } else {
               let {mnemonic} = await _getUser();
               if (!mnemonic) {
@@ -586,15 +608,15 @@ Help
               message.channel.send('<@!' + message.author.id + '> is ' + balance + ' grease');
             }
           } else if (split[0] === prefix + 'address') {
-            let user;
-            if (split[1] && (match = split[1].match(/<@!([0-9]+)>/))) {
-              const userId = match[1];
-              const member = await message.channel.guild.members.fetch(userId);
-              user = member ? member.user : null;
-            } else {
-              user = message.author;
-            }
-            if (user) {
+            let user, address, userLabel;
+            if (split[1] !== 'treasury') {
+              if (split[1] && (match = split[1].match(/<@!([0-9]+)>/))) {
+                const userId = match[1];
+                const member = await message.channel.guild.members.fetch(userId);
+                user = member ? member.user : null;
+              } else {
+                user = message.author;
+              }
               let mnemonic;
               const spec = await _getUser(user.id);
               if (spec.mnemonic) {
@@ -605,9 +627,18 @@ Help
               }
               
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-              const address = wallet.getAddressString();
+              address = wallet.getAddressString();
 
-              message.channel.send('<@!' + user.id + '>\'s address: ```' + address + '```');
+              userLabel = '<@!' + user.id + '>';
+            } else {
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              address = wallet.getAddressString();
+              
+              userLabel = 'treasury';
+            }
+
+            if (address) {
+              message.channel.send(userLabel + '\'s address: ```' + address + '```');
             } else {
               message.channel.send('no such user');
             }
@@ -681,7 +712,7 @@ Help
                 });
                 const response2 = await res.json(); */
 
-                if (result.status) {
+                if (status) {
                   message.channel.send('<@!' + message.author.id + '>: greased ' + amount + ' to <@!' + userId + '>');
                 } else {
                   message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
@@ -727,6 +758,48 @@ Help
 
               if (status) {
                 message.channel.send('<@!' + message.author.id + '>: greased ' + amount + ' to 0x' + addr2);
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
+              }
+            } else if (split[1] === 'treasury') {
+              let {mnemonic} = await _getUser();
+              if (!mnemonic) {
+                const spec = await _genKey();
+                mnemonic = spec.mnemonic;
+              }
+
+              const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address2 = wallet2.getAddressString();
+
+              let status, transactionHash;
+              try {
+                const result = await runSidechainTransaction(mnemonic)('FT', 'transfer', address2, amount);
+                status = result.status;
+                transactionHash = result.transactionHash;
+              } catch(err) {
+                console.warn(err.stack);
+                status = false;
+                transactionHash = '0x0';
+              }
+
+              /* const contractSource = await blockchain.getContractSource('transferToken.cdc');
+              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
+                method: 'POST',
+                body: JSON.stringify({
+                  address: addr,
+                  mnemonic,
+
+                  limit: 100,
+                  transaction: contractSource
+                    .replace(/ARG0/g, amount.toFixed(8))
+                    .replace(/ARG1/g, '0x' + addr2),
+                  wait: true,
+                }),
+              });
+              const response2 = await res.json(); */
+
+              if (status) {
+                message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' to 0x' + address2);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
               }
@@ -889,19 +962,29 @@ Help
             if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
               userId = match[1];
             } else {
-              userId = message.author.id;
+              /* const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString(); */
+              userId = 'treasury';
             }
-            const spec = await _getUser(userId);
+            /* const spec = await _getUser(userId);
             let mnemonic = spec.mnemonic;
             if (!mnemonic) {
               const spec = await _genKey(userId);
               mnemonic = spec.mnemonic;
-            }
+            } */
 
             let s = '';
-            if (store.length > 0) {
+            let store = stores.find(store => store.userId === userId);
+            if (!store) {
+              store = {
+                userId,
+                entries: [],
+              };
+              stores.push(store);
+            }
+            if (store.entries.length > 0) {
               const [usernames, filenames] = await Promise.all([
-                Promise.all(store.map(async entry => {
+                Promise.all(store.entries.map(async entry => {
                   const member = await message.channel.guild.members.fetch(entry.userId);
                   const user = member ? member.user : null;
                   if (user) {
@@ -910,7 +993,7 @@ Help
                     return 'Unknown';
                   }
                 })),
-                Promise.all(store.map(async entry => {
+                Promise.all(store.entries.map(async entry => {
                   const hashNumberString = await contracts.NFT.methods.getHash(entry.tokenId).call();
                   const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
                   const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
@@ -918,9 +1001,9 @@ Help
                 })),
               ]);
 
-              s += '```' + store.map((entry, i) => `#${entry.id}: ${usernames[i]} sells ${entry.tokenId} (${filenames[i]}) for ${entry.price} FT`).join('\n') + '```';
+              s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```' + store.entries.map((entry, i) => `#${entry.id}: ${usernames[i]} sells ${entry.tokenId} (${filenames[i]}) for ${entry.price} FT`).join('\n') + '```';
             } else {
-              s += '```store empty```';
+              s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```empty```';
             }
             message.channel.send(s);
           } else if (split[0] === prefix + 'sell' && split.length >= 3) {
@@ -943,9 +1026,17 @@ Help
               }
 
               if (ownTokenIds.includes(tokenId)) {
-                if (!store.some(entry => entry.tokenId === tokenId)) {
+                let store = stores.find(store => store.userId === message.author.id);
+                if (!store) {
+                  store = {
+                    userId: message.author.id,
+                    entries: [],
+                  };
+                  stores.push(store);
+                }
+                if (!store.entries.some(entry => entry.tokenId === tokenId)) {
                   const buyId = ++nextBuyId;
-                  store.push({
+                  store.entries.push({
                     userId: message.author.id,
                     id: buyId,
                     tokenId,
@@ -964,11 +1055,12 @@ Help
           } else if (split[0] === prefix + 'unsell' && split.length >= 2) {
             const buyId = parseInt(split[1], 10);
             if (!isNaN(buyId)) {
-              const entryIndex = store.findIndex(entry => entry.id === buyId);
+              const store = stores.find(store => store.userId === message.author.id);
+              const entryIndex = store ? store.entries.findIndex(entry => entry.id === buyId) : -1;
               if (entryIndex !== -1) {
                 const entry = store[entryIndex];
                 if (entry && entry.userId === message.author.id) {
-                  store.splice(entryIndex, 1);
+                  store.entries.splice(entryIndex, 1);
 
                   message.channel.send('<@!' + message.author.id + '>: unlisted sell ' + buyId);
                 } else {
@@ -982,7 +1074,20 @@ Help
             }
           } else if (split[0] === prefix + 'buy' && split.length >= 2) {
             const buyId = parseInt(split[1], 10);
-            const entry = store.find(entry => entry.id === buyId);
+            let store = null;
+            let entry = null;
+            for (const s of stores) {
+              for (const e of s.entries) {
+                if (e.id === buyId) {
+                  store = s;
+                  entry = e;
+                  break;
+                }
+              }
+              if (entry) {
+                break;
+              }
+            }
             if (entry) {
               if (entry.userId !== message.author.id) {
                 const {tokenId, price} = entry;
@@ -1012,7 +1117,7 @@ Help
                   addresses.push(address);
                 }
                 
-                console.log('got addresses', addresses[0], addresses[1]);
+                /* console.log('got addresses', addresses[0], addresses[1]);
                 
                 console.log('transferring', [
                     'Trade',
@@ -1021,7 +1126,7 @@ Help
                     price, 0,
                     0, tokenId,
                     0, 0,
-                    0, 0,]);
+                    0, 0,]); */
                 
                 let status;
                 try {
@@ -1035,7 +1140,7 @@ Help
                     0, 0,
                   );
                   
-                  store.splice(store.indexOf(entry), 1);
+                  store.entries.splice(store.entries.indexOf(entry), 1);
                   
                   status = true;
                 } catch (err) {
@@ -1194,78 +1299,101 @@ Help
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
             }
-          } else if (split[0] === prefix + 'transfer' && split.length >= 3 && !isNaN(parseInt(split[2], 10))) {
+          } else if (split[0] === prefix + 'transfer' && split.length >= 3) {
             const id = parseInt(split[2], 10);
-            let quantity = split[3] ? parseInt(split[3], 10) : 1;
-            if (!isNaN(quantity)) {
-              if (match = split[1].match(/<@!([0-9]+)>/)) {
-                const userId = match[1];
-                const member = await message.channel.guild.members.fetch(userId);
-                const user = member ? member.user : null;
-                if (user) {
+            if (!isNaN(id)) {
+              let quantity = split[3] ? parseInt(split[3], 10) : 1;
+              if (!isNaN(quantity)) {
+                if (match = split[1].match(/<@!([0-9]+)>/)) {
+                  const userId = match[1];
+                  const member = await message.channel.guild.members.fetch(userId);
+                  const user = member ? member.user : null;
+                  if (user) {
+                    let {mnemonic} = await _getUser();
+                    if (!mnemonic) {
+                      const spec = await _genKey();
+                      mnemonic = spec.mnemonic;
+                    }
+                    let {mnemonic: mnemonic2} = await _getUser(user.id);
+                    if (!mnemonic2) {
+                      const spec = await _genKey(userId);
+                      mnemonic2 = spec.mnemonic;
+                    }
+                    
+                    const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                    const address = wallet.getAddressString();
+                    
+                    const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                    const address2 = wallet2.getAddressString();
+
+                    let status = true, transactionHash;
+                    try {
+                      const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+                      const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+
+                      const ids = [];
+                      const nftBalance = await contracts.NFT.methods.balanceOf(address).call();
+                      for (let i = 0; i < nftBalance; i++) {
+                        const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
+                        const hashNumberString2 = await contracts.NFT.methods.getHash(id).call();
+                        const hash2 = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString2, 10).toString(16), 32);
+                        if (hash2 === hash) {
+                          ids.push(id);
+                        }
+                      }
+                      ids.sort();
+                      
+                      if (ids.length >= quantity) {
+                        await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+
+                        for (let i = 0; i < quantity; i++) {
+                          const id = ids[i];
+                          const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
+                          status = status && result.status;
+                          transactionHash = result.transactionHash;
+                        }
+                      } else {
+                        status = false;
+                        transactionHash = 'insufficient nft balance';
+                      }
+                    } catch(err) {
+                      console.warn(err.stack);
+                      status = false;
+                      transactionHash = '0x0';
+                    }
+
+                    if (status) {
+                      message.channel.send('<@!' + message.author.id + '>: transferred ' + id + (quantity > 1 ? `(x${quantity})` : '') + ' to <@!' + userId + '>');
+                    } else {
+                      message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + transactionHash);
+                    }
+                  } else {
+                    message.channel.send('unknown user');
+                  }
+                } else if (match = split[1].match(/^0x([0-9a-f]+)$/i)) {
                   let {mnemonic} = await _getUser();
                   if (!mnemonic) {
                     const spec = await _genKey();
                     mnemonic = spec.mnemonic;
                   }
-                  let {mnemonic: mnemonic2} = await _getUser(user.id);
-                  if (!mnemonic2) {
-                    const spec = await _genKey(userId);
-                    mnemonic2 = spec.mnemonic;
-                  }
-                  
+
                   const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                   const address = wallet.getAddressString();
                   
-                  const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                  const address2 = wallet2.getAddressString();
-                  
-                  /* const nftBalance = await contracts.NFT.methods.balanceOf(address).call();
-                  const hashToIds = {};
-                  for (let i = 0; i < nftBalance; i++) {
-                    const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
-                    const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-                    const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
-                    if (!hashToIds[hash]) {
-                      hashToIds[hash] = [];
-                    }
-                    hashToIds[hash].push(id);
-                  } */
+                  const address2 = match[1];
 
-                  let status = true, transactionHash;
-                  try {
-                    const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-                    const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
-
-                    const ids = [];
-                    const nftBalance = await contracts.NFT.methods.balanceOf(address).call();
-                    for (let i = 0; i < nftBalance; i++) {
-                      const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
-                      const hashNumberString2 = await contracts.NFT.methods.getHash(id).call();
-                      const hash2 = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString2, 10).toString(16), 32);
-                      if (hash2 === hash) {
-                        ids.push(id);
-                      }
-                    }
-                    ids.sort();
-                    
-                    if (ids.length >= quantity) {
+                  let status = true;
+                  for (let i = 0; i < quantity; i++) {
+                    try {
                       await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
-
-                      for (let i = 0; i < quantity; i++) {
-                        const id = ids[i];
-                        const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
-                        status = status && result.status;
-                        transactionHash = result.transactionHash;
-                      }
-                    } else {
+                      
+                      const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
+                      status = status && result.status;
+                    } catch(err) {
+                      console.warn(err.stack);
                       status = false;
-                      transactionHash = 'insufficient nft balance';
+                      break;
                     }
-                  } catch(err) {
-                    console.warn(err.stack);
-                    status = false;
-                    transactionHash = '0x0'
                   }
 
                   /* const contractSource = await blockchain.getContractSource('transferNft.cdc');
@@ -1275,7 +1403,7 @@ Help
                       address: addr,
                       mnemonic,
 
-                      limit: 1000,
+                      limit: 100,
                       transaction: contractSource
                         .replace(/ARG0/g, id)
                         .replace(/ARG1/g, '0x' + addr2)
@@ -1286,64 +1414,67 @@ Help
                   const response2 = await res.json(); */
 
                   if (status) {
-                    message.channel.send('<@!' + message.author.id + '>: transferred ' + id + (quantity > 1 ? `(x${quantity})` : '') + ' to <@!' + userId + '>');
+                    message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to 0x' + address2);
                   } else {
-                    message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + transactionHash);
+                    message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + response2.transaction.errorMessage);
+                  }
+                } else if (split[1] === 'treasury') {
+                  let {mnemonic} = await _getUser();
+                  if (!mnemonic) {
+                    const spec = await _genKey();
+                    mnemonic = spec.mnemonic;
+                  }
+
+                  const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                  const address = wallet.getAddressString();
+                  
+                  const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                  const address2 = wallet2.getAddressString();
+
+                  let status = true;
+                  for (let i = 0; i < quantity; i++) {
+                    try {
+                      await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                      
+                      const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
+                      status = status && result.status;
+                    } catch(err) {
+                      console.warn(err.stack);
+                      status = false;
+                      break;
+                    }
+                  }
+
+                  /* const contractSource = await blockchain.getContractSource('transferNft.cdc');
+                  const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                      address: addr,
+                      mnemonic,
+
+                      limit: 100,
+                      transaction: contractSource
+                        .replace(/ARG0/g, id)
+                        .replace(/ARG1/g, '0x' + addr2)
+                        .replace(/ARG2/g, quantity),
+                      wait: true,
+                    }),
+                  });
+                  const response2 = await res.json(); */
+
+                  if (status) {
+                    message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to treasury');
+                  } else {
+                    message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + response2.transaction.errorMessage);
                   }
                 } else {
                   message.channel.send('unknown user');
                 }
-              } else if (match = split[1].match(/^0x([0-9a-f]+)$/i)) {
-                let {mnemonic} = await _getUser();
-                if (!mnemonic) {
-                  const spec = await _genKey();
-                  mnemonic = spec.mnemonic;
-                }
-
-                const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                const address = wallet.getAddressString();
-                
-                const address2 = match[1];
-
-                let status = true;
-                for (let i = 0; i < quantity; i++) {
-                  try {
-                    const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
-                    status = status && result.status;
-                  } catch(err) {
-                    console.warn(err.stack);
-                    status = false;
-                    break;
-                  }
-                }
-
-                /* const contractSource = await blockchain.getContractSource('transferNft.cdc');
-                const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    address: addr,
-                    mnemonic,
-
-                    limit: 100,
-                    transaction: contractSource
-                      .replace(/ARG0/g, id)
-                      .replace(/ARG1/g, '0x' + addr2)
-                      .replace(/ARG2/g, quantity),
-                    wait: true,
-                  }),
-                });
-                const response2 = await res.json(); */
-
-                if (status) {
-                  message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to 0x' + addr2);
-                } else {
-                  message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + response2.transaction.errorMessage);
-                }
               } else {
-                message.channel.send('unknown user');
+                message.channel.send('<@!' + message.author.id + '>: invalid quantity: ' + split[3]);
               }
             } else {
-              message.channel.send('<@!' + message.author.id + '>: invalid quantity: ' + split[3]);
+              message.channel.send('<@!' + message.author.id + '>: invalid token id: ' + split[2]);
             }
           } else if (split[0] === prefix + 'inventory') {
             let address, userLabel;
@@ -1364,10 +1495,17 @@ Help
               address = a;
               userLabel = '`0x' + a + '`';
             };
+            const _loadFromTreasury = () => {
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              address = wallet.getAddressString();
+              userLabel = 'treasury';
+            };
             if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
               await _loadFromUserId(match[1]);
             } else if (split.length >= 2 && (match = split[1].match(/^0x([0-9a-f]+)$/i))) {
               _loadFromAddress(match[1]);
+            } else if (split.length >= 2 && split[1] === 'treasury') {
+              _loadFromTreasury();
             } else {
               await _loadFromUserId(message.author.id);
             }
