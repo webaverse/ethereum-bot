@@ -200,8 +200,10 @@ const _readStorageHashAsBuffer = async hash => {
           const helpIndex = helps.findIndex(help => help.id === message.id);
           if (helpIndex !== -1) {
             const help = helps[helpIndex];
-            help.delete();
-            helps.splice(helpIndex, 1);
+            if (help.requester.id === user.id) {
+              help.delete();
+              helps.splice(helpIndex, 1);
+            }
           }
         }
       } else if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
@@ -389,6 +391,7 @@ Help
 .help - show this info
 \`\`\``);
             m.react('❌');
+            m.requester = message.author;
             helps.push(m);
           } else if (split[0] === prefix + 'status') {
             let userId, mnemonic;
@@ -1582,6 +1585,7 @@ Help
             }
             const m = await message.channel.send(s);
             m.react('❌');
+            m.requester = message.author;
             helps.push(m);
           } else if (split[0] === prefix + 'upload' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
