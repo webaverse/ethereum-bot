@@ -1406,15 +1406,40 @@ Help
                   const member = await message.channel.guild.members.fetch(userId);
                   const user = member ? member.user : null;
                   if (user) {
-                    let {mnemonic} = await _getUser();
-                    if (!mnemonic) {
-                      const spec = await _genKey();
-                      mnemonic = spec.mnemonic;
-                    }
-                    let {mnemonic: mnemonic2} = await _getUser(user.id);
-                    if (!mnemonic2) {
-                      const spec = await _genKey(userId);
-                      mnemonic2 = spec.mnemonic;
+                    let mnemonic, mnemonic2;
+                    if (userId !== message.author.id) {
+                      {
+                        const userSpec = await _getUser();
+                        mnemonic = userSpec.mnemonic;
+                        if (!mnemonic) {
+                          const spec = await _genKey();
+                          mnemonic = spec.mnemonic;
+                        }
+                      }
+                      {
+                        const userSpec = await _getUser(user.id);
+                        mnemonic2 = userSpec.mnemonic;
+                        if (!mnemonic2) {
+                          const spec = await _genKey(userId);
+                          mnemonic2 = spec.mnemonic;
+                        }
+                      }
+                    } else {
+                      const treasurer = member.roles.cache.some(role => role.name === treasurerRoleName);
+                      if (treasurer) {
+                        mnemonic = treasuryMnemonic;
+                        {
+                          const userSpec = await _getUser();
+                          mnemonic2 = userSpec.mnemonic;
+                          if (!mnemonic2) {
+                            const spec = await _genKey();
+                            mnemonic2 = spec.mnemonic;
+                          }
+                        }
+                      } else {
+                        message.channel.send('<@!' + message.author.id + '>: you are not a treasurer');
+                        return;
+                      }
                     }
                     
                     const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
