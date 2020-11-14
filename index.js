@@ -376,10 +376,10 @@ Trade
 .addft [tradeid] [amount] - add fungible tokens to trade [tradeid]
 
 Store
-.store [@user]? - show your store listings, or that of a user
+.store [@user]? - show the treasury store, or that of a user
 .sell [nftid] [price] - list [nftid] for sale at [price]
 .unsell [saleid] - unlist [saleid] from the store
-.buy [@user] [saleid] - buy the [saleid] from [@user]
+.buy [saleid] - buy the [saleid] from [@user]
 
 Worlds
 .createworld - create a world and print its details
