@@ -1084,7 +1084,7 @@ Help
                     tokenId,
                     price,
                   });
-                  message.channel.send('<@!' + message.author.id + '>: sale #' + buyId + ': ' + tokenId + ' for ' + price);
+                  message.channel.send('<@!' + message.author.id + '>: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price);
                 } else {
                   message.channel.send('<@!' + message.author.id + '>: already selling nft: ' + tokenId);
                 }
@@ -1105,7 +1105,7 @@ Help
                     tokenId,
                     price,
                   });
-                  message.channel.send('treasury: sale #' + buyId + ': ' + tokenId + ' for ' + price);
+                  message.channel.send('treasury: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price);
                 } else {
                   message.channel.send('treasury: already selling nft: ' + tokenId);
                 }
