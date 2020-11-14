@@ -35,6 +35,7 @@ const prefix = '.';
 const storageHost = 'https://storage.exokit.org';
 const previewHost = 'https://preview.exokit.org';
 const previewExt = 'png';
+const treasurerRoleName = 'Treasurer';
 
 function getExt(fileName) {
   const match = fileName.match(/\.([^\.]+)$/);
@@ -1027,6 +1028,10 @@ Help
               s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```empty```';
             }
             message.channel.send(s);
+          } else if (split[0] === prefix + 'treasury') {
+            const member = await message.channel.guild.members.fetch(message.author.id);
+            const treasurer = member.roles.cache.some(role => role.name === treasurerRoleName);
+            message.channel.send('treasurer flag: ' + treasurer);
           } else if (split[0] === prefix + 'sell' && split.length >= 3) {
             const tokenId = split[1];
             let price = parseInt(split[2], 10);
