@@ -1025,10 +1025,10 @@ Help
               s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```empty```';
             }
             message.channel.send(s);
-          } else if (split[0] === prefix + 'treasury') {
+          /* } else if (split[0] === prefix + 'treasury') {
             const member = await message.channel.guild.members.fetch(message.author.id);
             const treasurer = member.roles.cache.some(role => role.name === treasurerRoleName);
-            message.channel.send('treasurer flag: ' + treasurer);
+            message.channel.send('treasurer flag: ' + treasurer); */
           } else if (split[0] === prefix + 'sell' && split.length >= 3) {
             const tokenId = split[1];
             let price = parseInt(split[2], 10);
