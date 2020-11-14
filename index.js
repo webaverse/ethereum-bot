@@ -191,46 +191,52 @@ const _readStorageHashAsBuffer = async hash => {
 
     client.on('messageReactionAdd', async (reaction, user) => {
       const {data, message, emoji} = reaction;
-      // console.log('emoji identifier', emoji.identifier);
-      if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
-        const trade = trades.find(trade => trade.id === message.id);
-        if (trade) {
-          const index = trade.userIds.indexOf(user.id);
-          if (index >= 0) {
-            trade.confirmations[index] = true;
-            trade.render();
- 
-            if (trade.confirmations.every(confirmation => !!confirmation)) {
-              if (trade.confirmations2.every(confirmation => !!confirmation)) {
-                trade.finish();
-                trades.splice(trades.indexOf(trade), 1);
-              } else {
-                trade.react('💞');
+      // console.log('emoji identifier', message, emoji.identifier);
+      if (message.channel.type === 'dm') {
+        if (user.id !== client.user.id && emoji.identifier === '%E2%9D%8C') { // x
+          message.delete();
+        }
+      } else {
+        if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
+          const trade = trades.find(trade => trade.id === message.id);
+          if (trade) {
+            const index = trade.userIds.indexOf(user.id);
+            if (index >= 0) {
+              trade.confirmations[index] = true;
+              trade.render();
+   
+              if (trade.confirmations.every(confirmation => !!confirmation)) {
+                if (trade.confirmations2.every(confirmation => !!confirmation)) {
+                  trade.finish();
+                  trades.splice(trades.indexOf(trade), 1);
+                } else {
+                  trade.react('💞');
+                }
               }
             }
           }
-        }
-      } else if (user.id !== client.user.id && emoji.identifier === '%F0%9F%92%9E') { // rotating hearts
-        const trade = trades.find(trade => trade.id === message.id);
-        if (trade) {
-          const index = trade.userIds.indexOf(user.id);
-          if (index >= 0) {
-            trade.confirmations2[index] = true;
-            trade.render();
- 
-            if (trade.confirmations.every(confirmation => !!confirmation) && trade.confirmations2.every(confirmation => !!confirmation)) {
-              trade.finish();
-              trades.splice(trades.indexOf(trade), 1);
+        } else if (user.id !== client.user.id && emoji.identifier === '%F0%9F%92%9E') { // rotating hearts
+          const trade = trades.find(trade => trade.id === message.id);
+          if (trade) {
+            const index = trade.userIds.indexOf(user.id);
+            if (index >= 0) {
+              trade.confirmations2[index] = true;
+              trade.render();
+   
+              if (trade.confirmations.every(confirmation => !!confirmation) && trade.confirmations2.every(confirmation => !!confirmation)) {
+                trade.finish();
+                trades.splice(trades.indexOf(trade), 1);
+              }
             }
           }
-        }
-      } else if (user.id !== client.user.id && emoji.identifier === '%E2%9D%8C') { // x
-        const trade = trades.find(trade => trade.id === message.id);
-        if (trade) {
-          const index = trade.userIds.indexOf(user.id);
-          if (index >= 0) {
-            trade.cancel();
-            trades.splice(trades.indexOf(trade), 1);
+        } else if (user.id !== client.user.id && emoji.identifier === '%E2%9D%8C') { // x
+          const trade = trades.find(trade => trade.id === message.id);
+          if (trade) {
+            const index = trade.userIds.indexOf(user.id);
+            if (index >= 0) {
+              trade.cancel();
+              trades.splice(trades.indexOf(trade), 1);
+            }
           }
         }
       }
@@ -1659,7 +1665,8 @@ Help
               mnemonic = spec.mnemonic;
             }
 
-            message.author.send('Key: ||' + mnemonic + '||');
+            const m = await message.author.send('Key: ||' + mnemonic + '||');
+            m.react('❌');
           } else if (split[0] === prefix + 'get' && split.length >= 3 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
             const key = split[2];
