@@ -1566,7 +1566,7 @@ Help
               return {id, hash, filename, balance, totalSupply};
             }); */
 
-            let s = userLabel + ':\n';
+            let s = userLabel + '\'s inventory:\n';
             if (entries.length > 0) {
               s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.filename} ${entry.hash} (${entry.balance}/${entry.totalSupply})${entry.ids.length > 1 ? ` [${entry.ids.join(',')}]` : ''}`).join('\n') + '```';
             } else {
