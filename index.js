@@ -355,8 +355,8 @@ Info
      - can be used to log into the app
 
 Tokens
-.send [@user|0xaddr] [amount] - send [amount] FT to user/address
-.transfer [@user|0xaddr] [id] [quantity]? - send [quantity] [id] NFTs to user/address
+.send [@user|0xaddr|treasury] [amount] - send [amount] FT to user/address
+.transfer [@user|0xaddr|treasury] [id] [quantity]? - send [quantity] [id] NFTs to user/addr/treasury
 .preview [id] - show preview of NFT [id] in channel
 .gif [id] - show animated gif of NFT [id] in channel
 .get [id] [key] - get metadata key [key] for NFT [id]
