@@ -36,6 +36,8 @@ const storageHost = 'https://storage.exokit.org';
 const previewHost = 'https://preview.exokit.org';
 const previewExt = 'png';
 const treasurerRoleName = 'Treasurer';
+const treasuryWallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+const treasuryAddress = treasuryWallet.getAddressString();
 
 function getExt(fileName) {
   const match = fileName.match(/\.([^\.]+)$/);
@@ -578,9 +580,7 @@ Help
 
               message.channel.send('<@!' + userId + '> is ' + balance + ' grease');
             } else if (split[1] === 'treasury') {
-              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-              const address = wallet.getAddressString();
-              const balance = await contracts.FT.methods.balanceOf(address).call();
+              const balance = await contracts.FT.methods.balanceOf(treasuryAddress).call();
 
               /* const contractSource = await blockchain.getContractSource('getBalance.cdc');
 
@@ -652,9 +652,7 @@ Help
 
               userLabel = '<@!' + user.id + '>';
             } else {
-              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-              address = wallet.getAddressString();
-              
+              address = treasuryAddress;
               userLabel = 'treasury';
             }
 
