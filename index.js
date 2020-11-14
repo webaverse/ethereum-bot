@@ -857,7 +857,7 @@ Help
                     addresses.push(address);
                   }
                   
-                  await runSidechainTransaction(mnemonics[0])(
+                  await runSidechainTransaction(mnemonic)(
                     'Trade',
                     'trade',
                     addresses[0], addresses[1],
