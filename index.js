@@ -1048,6 +1048,17 @@ Help
                 ownTokenIds.push(id);
               }
 
+              const treasuryTokenIds = [];
+              const member = await message.channel.guild.members.fetch(message.author.id);
+              const treasurer = member.roles.cache.some(role => role.name === treasurerRoleName);
+              if (treasurer) {
+                const nftBalance = await contracts.NFT.methods.balanceOf(treasuryAddress).call();
+                for (let i = 0; i < nftBalance; i++) {
+                  const id = await contracts.NFT.methods.tokenOfOwnerByIndex(treasuryAddress, i).call();
+                  treasuryTokenIds.push(id);
+                }
+              }
+
               if (ownTokenIds.includes(tokenId)) {
                 let store = stores.find(store => store.userId === message.author.id);
                 if (!store) {
@@ -1069,6 +1080,27 @@ Help
                 } else {
                   message.channel.send('<@!' + message.author.id + '>: already selling nft: ' + tokenId);
                 }
+              } else if (treasuryTokenIds.includes(tokenId)) {
+                let store = stores.find(store => store.userId === 'treasury');
+                if (!store) {
+                  store = {
+                    userId: message.author.id,
+                    entries: [],
+                  };
+                  stores.push(store);
+                }
+                if (!store.entries.some(entry => entry.tokenId === tokenId)) {
+                  const buyId = ++nextBuyId;
+                  store.entries.push({
+                    userId: 'treasury',
+                    id: buyId,
+                    tokenId,
+                    price,
+                  });
+                  message.channel.send('treasury: sale #' + buyId + ': ' + tokenId + ' for ' + price);
+                } else {
+                  message.channel.send('treasury: already selling nft: ' + tokenId);
+                }
               } else {
                 message.channel.send('<@!' + message.author.id + '>: not your nft: ' + tokenId);
               }
@@ -1078,8 +1110,16 @@ Help
           } else if (split[0] === prefix + 'unsell' && split.length >= 2) {
             const buyId = parseInt(split[1], 10);
             if (!isNaN(buyId)) {
-              const store = stores.find(store => store.userId === message.author.id);
-              const entryIndex = store ? store.entries.findIndex(entry => entry.id === buyId) : -1;
+              let store = stores.find(store => store.userId === message.author.id);
+              let entryIndex = store ? store.entries.findIndex(entry => entry.id === buyId) : -1;
+              if (entryIndex === -1) {
+                const member = await message.channel.guild.members.fetch(message.author.id);
+                const treasurer = member.roles.cache.some(role => role.name === treasurerRoleName);
+                if (treasurer) {
+                  store = stores.find(store => store.userId === 'treasury');
+                  entryIndex = store ? store.entries.findIndex(entry => entry.id === buyId) : -1;
+                }
+              }
               if (entryIndex !== -1) {
                 const entry = store[entryIndex];
                 if (entry && entry.userId === message.author.id) {
@@ -1126,10 +1166,14 @@ Help
                 const userIds = [message.author.id, entry.userId];
                 const addresses = [];
                 for (const userId of userIds) {
-                  let {mnemonic} = await _getUser(userId);
-                  if (!mnemonic) {
-                    const spec = await _genKey(userId);
-                    mnemonic = spec.mnemonic;
+                  if (userId !== 'treasury') {
+                    let {mnemonic} = await _getUser(userId);
+                    if (!mnemonic) {
+                      const spec = await _genKey(userId);
+                      mnemonic = spec.mnemonic;
+                    }
+                  } else {
+                    mnemonic = treasuryMnemonic;
                   }
 
                   await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
