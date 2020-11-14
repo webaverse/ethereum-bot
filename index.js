@@ -776,7 +776,7 @@ Help
               const response2 = await res.json(); */
 
               if (status) {
-                message.channel.send('<@!' + message.author.id + '>: greased ' + amount + ' to 0x' + addr2);
+                message.channel.send('<@!' + message.author.id + '>: greased ' + amount + ' to ' + address2);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
               }
@@ -818,7 +818,7 @@ Help
               const response2 = await res.json(); */
 
               if (status) {
-                message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' to 0x' + address2);
+                message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' to treasury');
               } else {
                 message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
               }
