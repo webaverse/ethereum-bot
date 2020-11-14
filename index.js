@@ -192,7 +192,7 @@ const _readStorageHashAsBuffer = async hash => {
 
     client.on('messageReactionAdd', async (reaction, user) => {
       const {data, message, emoji} = reaction;
-      // console.log('emoji identifier', message, emoji.identifier);
+      // console.log('emoji identifier', message, data, emoji);
       if (user.id !== client.user.id && emoji.identifier === '%E2%9D%8C') { // x
         if (message.channel.type === 'dm') {
           message.delete();
