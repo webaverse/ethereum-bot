@@ -1521,7 +1521,7 @@ Help
               mnemonic = spec.mnemonic;
             }
 
-            message.author.send('Key: ```' + mnemonic + '```');
+            message.author.send('Key: ||' + mnemonic + '||');
           } else if (split[0] === prefix + 'get' && split.length >= 3 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
             const key = split[2];
