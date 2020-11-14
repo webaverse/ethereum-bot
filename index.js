@@ -1002,25 +1002,33 @@ Help
               stores.push(store);
             }
             if (store.entries.length > 0) {
-              const [usernames, filenames] = await Promise.all([
-                Promise.all(store.entries.map(async entry => {
-                  const member = await message.channel.guild.members.fetch(entry.userId);
-                  const user = member ? member.user : null;
-                  if (user) {
-                    return user.username;
-                  } else {
-                    return 'Unknown';
-                  }
-                })),
-                Promise.all(store.entries.map(async entry => {
-                  const hashNumberString = await contracts.NFT.methods.getHash(entry.tokenId).call();
-                  const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
-                  const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
-                  return filename;
-                })),
-              ]);
+              try {
+                const [usernames, filenames] = await Promise.all([
+                  Promise.all(store.entries.map(async entry => {
+                    if (store.userId !== 'treasury') {
+                      const member = await message.channel.guild.members.fetch(entry.userId);
+                      const user = member ? member.user : null;
+                      if (user) {
+                        return user.username;
+                      } else {
+                        return 'Unknown';
+                      }
+                    } else {
+                      return 'Treasury';
+                    }
+                  })),
+                  Promise.all(store.entries.map(async entry => {
+                    const hashNumberString = await contracts.NFT.methods.getHash(entry.tokenId).call();
+                    const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+                    const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
+                    return filename;
+                  })),
+                ]);
 
-              s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```' + store.entries.map((entry, i) => `#${entry.id}: ${usernames[i]} sells ${entry.tokenId} (${filenames[i]}) for ${entry.price} FT`).join('\n') + '```';
+                s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```' + store.entries.map((entry, i) => `#${entry.id}: NFT ${entry.tokenId} (${filenames[i]}) for ${entry.price} FT`).join('\n') + '```';
+              } catch(err) {
+                console.warn(err);
+              }
             } else {
               s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```empty```';
             }
@@ -1071,7 +1079,7 @@ Help
                 if (!store.entries.some(entry => entry.tokenId === tokenId)) {
                   const buyId = ++nextBuyId;
                   store.entries.push({
-                    userId: message.author.id,
+                    // userId: message.author.id,
                     id: buyId,
                     tokenId,
                     price,
@@ -1084,7 +1092,7 @@ Help
                 let store = stores.find(store => store.userId === 'treasury');
                 if (!store) {
                   store = {
-                    userId: message.author.id,
+                    userId: 'treasury',
                     entries: [],
                   };
                   stores.push(store);
@@ -1092,7 +1100,7 @@ Help
                 if (!store.entries.some(entry => entry.tokenId === tokenId)) {
                   const buyId = ++nextBuyId;
                   store.entries.push({
-                    userId: 'treasury',
+                    // userId: 'treasury',
                     id: buyId,
                     tokenId,
                     price,
@@ -1121,14 +1129,10 @@ Help
                 }
               }
               if (entryIndex !== -1) {
-                const entry = store[entryIndex];
-                if (entry && entry.userId === message.author.id) {
-                  store.entries.splice(entryIndex, 1);
+                // const entry = store[entryIndex];
+                store.entries.splice(entryIndex, 1);
 
-                  message.channel.send('<@!' + message.author.id + '>: unlisted sell ' + buyId);
-                } else {
-                  message.channel.send('<@!' + message.author.id + '>: not your sale: ' + buyId);
-                }
+                message.channel.send('<@!' + message.author.id + '>: unlisted sell ' + buyId);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: unknown sell id: ' + buyId);
               }
@@ -1163,11 +1167,13 @@ Help
                     .mul(new web3.utils.BN(1e9))
                     .mul(new web3.utils.BN(1e9)),
                 };
-                const userIds = [message.author.id, entry.userId];
+                const userIds = [message.author.id, store.userId];
                 const addresses = [];
                 for (const userId of userIds) {
+                  let mnemonic;
                   if (userId !== 'treasury') {
-                    let {mnemonic} = await _getUser(userId);
+                    const userSpec = await _getUser(userId);
+                    mnemonic = userSpec.mnemonic;
                     if (!mnemonic) {
                       const spec = await _genKey(userId);
                       mnemonic = spec.mnemonic;
