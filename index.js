@@ -133,6 +133,7 @@ const _readStorageHashAsBuffer = async hash => {
   
   const trades = [];
   const stores = [];
+  const helps = [];
   let nextTradeId = 0;
   let nextBuyId = 0;
 
@@ -192,51 +193,56 @@ const _readStorageHashAsBuffer = async hash => {
     client.on('messageReactionAdd', async (reaction, user) => {
       const {data, message, emoji} = reaction;
       // console.log('emoji identifier', message, emoji.identifier);
-      if (message.channel.type === 'dm') {
-        if (user.id !== client.user.id && emoji.identifier === '%E2%9D%8C') { // x
+      if (user.id !== client.user.id && emoji.identifier === '%E2%9D%8C') { // x
+        if (message.channel.type === 'dm') {
           message.delete();
-        }
-      } else {
-        if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
-          const trade = trades.find(trade => trade.id === message.id);
-          if (trade) {
-            const index = trade.userIds.indexOf(user.id);
-            if (index >= 0) {
-              trade.confirmations[index] = true;
-              trade.render();
-   
-              if (trade.confirmations.every(confirmation => !!confirmation)) {
-                if (trade.confirmations2.every(confirmation => !!confirmation)) {
-                  trade.finish();
-                  trades.splice(trades.indexOf(trade), 1);
-                } else {
-                  trade.react('💞');
-                }
-              }
-            }
+        } else {
+          const helpIndex = helps.findIndex(help => help.id === message.id);
+          if (helpIndex !== -1) {
+            const help = helps[helpIndex];
+            help.delete();
+            helps.splice(helpIndex, 1);
           }
-        } else if (user.id !== client.user.id && emoji.identifier === '%F0%9F%92%9E') { // rotating hearts
-          const trade = trades.find(trade => trade.id === message.id);
-          if (trade) {
-            const index = trade.userIds.indexOf(user.id);
-            if (index >= 0) {
-              trade.confirmations2[index] = true;
-              trade.render();
-   
-              if (trade.confirmations.every(confirmation => !!confirmation) && trade.confirmations2.every(confirmation => !!confirmation)) {
+        }
+      } else if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
+        const trade = trades.find(trade => trade.id === message.id);
+        if (trade) {
+          const index = trade.userIds.indexOf(user.id);
+          if (index >= 0) {
+            trade.confirmations[index] = true;
+            trade.render();
+ 
+            if (trade.confirmations.every(confirmation => !!confirmation)) {
+              if (trade.confirmations2.every(confirmation => !!confirmation)) {
                 trade.finish();
                 trades.splice(trades.indexOf(trade), 1);
+              } else {
+                trade.react('💞');
               }
             }
           }
-        } else if (user.id !== client.user.id && emoji.identifier === '%E2%9D%8C') { // x
-          const trade = trades.find(trade => trade.id === message.id);
-          if (trade) {
-            const index = trade.userIds.indexOf(user.id);
-            if (index >= 0) {
-              trade.cancel();
+        }
+      } else if (user.id !== client.user.id && emoji.identifier === '%F0%9F%92%9E') { // rotating hearts
+        const trade = trades.find(trade => trade.id === message.id);
+        if (trade) {
+          const index = trade.userIds.indexOf(user.id);
+          if (index >= 0) {
+            trade.confirmations2[index] = true;
+            trade.render();
+ 
+            if (trade.confirmations.every(confirmation => !!confirmation) && trade.confirmations2.every(confirmation => !!confirmation)) {
+              trade.finish();
               trades.splice(trades.indexOf(trade), 1);
             }
+          }
+        }
+      } else if (user.id !== client.user.id && emoji.identifier === '%E2%9D%8C') { // x
+        const trade = trades.find(trade => trade.id === message.id);
+        if (trade) {
+          const index = trade.userIds.indexOf(user.id);
+          if (index >= 0) {
+            trade.cancel();
+            trades.splice(trades.indexOf(trade), 1);
           }
         }
       }
@@ -334,7 +340,7 @@ const _readStorageHashAsBuffer = async hash => {
           const split = message.content.split(/\s+/);
           let match;
           if (split[0] === prefix + 'help') {
-            message.channel.send(`\`\`\`\
+            const m = await message.channel.send(`\`\`\`\
 Info
 .status - show your account details
 .balance - show your FT balance, or that of a user/address
@@ -382,6 +388,8 @@ Key Management (DM to bot)
 Help
 .help - show this info
 \`\`\``);
+            m.react('❌');
+            helps.push(m);
           } else if (split[0] === prefix + 'status') {
             let userId, mnemonic;
             if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
@@ -719,7 +727,7 @@ Help
                 const response2 = await res.json(); */
 
                 if (status) {
-                  message.channel.send('<@!' + message.author.id + '>: greased ' + amount + ' to <@!' + userId + '>');
+                  message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' to <@!' + userId + '>');
                 } else {
                   message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
                 }
@@ -1572,7 +1580,9 @@ Help
             } else {
               s += '```inventory empty```';
             }
-            message.channel.send(s);
+            const m = await message.channel.send(s);
+            m.react('❌');
+            helps.push(m);
           } else if (split[0] === prefix + 'upload' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
 
