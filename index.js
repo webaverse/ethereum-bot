@@ -527,7 +527,7 @@ Help
 
               message.channel.send('<@!' + message.author.id + '>: set avatar to ' + JSON.stringify(avatar));
             } else {
-              const contractSource = await blockchain.getContractSource('getUserData.cdc');
+              /* const contractSource = await blockchain.getContractSource('getUserData.cdc');
 
               const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
                 method: 'POST',
@@ -538,7 +538,11 @@ Help
                 }),
               });
               const response2 = await res.json();
-              const [name, avatarUrl] = response2.encodedData.value.map(value => value.value && value.value.value);
+              const [name, avatarUrl] = response2.encodedData.value.map(value => value.value && value.value.value); */
+              
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+              const avatarUrl = await contracts.Account.methods.getMetadata(address, 'avatarUrl').call();
 
               message.channel.send('<@!' + message.author.id + '>: avatar is ' + JSON.stringify(avatarUrl));
             }
