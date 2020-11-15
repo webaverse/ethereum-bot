@@ -1396,6 +1396,14 @@ Help
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
             }
+          } else if (split[0] === prefix + 'peek' && split.length >= 2) {
+            const tokenId = parseInt(split[1], 10);
+            if (!isNaN(tokenId)) {
+              const balance = await contracts.NFT.methods.getPackedBalance(tokenId).call();
+              message.channel.send('<@!' + message.author.id + '>: packed balance of #' + tokenId + ': ' + balance);
+            } else {
+              message.channel.send('<@!' + message.author.id + '>: invalid token id: ' + split[1]);
+            }
           } else if (split[0] === prefix + 'transfer' && split.length >= 3) {
             const id = parseInt(split[2], 10);
             if (!isNaN(id)) {
