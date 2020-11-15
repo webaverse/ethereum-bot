@@ -1943,13 +1943,27 @@ Help
 
                         const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                         const address = wallet.getAddressString();
-                        
+
+                        const fullAmount = {
+                          t: 'uint256',
+                          v: new web3.utils.BN(1e9)
+                            .mul(new web3.utils.BN(1e9))
+                            .mul(new web3.utils.BN(1e9)),
+                        };
+
                         let status, transactionHash;
                         try {
-                          // console.log('minting', ['NFT', 'mint', address, '0x' + hash, name, quantity]);
-                          const result = await runSidechainTransaction(mnemonic)('NFT', 'mint', address, '0x' + hash, name, quantity);
-                          status = result.status;
-                          transactionHash = result.transactionHash;
+                          {
+                            const result = await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['NFT']._address, fullAmount.v);
+                            status = result.status;
+                            transactionHash = '0x0';
+                          }
+                          if (status) {
+                            // console.log('minting', ['NFT', 'mint', address, '0x' + hash, name, quantity]);
+                            const result = await runSidechainTransaction(mnemonic)('NFT', 'mint', address, '0x' + hash, name, quantity);
+                            status = result.status;
+                            transactionHash = result.transactionHash;
+                          }
                         } catch(err) {
                           console.warn(err.stack);
                           status = false;
