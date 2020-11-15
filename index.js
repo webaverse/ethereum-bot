@@ -369,6 +369,11 @@ Account
 Minting
 .mint [count]? (in the file upload comment) - mint [count] NFTs from file upload
 
+Packing
+.peek [nftid] - check packed ft balance of [nftid]
+.pack [nftid] [amount] - pack [amount] ft from yourself into [nftid]
+.unpack [nftid] [amount] - unpack [amount] ft from [nftid] to yourself
+
 Trade
 .trade [@user|0xaddr] - start a trade with user/address
 .addnft [tradeid] [nftid] - add nonfungible token to trade [tradeid]
