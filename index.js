@@ -1427,6 +1427,29 @@ Help
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid token id: ' + split[1]);
             }
+          } else if (split[0] === prefix + 'unpack' && split.length >= 3) {
+            const tokenId = parseInt(split[1], 10);
+            const amount = parseInt(split[2], 10);
+            if (!isNaN(tokenId) && !isNaN(amount)) {
+              let {mnemonic} = await _getUser();
+              if (!mnemonic) {
+                const spec = await _genKey();
+                mnemonic = spec.mnemonic;
+              }
+              
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+              
+              const result = await runSidechainTransaction(mnemonic)('NFT', 'unpack', address, tokenId, amount);
+
+              if (result.status) {
+                message.channel.send('<@!' + message.author.id + '>: unpacked ' + amount + ' from #' + amount);
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: failed to unpack FT from NFT: ' + tokenId);
+              }
+            } else {
+              message.channel.send('<@!' + message.author.id + '>: invalid token id: ' + split[1]);
+            }
           } else if (split[0] === prefix + 'transfer' && split.length >= 3) {
             const id = parseInt(split[2], 10);
             if (!isNaN(id)) {
