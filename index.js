@@ -432,6 +432,7 @@ Tokens
 .transfer [@user|0xaddr|treasury] [id] [quantity]? - send [quantity] [id] NFTs to user/addr/treasury
 .preview [id] - show preview of NFT [id] in channel
 .gif [id] - show animated gif of NFT [id] in channel
+.upload [id] - upload NFT [id] to channel
 .get [id] [key] - get metadata key [key] for NFT [id]
 .set [id] [key] [value] - set metadata key [key] to [value] for NFT [id]
 
@@ -1909,6 +1910,31 @@ Help
             m.react('❌');
             m.requester = message.author;
             helps.push(m);
+          } else if (split[0] === prefix + 'upload' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
+            const id = parseInt(split[1], 10);
+
+            const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+            const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
+
+            /* const contractSource = await blockchain.getContractSource('getNft.cdc');
+
+            const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
+              method: 'POST',
+              body: JSON.stringify({
+                limit: 100,
+                script: contractSource
+                  .replace(/ARG0/g, n),
+                wait: true,
+              }),
+            });
+            const response2 = await res.json();
+            const [hash, filename] = response2.encodedData.value.map(value => value.value && value.value.value); */
+
+            const buffer = await _readStorageHashAsBuffer(hash.slice(2));
+            const attachment = new Discord.MessageAttachment(buffer, filename);
+
+            message.channel.send('<@!' + message.author.id + '>: ' + id + ' is this', attachment);
           } else if (split[0] === prefix + 'preview' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
 
