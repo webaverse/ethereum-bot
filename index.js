@@ -1540,7 +1540,7 @@ Help
               }
 
               if (status) {
-                message.channel.send('<@!' + message.author.id + '>: packed ' + amount + ' into #' + amount);
+                message.channel.send('<@!' + message.author.id + '>: packed ' + amount + ' into #' + tokenId);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: failed to pack FT into NFT: ' + tokenId);
               }
