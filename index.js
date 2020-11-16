@@ -430,20 +430,6 @@ Help
 .help - show this info
 \`\`\``);
 
-// mighty minting machine
-// 10B total supply
-// 1 million grease minted
-// packs of grease (sample, 25, 50, 100)
-// 1000 grease = $25
-// 2000 grease = $50
-// 4000 grease = $100
-// 0.25 per mint
-// 10 = $0.25
-// 10 grease per mint transaction
-// 2 types of fees: paid by minter, paid from treasury (if you have crafter role)
-// opensea fee
-// publish blog post on mainnet coming
-
             m.react('❌');
             m.requester = message.author;
             helps.push(m);
