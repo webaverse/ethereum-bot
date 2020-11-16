@@ -1496,7 +1496,7 @@ Help
 
               let s = userLabel + '\'s packs:\n';
               if (packedBalances.length > 0) {
-                s += '```' + packedBalances.map((pack, i) => `${pack.id}. contains ${pack.packedBalance} FT`) + '```';
+                s += '```' + packedBalances.map((pack, i) => `${pack.id}. contains ${pack.packedBalance} FT`).join('\n') + '```';
               } else {
                 s += '```packs empty```';
               }
