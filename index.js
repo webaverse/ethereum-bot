@@ -30,7 +30,8 @@ const ddb = new AWS.DynamoDB(awsConfig);
 // const guildId = '433492168825634816';
 // const channelName = 'token-hax';
 const adminUserId = '284377201233887233';
-const tableName = 'users';
+const usersTableName = 'users';
+const storeTableName = 'store';
 const prefix = '.';
 const storageHost = 'https://storage.exokit.org';
 const previewHost = 'https://preview.exokit.org';
@@ -110,6 +111,7 @@ const _readStorageHashAsBuffer = async hash => {
     return null;
   }
 };
+const _clone = o => JSON.parse(JSON.stringify(o));
 
 (async () => {
   const web3 = new Web3(new Web3.providers.HttpProvider('http://13.56.80.83:8545'));
@@ -135,10 +137,40 @@ const _readStorageHashAsBuffer = async hash => {
   // const address = wallet.getAddressString();
   
   const trades = [];
-  const stores = [];
+  // const stores = [];
   const helps = [];
   let nextTradeId = 0;
   let nextBuyId = 0;
+
+  let store = null;
+  const getStore = async () => {
+    if (store) {
+      return store;
+    } else {
+      const result = await ddb.getItem({
+        TableName: storeTableName,
+        Key: {
+          id: {S: 'store'},
+        },
+        /* Item: {
+          email: {S: id},
+          mnemonic: {S: mnemonic},
+        }, */
+      }).promise();
+      const store = (result && result.Item && _clone(result.Item)) || {
+        id: 'store',
+        nextBuyId: 0,
+        booths: [],
+      };
+      return store;
+    }
+  };
+  const setStore = async store => {
+    await ddb.setItem({
+      TableName: storeTableName,
+      Item: store,
+    }).promise();
+  };
 
   const runSidechainTransaction = mnemonic => {
     const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
@@ -283,7 +315,7 @@ const _readStorageHashAsBuffer = async hash => {
       if (!message.author.bot) {
         const _getUser = async (id = message.author.id) => {
           const tokenItem = await ddb.getItem({
-            TableName: tableName,
+            TableName: usersTableName,
             Key: {
               email: {S: id + '.discordtoken'},
             }
@@ -296,7 +328,7 @@ const _readStorageHashAsBuffer = async hash => {
           const mnemonic = bip39.generateMnemonic();
 
           await ddb.putItem({
-            TableName: tableName,
+            TableName: usersTableName,
             Item: {
               email: {S: id + '.discordtoken'},
               mnemonic: {S: mnemonic},
@@ -1022,19 +1054,20 @@ Help
             } */
 
             let s = '';
-            let store = stores.find(store => store.userId === userId);
-            if (!store) {
-              store = {
+            const store = await getStore();
+            let booth = store.booths.find(store => store.userId === userId);
+            if (!booth) {
+              booth = {
                 userId,
                 entries: [],
               };
-              stores.push(store);
+              store.booths.push(booth);
             }
-            if (store.entries.length > 0) {
+            if (booth.entries.length > 0) {
               try {
                 const [usernames, filenames] = await Promise.all([
-                  Promise.all(store.entries.map(async entry => {
-                    if (store.userId !== 'treasury') {
+                  Promise.all(booth.entries.map(async entry => {
+                    if (booth.userId !== 'treasury') {
                       const member = await message.channel.guild.members.fetch(entry.userId);
                       const user = member ? member.user : null;
                       if (user) {
@@ -1046,7 +1079,7 @@ Help
                       return 'Treasury';
                     }
                   })),
-                  Promise.all(store.entries.map(async entry => {
+                  Promise.all(booth.entries.map(async entry => {
                     const hashNumberString = await contracts.NFT.methods.getHash(entry.tokenId).call();
                     const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
                     const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
@@ -1054,7 +1087,7 @@ Help
                   })),
                 ]);
 
-                s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```' + store.entries.map((entry, i) => `#${entry.id}: NFT ${entry.tokenId} (${filenames[i]}) for ${entry.price} FT`).join('\n') + '```';
+                s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```' + booth.entries.map((entry, i) => `#${entry.id}: NFT ${entry.tokenId} (${filenames[i]}) for ${entry.price} FT`).join('\n') + '```';
               } catch(err) {
                 console.warn(err);
               }
@@ -1096,44 +1129,47 @@ Help
                 }
               }
 
+              const store = await getStore();
               if (ownTokenIds.includes(tokenId)) {
-                let store = stores.find(store => store.userId === message.author.id);
-                if (!store) {
-                  store = {
+                let booth = store.booths.find(store => store.userId === message.author.id);
+                if (!booth) {
+                  booth = {
                     userId: message.author.id,
                     entries: [],
                   };
-                  stores.push(store);
+                  store.booths.push(booth);
                 }
-                if (!store.entries.some(entry => entry.tokenId === tokenId)) {
-                  const buyId = ++nextBuyId;
-                  store.entries.push({
+                if (!booth.entries.some(entry => entry.tokenId === tokenId)) {
+                  const buyId = ++store.nextBuyId;
+                  booth.entries.push({
                     // userId: message.author.id,
                     id: buyId,
                     tokenId,
                     price,
                   });
+                  await setStore(store);
                   message.channel.send('<@!' + message.author.id + '>: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price);
                 } else {
                   message.channel.send('<@!' + message.author.id + '>: already selling nft: ' + tokenId);
                 }
               } else if (treasuryTokenIds.includes(tokenId)) {
-                let store = stores.find(store => store.userId === 'treasury');
-                if (!store) {
-                  store = {
+                let booth = store.booths.find(store => store.userId === 'treasury');
+                if (!booth) {
+                  booth = {
                     userId: 'treasury',
                     entries: [],
                   };
-                  stores.push(store);
+                  store.booths.push(booth);
                 }
-                if (!store.entries.some(entry => entry.tokenId === tokenId)) {
-                  const buyId = ++nextBuyId;
-                  store.entries.push({
+                if (!booth.entries.some(entry => entry.tokenId === tokenId)) {
+                  const buyId = ++stores.nextBuyId;
+                  booth.entries.push({
                     // userId: 'treasury',
                     id: buyId,
                     tokenId,
                     price,
                   });
+                  await setStore(store);
                   message.channel.send('treasury: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price);
                 } else {
                   message.channel.send('treasury: already selling nft: ' + tokenId);
@@ -1147,20 +1183,20 @@ Help
           } else if (split[0] === prefix + 'unsell' && split.length >= 2) {
             const buyId = parseInt(split[1], 10);
             if (!isNaN(buyId)) {
-              let store = stores.find(store => store.userId === message.author.id);
-              let entryIndex = store ? store.entries.findIndex(entry => entry.id === buyId) : -1;
+              const store = await getStore();
+              let booth = store.booths.find(store => store.userId === message.author.id);
+              let entryIndex = booth ? booth.entries.findIndex(entry => entry.id === buyId) : -1;
               if (entryIndex === -1) {
                 const member = await message.channel.guild.members.fetch(message.author.id);
                 const treasurer = member.roles.cache.some(role => role.name === treasurerRoleName);
                 if (treasurer) {
-                  store = stores.find(store => store.userId === 'treasury');
-                  entryIndex = store ? store.entries.findIndex(entry => entry.id === buyId) : -1;
+                  booth = store.booths.find(store => store.userId === 'treasury');
+                  entryIndex = booth ? store.entries.findIndex(entry => entry.id === buyId) : -1;
                 }
               }
               if (entryIndex !== -1) {
-                // const entry = store[entryIndex];
-                store.entries.splice(entryIndex, 1);
-
+                booth.entries.splice(entryIndex, 1);
+                await setStore(store);
                 message.channel.send('<@!' + message.author.id + '>: unlisted sell ' + buyId);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: unknown sell id: ' + buyId);
@@ -1169,13 +1205,15 @@ Help
               message.channel.send('<@!' + message.author.id + '>: invalid sell id: ' + split[1]);
             }
           } else if (split[0] === prefix + 'buy' && split.length >= 2) {
+            const store = await getStore();
+
             const buyId = parseInt(split[1], 10);
-            let store = null;
+            let booth = null;
             let entry = null;
-            for (const s of stores) {
-              for (const e of s.entries) {
+            for (const b of store.booths) {
+              for (const e of b.entries) {
                 if (e.id === buyId) {
-                  store = s;
+                  booth = b;
                   entry = e;
                   break;
                 }
@@ -1196,7 +1234,7 @@ Help
                     .mul(new web3.utils.BN(1e9))
                     .mul(new web3.utils.BN(1e9)),
                 };
-                const userIds = [message.author.id, store.userId];
+                const userIds = [message.author.id, booth.userId];
                 const addresses = [];
                 for (const userId of userIds) {
                   let mnemonic;
@@ -1242,8 +1280,6 @@ Help
                     0, 0,
                   );
                   
-                  store.entries.splice(store.entries.indexOf(entry), 1);
-                  
                   status = true;
                 } catch (err) {
                   console.warn(err.stack);
@@ -1251,6 +1287,8 @@ Help
                 }
 
                 if (status) {
+                  store.entries.splice(store.entries.indexOf(entry), 1);
+                  await setStore(store);
                   message.channel.send('<@!' + message.author.id + '>: got ' + tokenId + ' for ' + price + '. noice!');
                 } else {
                   message.channel.send('<@!' + message.author.id + '>: buy failed');
@@ -2024,7 +2062,7 @@ Help
               const mnemonic = split.join(' ');
               if (bip39.validateMnemonic(mnemonic)) {
                 await ddb.putItem({
-                  TableName: tableName,
+                  TableName: usersTableName,
                   Item: {
                     email: {S: id + '.discord'},
                     mnemonic: {S: mnemonic},
