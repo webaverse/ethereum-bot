@@ -27,6 +27,7 @@ const awsConfig = new AWS.Config({
   region: 'us-west-1',
 });
 const ddb = new AWS.DynamoDB(awsConfig);
+const ddbd = new AWS.DynamoDB.DocumentClient(awsConfig);
 // const guildId = '433492168825634816';
 // const channelName = 'token-hax';
 const adminUserId = '284377201233887233';
@@ -111,7 +112,6 @@ const _readStorageHashAsBuffer = async hash => {
     return null;
   }
 };
-const _clone = o => JSON.parse(JSON.stringify(o));
 
 (async () => {
   const web3 = new Web3(new Web3.providers.HttpProvider('http://13.56.80.83:8545'));
@@ -147,17 +147,17 @@ const _clone = o => JSON.parse(JSON.stringify(o));
     if (store) {
       return store;
     } else {
-      const result = await ddb.getItem({
+      const result = await ddbd.get({
         TableName: storeTableName,
         Key: {
-          id: {S: 'store'},
+          id: 'store',
         },
         /* Item: {
           email: {S: id},
           mnemonic: {S: mnemonic},
         }, */
       }).promise();
-      const store = (result && result.Item && _clone(result.Item)) || {
+      const store = (result && result.Item) || {
         id: 'store',
         nextBuyId: 0,
         booths: [],
@@ -166,7 +166,7 @@ const _clone = o => JSON.parse(JSON.stringify(o));
     }
   };
   const setStore = async store => {
-    await ddb.setItem({
+    await ddbd.put({
       TableName: storeTableName,
       Item: store,
     }).promise();
@@ -429,6 +429,21 @@ Key Management (DM to bot)
 Help
 .help - show this info
 \`\`\``);
+
+// mighty minting machine
+// 10B total supply
+// 1 million grease minted
+// packs of grease (sample, 25, 50, 100)
+// 1000 grease = $25
+// 2000 grease = $50
+// 4000 grease = $100
+// 0.25 per mint
+// 10 = $0.25
+// 10 grease per mint transaction
+// 2 types of fees: paid by minter, paid from treasury (if you have crafter role)
+// opensea fee
+// publish blog post on mainnet coming
+
             m.react('❌');
             m.requester = message.author;
             helps.push(m);
@@ -1068,7 +1083,7 @@ Help
                 const [usernames, filenames] = await Promise.all([
                   Promise.all(booth.entries.map(async entry => {
                     if (booth.userId !== 'treasury') {
-                      const member = await message.channel.guild.members.fetch(entry.userId);
+                      const member = await message.channel.guild.members.fetch(booth.userId);
                       const user = member ? member.user : null;
                       if (user) {
                         return user.username;
@@ -1162,7 +1177,7 @@ Help
                   store.booths.push(booth);
                 }
                 if (!booth.entries.some(entry => entry.tokenId === tokenId)) {
-                  const buyId = ++stores.nextBuyId;
+                  const buyId = ++store.nextBuyId;
                   booth.entries.push({
                     // userId: 'treasury',
                     id: buyId,
@@ -1191,7 +1206,7 @@ Help
                 const treasurer = member.roles.cache.some(role => role.name === treasurerRoleName);
                 if (treasurer) {
                   booth = store.booths.find(store => store.userId === 'treasury');
-                  entryIndex = booth ? store.entries.findIndex(entry => entry.id === buyId) : -1;
+                  entryIndex = booth ? booth.entries.findIndex(entry => entry.id === buyId) : -1;
                 }
               }
               if (entryIndex !== -1) {
@@ -1236,6 +1251,7 @@ Help
                 };
                 const userIds = [message.author.id, booth.userId];
                 const addresses = [];
+                // console.log('got user ids', userIds);
                 for (const userId of userIds) {
                   let mnemonic;
                   if (userId !== 'treasury') {
@@ -1287,9 +1303,9 @@ Help
                 }
 
                 if (status) {
-                  store.entries.splice(store.entries.indexOf(entry), 1);
+                  booth.entries.splice(booth.entries.indexOf(entry), 1);
                   await setStore(store);
-                  message.channel.send('<@!' + message.author.id + '>: got ' + tokenId + ' for ' + price + '. noice!');
+                  message.channel.send('<@!' + message.author.id + '>: got sale #' + tokenId + ' for ' + price + '. noice!');
                 } else {
                   message.channel.send('<@!' + message.author.id + '>: buy failed');
                 }
