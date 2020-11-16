@@ -1107,7 +1107,7 @@ Help
             }
             if (booth.entries.length > 0) {
               try {
-                const [usernames, filenames] = await Promise.all([
+                const [usernames, filenames, packedBalances] = await Promise.all([
                   Promise.all(booth.entries.map(async entry => {
                     if (booth.userId !== 'treasury') {
                       const member = await message.channel.guild.members.fetch(booth.userId);
@@ -1127,9 +1127,13 @@ Help
                     const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
                     return filename;
                   })),
+                  Promise.all(booth.entries.map(async entry => {
+                    const packedBalance = await contracts.NFT.methods.getPackedBalance(entry.tokenId).call();
+                    return packedBalance;
+                  })),
                 ]);
 
-                s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```' + booth.entries.map((entry, i) => `#${entry.id}: NFT ${entry.tokenId} (${filenames[i]}) for ${entry.price} FT`).join('\n') + '```';
+                s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```' + booth.entries.map((entry, i) => `#${entry.id}: NFT ${entry.tokenId} (${filenames[i]})${packedBalances[i] > 0 ? (' + ' + packedBalances[i] + ' FT') : ''} for ${entry.price} FT`).join('\n') + '```';
               } catch(err) {
                 console.warn(err);
               }
@@ -1484,8 +1488,8 @@ Help
             const tokenId = parseInt(split[1], 10);
             let match;
             if (!isNaN(tokenId)) {
-              const balance = await contracts.NFT.methods.getPackedBalance(tokenId).call();
-              message.channel.send('<@!' + message.author.id + '>: packed balance of #' + tokenId + ': ' + balance);
+              const packedBalance = await contracts.NFT.methods.getPackedBalance(tokenId).call();
+              message.channel.send('<@!' + message.author.id + '>: packed balance of #' + tokenId + ': ' + packedBalance);
             } else {
               let address, userLabel;
               const _loadFromUserId = async userId => {
