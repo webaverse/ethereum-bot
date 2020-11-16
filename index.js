@@ -2187,7 +2187,7 @@ Help
                         const response2 = await res.json(); */
 
                         if (status) {
-                          message.channel.send('<@!' + message.author.id + '>: minted ' + (tokenIds[0] === tokenIds[1] ? ('#' + tokenIds[0]) : tokenIds.map(n => '#' + n).join(' - ')) + ' (' + storageHost + '/' + hash + ')');
+                          message.channel.send('<@!' + message.author.id + '>: minted ' + (tokenIds[0] === tokenIds[1] ? ('#' + tokenIds[0]) : tokenIds.map(n => '#' + n).join(' - ')) + ' (' + hash + ')');
                         } else {
                           message.channel.send('<@!' + message.author.id + '>: mint transaction failed: ' + transactionHash);
                         }
