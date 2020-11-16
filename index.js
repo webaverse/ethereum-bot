@@ -1968,7 +1968,7 @@ Help
               const ext = match[2];
               message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash.slice(2) + '.' + ext + '/' + basename + '.png');
             } else {
-              message.channel.send('<@!' + message.author.id + '>: ' + id + ': no preivew available');
+              message.channel.send('<@!' + message.author.id + '>: ' + id + ': no preview available');
             }
           } else if (split[0] === prefix + 'gif' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
