@@ -1966,7 +1966,7 @@ Help
             if (match) {
               const basename = match[1];
               const ext = match[2];
-              const m = message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash.slice(2) + '.' + ext + '/' + basename + '.png');
+              const m = await message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash.slice(2) + '.' + ext + '/' + basename + '.png');
               m.react('❌');
               m.requester = message.author;
               helps.push(m);
