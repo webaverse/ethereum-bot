@@ -2145,23 +2145,27 @@ Help
                             .mul(new web3.utils.BN(1e9)),
                         };
 
-                        let status, transactionHash;
+                        let status, transactionHash, tokenIds;
                         try {
                           {
                             const result = await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['NFT']._address, fullAmount.v);
                             status = result.status;
                             transactionHash = '0x0';
+                            tokenIds = [];
                           }
                           if (status) {
                             // console.log('minting', ['NFT', 'mint', address, '0x' + hash, name, quantity]);
                             const result = await runSidechainTransaction(mnemonic)('NFT', 'mint', address, '0x' + hash, name, quantity);
                             status = result.status;
                             transactionHash = result.transactionHash;
+                            const tokenId = new web3.utils.BN(result.logs[0].topics[3].slice(2), 16).toNumber();
+                            tokenIds = [tokenId, tokenId + quantity - 1];
                           }
                         } catch(err) {
                           console.warn(err.stack);
                           status = false;
                           transactionHash = '0x0';
+                          tokenIds = [];
                         }
 
                         /* const contractSource = await blockchain.getContractSource('mintNft.cdc');
@@ -2183,7 +2187,7 @@ Help
                         const response2 = await res.json(); */
 
                         if (status) {
-                          message.channel.send('<@!' + message.author.id + '>: minted ' + hash + ' (' + storageHost + '/' + hash + ')');
+                          message.channel.send('<@!' + message.author.id + '>: minted ' + (tokenIds[0] === tokenIds[1] ? ('#' + tokenIds[0]) : tokenIds.map(n => '#' + n).join(' - ')) + ' (' + storageHost + '/' + hash + ')');
                         } else {
                           message.channel.send('<@!' + message.author.id + '>: mint transaction failed: ' + transactionHash);
                         }
