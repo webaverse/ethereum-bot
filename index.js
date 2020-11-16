@@ -1476,9 +1476,28 @@ Help
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
               
-              const result = await runSidechainTransaction(mnemonic)('NFT', 'pack', address, tokenId, amount);
+              const fullAmount = {
+                t: 'uint256',
+                v: new web3.utils.BN(1e9)
+                  .mul(new web3.utils.BN(1e9))
+                  .mul(new web3.utils.BN(1e9)),
+              };
 
-              if (result.status) {
+              let status;
+              try {
+                {
+                  const result = await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['NFT']._address, fullAmount.v);
+                  status = result.status;
+                }
+                if (status) {
+                  const result = await runSidechainTransaction(mnemonic)('NFT', 'pack', address, tokenId, amount);
+                  status = result.status;
+                }
+              } catch(err) {
+                console.warn(err);
+              }
+
+              if (status) {
                 message.channel.send('<@!' + message.author.id + '>: packed ' + amount + ' into #' + amount);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: failed to pack FT into NFT: ' + tokenId);
