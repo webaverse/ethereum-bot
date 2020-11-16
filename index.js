@@ -402,7 +402,7 @@ Minting
 .mint [count]? (in the file upload comment) - mint [count] NFTs from file upload
 
 Packing
-.peek [nftid] - check packed ft balance of [nftid]
+.packs [@user|nftid] - check packed ft balances of [@user] or [nftid]
 .pack [nftid] [amount] - pack [amount] ft from yourself into [nftid]
 .unpack [nftid] [amount] - unpack [amount] ft from [nftid] to yourself
 
@@ -1455,13 +1455,69 @@ Help
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid trade: ' + split[1]);
             }
-          } else if (split[0] === prefix + 'peek' && split.length >= 2) {
+          } else if (split[0] === prefix + 'packs') {
             const tokenId = parseInt(split[1], 10);
+            let match;
             if (!isNaN(tokenId)) {
               const balance = await contracts.NFT.methods.getPackedBalance(tokenId).call();
               message.channel.send('<@!' + message.author.id + '>: packed balance of #' + tokenId + ': ' + balance);
             } else {
-              message.channel.send('<@!' + message.author.id + '>: invalid token id: ' + split[1]);
+              let address, userLabel;
+              const _loadFromUserId = async userId => {
+                const spec = await _getUser(userId);
+                let mnemonic = spec.mnemonic;
+                if (!mnemonic) {
+                  const spec = await _genKey(userId);
+                  mnemonic = spec.mnemonic;
+                }
+
+                const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                address = wallet.getAddressString();
+
+                userLabel = '<@!' + userId + '>';
+              };
+              const _loadFromAddress = a => {
+                address = a;
+                userLabel = '`0x' + a + '`';
+              };
+              const _loadFromTreasury = () => {
+                const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                address = wallet.getAddressString();
+                userLabel = 'treasury';
+              };
+              if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
+                await _loadFromUserId(match[1]);
+              } else if (split.length >= 2 && (match = split[1].match(/^0x([0-9a-f]+)$/i))) {
+                _loadFromAddress(match[1]);
+              } else if (split.length >= 2 && split[1] === 'treasury') {
+                _loadFromTreasury();
+              } else {
+                await _loadFromUserId(message.author.id);
+              }
+              
+              const nftBalance = await contracts.NFT.methods.balanceOf(address).call();
+              const packedBalances = [];
+              for (let i = 0; i < nftBalance; i++) {
+                const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
+                const packedBalance = await contracts.NFT.methods.getPackedBalance(id).call();
+                if (packedBalance > 0) {
+                  packedBalances.push({
+                    id,
+                    packedBalance,
+                  });
+                }
+              }
+
+              let s = userLabel + '\'s packs:\n';
+              if (packedBalances.length > 0) {
+                s += '```' + packedBalances.map((pack, i) => `${pack.id}. contains ${pack.packedBalance} FT`) + '```';
+              } else {
+                s += '```packs empty```';
+              }
+              const m = await message.channel.send(s);
+              m.react('❌');
+              m.requester = message.author;
+              helps.push(m);
             }
           } else if (split[0] === prefix + 'pack' && split.length >= 3) {
             const tokenId = parseInt(split[1], 10);
