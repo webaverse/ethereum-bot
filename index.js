@@ -1133,7 +1133,7 @@ Help
                   })),
                 ]);
 
-                s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```' + booth.entries.map((entry, i) => `#${entry.id}: NFT ${entry.tokenId} (${filenames[i]})${packedBalances[i] > 0 ? (' + ' + packedBalances[i] + ' FT') : ''} for ${entry.price} FT`).join('\n') + '```';
+                s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```' + booth.entries.map((entry, i) => `#${entry.id}: NFT ${entry.tokenId} (${filenames[i]}${packedBalances[i] > 0 ? (' + ' + packedBalances[i] + ' FT') : ''}) for ${entry.price} FT`).join('\n') + '```';
               } catch(err) {
                 console.warn(err);
               }
