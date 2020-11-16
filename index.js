@@ -112,6 +112,16 @@ const _readStorageHashAsBuffer = async hash => {
     return null;
   }
 };
+const makePromise = () => {
+  let accept, reject;
+  const p = new Promise((a, r) => {
+    accept = a;
+    reject = r;
+  });
+  p.accept = accept;
+  p.reject = reject;
+  return p;
+};
 
 (async () => {
   const web3 = new Web3(new Web3.providers.HttpProvider('http://13.56.80.83:8545'));
@@ -172,48 +182,79 @@ const _readStorageHashAsBuffer = async hash => {
     }).promise();
   };
 
+  const txQueues = [];
   const runSidechainTransaction = mnemonic => {
     const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
     const address = wallet.getAddressString();
 
-    return async (contractName, method, ...args) => {
-      // console.log('run tx', contracts['sidechain'], [contractName, method]);
-      const txData = contracts[contractName].methods[method](...args);
-      const data = txData.encodeABI();
-      const gas = await txData.estimateGas({
-        from: address,
-      });
-      let gasPrice = await web3.eth.getGasPrice();
-      gasPrice = parseInt(gasPrice, 10);
+    const fn = async (contractName, method, ...args) => {
+      let entry = txQueues[address];
+      if (!entry) {
+        entry = {
+          running: false,
+          cbs: [],
+        };
+        txQueues[address] = entry;
+      }
+      if (!entry.running) {
+        entry.running = true;
 
-      const privateKey = wallet.getPrivateKeyString();
-      const nonce = await web3.eth.getTransactionCount(address);
-      const privateKeyBytes = Uint8Array.from(web3.utils.hexToBytes(privateKey));
+        // console.log('run tx', contracts['sidechain'], [contractName, method]);
+        const txData = contracts[contractName].methods[method](...args);
+        const data = txData.encodeABI();
+        const gas = await txData.estimateGas({
+          from: address,
+        });
+        let gasPrice = await web3.eth.getGasPrice();
+        gasPrice = parseInt(gasPrice, 10);
 
-      let tx = Transaction.fromTxData({
-        to: contracts[contractName]._address,
-        nonce: '0x' + new web3.utils.BN(nonce).toString(16),
-        // gas: '0x' + new web3.utils.BN(gasPrice).toString(16),
-        gasPrice: '0x' + new web3.utils.BN(gasPrice).toString(16),
-        gasLimit: '0x' + new web3.utils.BN(8000000).toString(16),
-        data,
-      }, {
-        common: Common.forCustomChain(
-          'mainnet',
-          {
-            name: 'geth',
-            networkId: 1,
-            chainId: 1337,
-          },
-          'petersburg',
-        ),
-      }).sign(privateKeyBytes);
-      const rawTx = '0x' + tx.serialize().toString('hex');
-      // console.log('signed tx', tx, rawTx);
-      const receipt = await web3.eth.sendSignedTransaction(rawTx);
-      // console.log('sent tx', receipt);
-      return receipt;
+        const privateKey = wallet.getPrivateKeyString();
+        const nonce = await web3.eth.getTransactionCount(address);
+        const privateKeyBytes = Uint8Array.from(web3.utils.hexToBytes(privateKey));
+
+        let tx = Transaction.fromTxData({
+          to: contracts[contractName]._address,
+          nonce: '0x' + new web3.utils.BN(nonce).toString(16),
+          // gas: '0x' + new web3.utils.BN(gasPrice).toString(16),
+          gasPrice: '0x' + new web3.utils.BN(gasPrice).toString(16),
+          gasLimit: '0x' + new web3.utils.BN(8000000).toString(16),
+          data,
+        }, {
+          common: Common.forCustomChain(
+            'mainnet',
+            {
+              name: 'geth',
+              networkId: 1,
+              chainId: 1337,
+            },
+            'petersburg',
+          ),
+        }).sign(privateKeyBytes);
+        const rawTx = '0x' + tx.serialize().toString('hex');
+
+        const receipt = await web3.eth.sendSignedTransaction(rawTx);
+        
+        entry.running = false;
+        
+        if (entry.cbs.length > 0) {
+          entry.cbs.shift()();
+        }
+
+        return receipt;
+      } else {
+        const p = makePromise();
+        entry.cbs.push(async () => {
+          try {
+            const result = await fn(contractName, method, ...args);
+            p.accept(result);
+          } catch(err) {
+            p.reject(err);
+          }
+        });
+        return await p;
+      }
     };
+    return fn;
   };
 
   const client = new Discord.Client();
@@ -1226,8 +1267,6 @@ Help
             if (entry) {
               if (entry.userId !== message.author.id) {
                 const {tokenId, price} = entry;
-
-                // console.log('got entry', entry);
 
                 const fullAmount = {
                   t: 'uint256',
