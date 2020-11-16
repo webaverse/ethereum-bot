@@ -1700,7 +1700,7 @@ Help
                   if (status) {
                     message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to treasury');
                   } else {
-                    message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + response2.transaction.errorMessage);
+                    message.channel.send('<@!' + message.author.id + '>: could not transfer');
                   }
                 } else {
                   message.channel.send('unknown user');
