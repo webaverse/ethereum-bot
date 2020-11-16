@@ -1998,7 +1998,7 @@ Help
               const ext = match[2];
               message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash.slice(2) + '.' + ext + '/' + basename + '.gif');
             } else {
-              message.channel.send('<@!' + message.author.id + '>: ' + id + ': no preivew available');
+              message.channel.send('<@!' + message.author.id + '>: ' + id + ': no preview available');
             }
           } else if (split[0] === prefix + 'key') {
             let {mnemonic} = await _getUser();
