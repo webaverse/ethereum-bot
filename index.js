@@ -1108,20 +1108,7 @@ Help
             }
             if (booth.entries.length > 0) {
               try {
-                const [usernames, filenames, packedBalances] = await Promise.all([
-                  Promise.all(booth.entries.map(async entry => {
-                    if (booth.address !== treasuryAddress) {
-                      const member = await message.channel.guild.members.fetch(booth.address);
-                      const user = member ? member.user : null;
-                      if (user) {
-                        return user.username;
-                      } else {
-                        return 'Unknown';
-                      }
-                    } else {
-                      return 'Treasury';
-                    }
-                  })),
+                const [filenames, packedBalances] = await Promise.all([
                   Promise.all(booth.entries.map(async entry => {
                     const hashNumberString = await contracts.NFT.methods.getHash(entry.tokenId).call();
                     const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
@@ -1134,12 +1121,12 @@ Help
                   })),
                 ]);
 
-                s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```' + booth.entries.map((entry, i) => `#${entry.id}: NFT ${entry.tokenId} (${filenames[i]}${packedBalances[i] > 0 ? (' + ' + packedBalances[i] + ' FT') : ''}) for ${entry.price} FT`).join('\n') + '```';
+                s += (booth.address !== treasuryAddress ? booth.address : 'treasury') + '\'s store: ```' + booth.entries.map((entry, i) => `#${entry.id}: NFT ${entry.tokenId} (${filenames[i]}${packedBalances[i] > 0 ? (' + ' + packedBalances[i] + ' FT') : ''}) for ${entry.price} FT`).join('\n') + '```';
               } catch(err) {
                 console.warn(err);
               }
             } else {
-              s += (userId !== 'treasury' ? ('<@!' + userId + '>') : 'treasury') + '\'s store: ```empty```';
+              s += (booth.address !== treasuryAddress ? booth.address : 'treasury') + '\'s store: ```empty```';
             }
             message.channel.send(s);
           /* } else if (split[0] === prefix + 'treasury') {
