@@ -638,7 +638,7 @@ Help
               const response2 = await res.json();
               const balance = parseFloat(response2.encodedData.value); */
 
-              message.channel.send('<@!' + userId + '> is ' + balance + ' grease');
+              message.channel.send('<@!' + userId + '> has ' + balance + ' grease');
             } else if (split[1] === 'treasury') {
               const balance = await contracts.FT.methods.balanceOf(treasuryAddress).call();
 
@@ -658,7 +658,7 @@ Help
               const response2 = await res.json();
               const balance = parseFloat(response2.encodedData.value); */
 
-              message.channel.send('treasury is ' + balance + ' grease');
+              message.channel.send('treasury has ' + balance + ' grease');
             } else {
               let {mnemonic} = await _getUser();
               if (!mnemonic) {
@@ -686,7 +686,7 @@ Help
               const response2 = await res.json();
               const balance = parseFloat(response2.encodedData.value); */
 
-              message.channel.send('<@!' + message.author.id + '> is ' + balance + ' grease');
+              message.channel.send('<@!' + message.author.id + '> has ' + balance + ' grease');
             }
           } else if (split[0] === prefix + 'address') {
             let user, address, userLabel;
@@ -860,7 +860,7 @@ Help
               const response2 = await res.json(); */
 
               if (status) {
-                message.channel.send('<@!' + message.author.id + '>: greased ' + amount + ' to ' + address2);
+                message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' to ' + address2);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
               }
