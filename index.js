@@ -1280,7 +1280,9 @@ Help
                       "#address": 'address',
                     },
                     ExpressionAttributeValues: {
-                      ":addr": booth.address,
+                      ":addr": {
+                        S: booth.address,
+                      },
                     },
                   }).promise();
                   if (tokenItem && tokenItem.Item) {
