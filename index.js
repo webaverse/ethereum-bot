@@ -1268,51 +1268,42 @@ Help
               if (entry.userId !== message.author.id) {
                 const {tokenId, price} = entry;
 
-                let boothUserId;
+                let {mnemonic: userMnemonic} = await _getUser();
+                if (!userMnemonic) {
+                  const spec = await _genKey();
+                  userMnemonic = spec.mnemonic;
+                }
+
+                let boothMnemonic;
                 if (booth.address === treasuryAddress) {
-                  boothUserId = 'treasury';
+                  boothMnemonic = treasuryMnemonic;
                 } else {
-                  boothUserId = null;
+                  boothMnemonic = null;
                   const tokenItem = await ddb.query({
                     TableName: usersTableName,
+                    IndexName: 'address-index',
                     KeyConditionExpression: "#address = :addr",
                     ExpressionAttributeNames:{
-                      "#address": 'address',
+                      '#address': 'address',
                     },
                     ExpressionAttributeValues: {
-                      ":addr": {
+                      ':addr': {
                         S: booth.address,
                       },
                     },
                   }).promise();
-                  if (tokenItem && tokenItem.Item) {
-                    const match = tokenItem.Item.id.S.match(/^(.+)\.discordtoken$/);
-                    if (match) {
-                      boothUserId = match[1];
-                    }
+                  if (tokenItem && tokenItem.Items && tokenItem.Items.length) {
+                    boothMnemonic = tokenItem.Items[0].mnemonic.S;
                   }
-                  if (!boothUserId) {
+                  if (!boothMnemonic) {
                     message.channel.send('<@!' + message.author.id + '>: failed to look up booth user');
                     return;
                   }
                 }
 
-                const userIds = [message.author.id, boothUserId];
+                const mnemonics = [userMnemonic, boothMnemonic];
                 const addresses = [];
-                // console.log('got user ids', userIds);
-                for (const userId of userIds) {
-                  let mnemonic;
-                  if (userId !== 'treasury') {
-                    const userSpec = await _getUser(userId);
-                    mnemonic = userSpec.mnemonic;
-                    if (!mnemonic) {
-                      const spec = await _genKey(userId);
-                      mnemonic = spec.mnemonic;
-                    }
-                  } else {
-                    mnemonic = treasuryMnemonic;
-                  }
-
+                for (const mnemonic of mnemonics) {
                   const fullAmount = {
                     t: 'uint256',
                     v: new web3.utils.BN(1e9)
