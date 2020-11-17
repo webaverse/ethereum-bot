@@ -566,48 +566,30 @@ Help
               mnemonic = spec.mnemonic;
             }
 
-            if (split[1]) {
-              const avatar = split[1];
+            const id = parseInt(split[1], 10);
 
-              const {filename, hash} = await (async () => {
-                const contractSource = await blockchain.getContractSource('getNft.cdc');
-
-                const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    limit: 100,
-                    script: contractSource
-                      .replace(/ARG0/g, avatar),
-                    wait: true,
-                  }),
-                });
-                const response2 = await res.json();
-                const [hash, filename] = response2.encodedData.value.map(value => value.value && value.value.value);
-                return {hash, filename};
-              })();
-              const url = `${storageHost}/${hash}`;
-              const ext = getExt(filename);
-              const preview = `${previewHost}/${hash}.${ext}/preview.${previewExt}`;
-              {
-                const contractSource = await blockchain.getContractSource('setUserDataMulti.cdc');
-
-                const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    address: addr,
-                    mnemonic,
-
-                    limit: 100,
-                    transaction: contractSource
-                      .replace(/ARG0/g, JSON.stringify(['avatarUrl', 'avatarFilename', 'avatarPreview']))
-                      .replace(/ARG1/g, JSON.stringify([url, filename, preview])),
-                    wait: true,
-                  }),
-                });
-                const response2 = await res.json();
+            if (!isNaN(id)) {
+              let {mnemonic} = await _getUser();
+              if (!mnemonic) {
+                const spec = await _genKey();
+                mnemonic = spec.mnemonic;
               }
+              
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+              
+              const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+              const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+              const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
 
-              message.channel.send('<@!' + message.author.id + '>: set avatar to ' + JSON.stringify(avatar));
+              const avatarUrl = `${storageHost}/${hash}`;
+              const avatarPreview = `${previewHost}/[${avatarUrl}]/preview.${previewExt}`;
+              
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarUrl', avatarUrl);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarFileName', avatarUrl);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarPreview', avatarPreview);
+
+              message.channel.send('<@!' + message.author.id + '>: set avatar to ' + id);
             } else {
               /* const contractSource = await blockchain.getContractSource('getUserData.cdc');
 
