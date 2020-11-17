@@ -200,49 +200,51 @@ const makePromise = () => {
       }
       if (!entry.running) {
         entry.running = true;
-
-        // console.log('run tx', contracts['sidechain'], [contractName, method]);
-        const txData = contracts[contractName].methods[method](...args);
-        const data = txData.encodeABI();
-        const gas = await txData.estimateGas({
-          from: address,
-        });
-        let gasPrice = await web3.eth.getGasPrice();
-        gasPrice = parseInt(gasPrice, 10);
-
-        const privateKey = wallet.getPrivateKeyString();
-        const nonce = await web3.eth.getTransactionCount(address);
-        const privateKeyBytes = Uint8Array.from(web3.utils.hexToBytes(privateKey));
-
-        let tx = Transaction.fromTxData({
-          to: contracts[contractName]._address,
-          nonce: '0x' + new web3.utils.BN(nonce).toString(16),
-          // gas: '0x' + new web3.utils.BN(gasPrice).toString(16),
-          gasPrice: '0x' + new web3.utils.BN(gasPrice).toString(16),
-          gasLimit: '0x' + new web3.utils.BN(8000000).toString(16),
-          data,
-        }, {
-          common: Common.forCustomChain(
-            'mainnet',
-            {
-              name: 'geth',
-              networkId: 1,
-              chainId: 1337,
-            },
-            'petersburg',
-          ),
-        }).sign(privateKeyBytes);
-        const rawTx = '0x' + tx.serialize().toString('hex');
-
-        const receipt = await web3.eth.sendSignedTransaction(rawTx);
         
-        entry.running = false;
-        
-        if (entry.cbs.length > 0) {
-          entry.cbs.shift()();
+        try {
+          // console.log('run tx', contracts['sidechain'], [contractName, method]);
+          const txData = contracts[contractName].methods[method](...args);
+          const data = txData.encodeABI();
+          const gas = await txData.estimateGas({
+            from: address,
+          });
+          let gasPrice = await web3.eth.getGasPrice();
+          gasPrice = parseInt(gasPrice, 10);
+
+          const privateKey = wallet.getPrivateKeyString();
+          const nonce = await web3.eth.getTransactionCount(address);
+          const privateKeyBytes = Uint8Array.from(web3.utils.hexToBytes(privateKey));
+
+          let tx = Transaction.fromTxData({
+            to: contracts[contractName]._address,
+            nonce: '0x' + new web3.utils.BN(nonce).toString(16),
+            // gas: '0x' + new web3.utils.BN(gasPrice).toString(16),
+            gasPrice: '0x' + new web3.utils.BN(gasPrice).toString(16),
+            gasLimit: '0x' + new web3.utils.BN(8000000).toString(16),
+            data,
+          }, {
+            common: Common.forCustomChain(
+              'mainnet',
+              {
+                name: 'geth',
+                networkId: 1,
+                chainId: 1337,
+              },
+              'petersburg',
+            ),
+          }).sign(privateKeyBytes);
+          const rawTx = '0x' + tx.serialize().toString('hex');
+
+          const receipt = await web3.eth.sendSignedTransaction(rawTx);
+          
+          return receipt;
+        } finally {
+          entry.running = false;
+
+          if (entry.cbs.length > 0) {
+            entry.cbs.shift()();
+          }
         }
-
-        return receipt;
       } else {
         const p = makePromise();
         entry.cbs.push(async () => {
