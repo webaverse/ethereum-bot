@@ -41,6 +41,8 @@ const treasurerRoleName = 'Treasurer';
 const treasuryWallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
 const treasuryAddress = treasuryWallet.getAddressString();
 
+Error.stackTraceLimit = 300;
+
 function getExt(fileName) {
   const match = fileName.match(/\.([^\.]+)$/);
   return match && match[1].toLowerCase();
