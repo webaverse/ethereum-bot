@@ -1081,27 +1081,27 @@ Help
               message.channel.send('<@!' + message.author.id + '>: invalid trade peer: ' + split[1]);
             }
           } else if (split[0] === prefix + 'store') {
-            let userId;
+            let address;
             if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
-              userId = match[1];
+              const userId = match[1];
+              let {mnemonic} = await _getUser(userId);
+              if (!mnemonic) {
+                const spec = await _genKey(userId);
+                mnemonic = spec.mnemonic;
+              }
+
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
             } else {
-              /* const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-              const address = wallet.getAddressString(); */
-              userId = 'treasury';
+              address = treasuryAddress;
             }
-            /* const spec = await _getUser(userId);
-            let mnemonic = spec.mnemonic;
-            if (!mnemonic) {
-              const spec = await _genKey(userId);
-              mnemonic = spec.mnemonic;
-            } */
 
             let s = '';
             const store = await getStore();
-            let booth = store.booths.find(store => store.userId === userId);
+            let booth = store.booths.find(store => store.address === address);
             if (!booth) {
               booth = {
-                userId,
+                address,
                 entries: [],
               };
               store.booths.push(booth);
@@ -1110,8 +1110,8 @@ Help
               try {
                 const [usernames, filenames, packedBalances] = await Promise.all([
                   Promise.all(booth.entries.map(async entry => {
-                    if (booth.userId !== 'treasury') {
-                      const member = await message.channel.guild.members.fetch(booth.userId);
+                    if (booth.address !== treasuryAddress) {
+                      const member = await message.channel.guild.members.fetch(booth.address);
                       const user = member ? member.user : null;
                       if (user) {
                         return user.username;
@@ -1178,10 +1178,10 @@ Help
 
               const store = await getStore();
               if (ownTokenIds.includes(tokenId)) {
-                let booth = store.booths.find(store => store.userId === message.author.id);
+                let booth = store.booths.find(store => store.address === address);
                 if (!booth) {
                   booth = {
-                    userId: message.author.id,
+                    address,
                     entries: [],
                   };
                   store.booths.push(booth);
@@ -1189,7 +1189,6 @@ Help
                 if (!booth.entries.some(entry => entry.tokenId === tokenId)) {
                   const buyId = ++store.nextBuyId;
                   booth.entries.push({
-                    // userId: message.author.id,
                     id: buyId,
                     tokenId,
                     price,
@@ -1200,10 +1199,11 @@ Help
                   message.channel.send('<@!' + message.author.id + '>: already selling nft: ' + tokenId);
                 }
               } else if (treasuryTokenIds.includes(tokenId)) {
-                let booth = store.booths.find(store => store.userId === 'treasury');
+                const address = treasuryAddress;
+                let booth = store.booths.find(store => store.address === address);
                 if (!booth) {
                   booth = {
-                    userId: 'treasury',
+                    address,
                     entries: [],
                   };
                   store.booths.push(booth);
@@ -1211,7 +1211,6 @@ Help
                 if (!booth.entries.some(entry => entry.tokenId === tokenId)) {
                   const buyId = ++store.nextBuyId;
                   booth.entries.push({
-                    // userId: 'treasury',
                     id: buyId,
                     tokenId,
                     price,
@@ -1230,14 +1229,23 @@ Help
           } else if (split[0] === prefix + 'unsell' && split.length >= 2) {
             const buyId = parseInt(split[1], 10);
             if (!isNaN(buyId)) {
+              let {mnemonic} = await _getUser();
+              if (!mnemonic) {
+                const spec = await _genKey();
+                mnemonic = spec.mnemonic;
+              }
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+
               const store = await getStore();
-              let booth = store.booths.find(store => store.userId === message.author.id);
+              let booth = store.booths.find(store => store.address === address);
               let entryIndex = booth ? booth.entries.findIndex(entry => entry.id === buyId) : -1;
               if (entryIndex === -1) {
                 const member = await message.channel.guild.members.fetch(message.author.id);
                 const treasurer = member.roles.cache.some(role => role.name === treasurerRoleName);
                 if (treasurer) {
-                  booth = store.booths.find(store => store.userId === 'treasury');
+                  const address = treasuryAddress;
+                  booth = store.booths.find(store => store.address === address);
                   entryIndex = booth ? booth.entries.findIndex(entry => entry.id === buyId) : -1;
                 }
               }
@@ -1273,13 +1281,34 @@ Help
               if (entry.userId !== message.author.id) {
                 const {tokenId, price} = entry;
 
-                const fullAmount = {
-                  t: 'uint256',
-                  v: new web3.utils.BN(1e9)
-                    .mul(new web3.utils.BN(1e9))
-                    .mul(new web3.utils.BN(1e9)),
-                };
-                const userIds = [message.author.id, booth.userId];
+                let boothUserId;
+                if (booth.address === treasuryAddress) {
+                  boothUserId = 'treasury';
+                } else {
+                  boothUserId = null;
+                  const tokenItem = await ddb.query({
+                    TableName: usersTableName,
+                    KeyConditionExpression: "#address = :addr",
+                    ExpressionAttributeNames:{
+                      "#address": 'address',
+                    },
+                    ExpressionAttributeValues: {
+                      ":addr": booth.address,
+                    },
+                  }).promise();
+                  if (tokenItem && tokenItem.Item) {
+                    const match = tokenItem.Item.id.S.match(/^(.+)\.discordtoken$/);
+                    if (match) {
+                      boothUserId = match[1];
+                    }
+                  }
+                  if (!boothUserId) {
+                    message.channel.send('<@!' + message.author.id + '>: failed to look up booth user');
+                    return;
+                  }
+                }
+
+                const userIds = [message.author.id, boothUserId];
                 const addresses = [];
                 // console.log('got user ids', userIds);
                 for (const userId of userIds) {
@@ -1294,6 +1323,13 @@ Help
                   } else {
                     mnemonic = treasuryMnemonic;
                   }
+
+                  const fullAmount = {
+                    t: 'uint256',
+                    v: new web3.utils.BN(1e9)
+                      .mul(new web3.utils.BN(1e9))
+                      .mul(new web3.utils.BN(1e9)),
+                  };
 
                   await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
                   await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
