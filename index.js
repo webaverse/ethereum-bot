@@ -460,10 +460,6 @@ Store
 .unsell [saleid] - unlist [saleid] from the store
 .buy [saleid] - buy the [saleid] from [@user]
 
-Worlds
-.createworld - create a world and print its details
-.destroyworld [worldID] - destroy world with id [worldId]
-
 Key Management (DM to bot)
 .key [new mnemonic key] - set your Discord private key
 .key reset - generate and set a new Discord private key
