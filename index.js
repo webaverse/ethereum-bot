@@ -581,9 +581,11 @@ Help
               const hashNumberString = await contracts.NFT.methods.getHash(id).call();
               const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
               const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
+              const match = filename.match(/^(.+)\.([^\.]+)$/);
+              const ext = match ? match[2] : '';
 
-              const avatarUrl = `${storageHost}/${hash}`;
-              const avatarPreview = `${previewHost}/[${avatarUrl}]/preview.${previewExt}`;
+              const avatarUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
+              const avatarPreview = `${previewHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
               
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarUrl', avatarUrl);
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarFileName', avatarUrl);
