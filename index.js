@@ -1756,7 +1756,7 @@ Help
                   if (status) {
                     message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to 0x' + address2);
                   } else {
-                    message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + response2.transaction.errorMessage);
+                    message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + status);
                   }
                 } else if (split[1] === 'treasury') {
                   let {mnemonic} = await _getUser();
