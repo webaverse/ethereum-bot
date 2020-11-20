@@ -1,6 +1,7 @@
 const http = require('http');
 const https = require('https');
 // const followRedirects = require('follow-redirects');
+const mime = require('mime');
 const AWS = require('aws-sdk');
 /* const flow = {
   sdk: require('@onflow/sdk'),
