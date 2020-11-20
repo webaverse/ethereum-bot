@@ -2112,10 +2112,16 @@ Help
           } else {
             if (split[0] === prefix + 'mint') {
               let quantity = parseInt(split[1], 10);
+              let manualUrl;
               if (isNaN(quantity)) {
                 quantity = 1;
+
+                if (split[1] && /^https?:\/\//.test(split[1])) {
+                  manualUrl = split[1];
+                }
+              } else {
+                manualUrl = split[2];
               }
-              const manualUrl = split[2];
 
               let {mnemonic} = await _getUser();
               if (!mnemonic) {
