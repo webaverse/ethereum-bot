@@ -446,6 +446,7 @@ Account
 
 Minting
 .mint [count]? (in the file upload comment) - mint [count] NFTs from file upload
+.mint [count]? [url] - mint [count] NFTs from the provided url
 
 Packing
 .packs [@user|nftid] - check packed ft balances of [@user] or [nftid]
@@ -2108,11 +2109,12 @@ Help
               message.channel.send('<@!' + message.author.id + '>: failed to destroy world: ' + res.statusCode);
             } */
           } else {
-            if (split[0] === prefix + 'mint' && message.attachments.size > 0) {
+            if (split[0] === prefix + 'mint') {
               let quantity = parseInt(split[1], 10);
               if (isNaN(quantity)) {
                 quantity = 1;
               }
+              const manualUrl = split[2];
 
               let {mnemonic} = await _getUser();
               if (!mnemonic) {
@@ -2120,94 +2122,131 @@ Help
                 mnemonic = spec.mnemonic;
               }
 
-              for (const [key, attachment] of message.attachments) {
-                const {name, url} = attachment;
+              const files = [];
+              if (manualUrl) {
+                const match = manualUrl.match(/^http(s)?:\/\//);
+                if (match) {
+                  const proxyRes = await new Promise((accept, reject) => {
+                    const proxyReq = (match[1] ? https : http).request(manualUrl, proxyRes => {
+                      proxyRes.name = manualUrl.match(/\/([^\/]+?)(?:\?.*)?$/)[1];
+                      if (!/\/..+$/.test(proxyRes.name)) {
+                        const contentType = proxyRes.headers['content-type'];
+                        if (contentType) {
+                          const ext = mime.getExtension(contentType) || 'bin';
+                          proxyRes.name += '.' + ext;
+                        }
+                      }
+                      accept(proxyRes);
+                    });
+                    proxyReq.once('error', reject);
+                    proxyReq.end();
+                  });
+                  files.push(proxyRes);
+                }
+              } else if (message.attachments.size > 0) {
+                for (const [key, attachment] of message.attachments) {
+                  const {name, url} = attachment;
+                  
+                  const proxyRes = await new Promise((accept, reject) => {
+                    const proxyReq = https.request(url, proxyRes => {
+                      proxyRes.name = name;
+                      accept(proxyRes);
+                    });
+                    proxyReq.once('error', reject);
+                    proxyReq.end();
+                  });
+                  files.push(proxyRes);
+                }
+              }
+              if (files.length > 0) {
+                await Promise.all(files.map(async file => {
+                  const req = https.request(storageHost, {
+                    method: 'POST',
+                  }, res => {
+                    const bs = [];
+                    res.on('data', d => {
+                      bs.push(d);
+                    });
+                    res.on('end', async () => {
+                      const b = Buffer.concat(bs);
+                      const s = b.toString('utf8');
+                      const j = JSON.parse(s);
+                      const {hash} = j;
 
-                await new Promise((accept, reject) => {
-                  const proxyReq = https.request(url, proxyRes => {
-                    const req = https.request(storageHost, {
-                      method: 'POST',
-                    }, res => {
-                      const bs = [];
-                      res.on('data', d => {
-                        bs.push(d);
-                      });
-                      res.on('end', async () => {
-                        const b = Buffer.concat(bs);
-                        const s = b.toString('utf8');
-                        const j = JSON.parse(s);
-                        const {hash} = j;
+                      const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                      const address = wallet.getAddressString();
 
-                        const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                        const address = wallet.getAddressString();
+                      const fullAmount = {
+                        t: 'uint256',
+                        v: new web3.utils.BN(1e9)
+                          .mul(new web3.utils.BN(1e9))
+                          .mul(new web3.utils.BN(1e9)),
+                      };
 
-                        const fullAmount = {
-                          t: 'uint256',
-                          v: new web3.utils.BN(1e9)
-                            .mul(new web3.utils.BN(1e9))
-                            .mul(new web3.utils.BN(1e9)),
-                        };
-
-                        let status, transactionHash, tokenIds;
-                        try {
-                          {
-                            const result = await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['NFT']._address, fullAmount.v);
-                            status = result.status;
-                            transactionHash = '0x0';
-                            tokenIds = [];
-                          }
-                          if (status) {
-                            // console.log('minting', ['NFT', 'mint', address, '0x' + hash, name, quantity]);
-                            const result = await runSidechainTransaction(mnemonic)('NFT', 'mint', address, '0x' + hash, name, quantity);
-                            status = result.status;
-                            transactionHash = result.transactionHash;
-                            const tokenId = new web3.utils.BN(result.logs[0].topics[3].slice(2), 16).toNumber();
-                            tokenIds = [tokenId, tokenId + quantity - 1];
-                          }
-                        } catch(err) {
-                          console.warn(err.stack);
-                          status = false;
+                      let status, transactionHash, tokenIds;
+                      try {
+                        {
+                          const result = await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['NFT']._address, fullAmount.v);
+                          status = result.status;
                           transactionHash = '0x0';
                           tokenIds = [];
                         }
-
-                        /* const contractSource = await blockchain.getContractSource('mintNft.cdc');
-
-                        const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                          method: 'POST',
-                          body: JSON.stringify({
-                            address: addr,
-                            mnemonic,
-
-                            limit: 100,
-                            transaction: contractSource
-                              .replace(/ARG0/g, hash)
-                              .replace(/ARG1/g, name)
-                              .replace(/ARG2/g, quantity),
-                            wait: true,
-                          }),
-                        });
-                        const response2 = await res.json(); */
-
                         if (status) {
-                          message.channel.send('<@!' + message.author.id + '>: minted ' + (tokenIds[0] === tokenIds[1] ? ('#' + tokenIds[0]) : tokenIds.map(n => '#' + n).join(' - ')) + ' (' + hash + ')');
-                        } else {
-                          message.channel.send('<@!' + message.author.id + '>: mint transaction failed: ' + transactionHash);
+                          console.log('minting', ['NFT', 'mint', address, '0x' + hash, file.name, quantity]);
+                          const result = await runSidechainTransaction(mnemonic)('NFT', 'mint', address, '0x' + hash, file.name, quantity);
+                          status = result.status;
+                          transactionHash = result.transactionHash;
+                          const tokenId = new web3.utils.BN(result.logs[0].topics[3].slice(2), 16).toNumber();
+                          tokenIds = [tokenId, tokenId + quantity - 1];
                         }
-
-                        accept();
-                      });
-                      res.on('error', err => {
+                      } catch(err) {
                         console.warn(err.stack);
-                        message.channel.send('<@!' + message.author.id + '>: mint failed: ' + err.message);
+                        status = false;
+                        transactionHash = '0x0';
+                        tokenIds = [];
+                      }
+                      
+                      console.log('minted 1', status);
+
+                      /* const contractSource = await blockchain.getContractSource('mintNft.cdc');
+
+                      const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                          address: addr,
+                          mnemonic,
+
+                          limit: 100,
+                          transaction: contractSource
+                            .replace(/ARG0/g, hash)
+                            .replace(/ARG1/g, name)
+                            .replace(/ARG2/g, quantity),
+                          wait: true,
+                        }),
                       });
+                      const response2 = await res.json(); */
+
+                      if (status) {
+                        message.channel.send('<@!' + message.author.id + '>: minted ' + (tokenIds[0] === tokenIds[1] ? ('#' + tokenIds[0]) : tokenIds.map(n => '#' + n).join(' - ')) + ' (' + hash + ')');
+                      } else {
+                        message.channel.send('<@!' + message.author.id + '>: mint transaction failed: ' + transactionHash);
+                      }
+                      
+                      console.log('minted 2', status);
                     });
-                    req.on('error', reject);
-                    proxyRes.pipe(req);
+                    res.on('error', err => {
+                      console.warn(err.stack);
+                      message.channel.send('<@!' + message.author.id + '>: mint failed: ' + err.message);
+                    });
                   });
-                  proxyReq.on('error', reject);
-                  proxyReq.end();
-                });
+                  req.on('error', err => {
+                    console.warn(err.stack);
+                    message.channel.send('<@!' + message.author.id + '>: mint failed: ' + err.message);
+                  });
+                  file.pipe(req);
+                }));
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: no files to mint');
               }
             }
           }
