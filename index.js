@@ -829,7 +829,7 @@ Help
               } else {
                 message.channel.send('unknown user');
               }
-            } else if (match = split[1].match(/0x([0-9a-f]+)/i)) {
+            } else if (match = split[1].match(/(0x[0-9a-f]+)/i)) {
               let {mnemonic} = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
