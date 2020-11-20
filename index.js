@@ -447,7 +447,7 @@ Account
 
 Minting
 .mint [count]? (in the file upload comment) - mint [count] NFTs from file upload
-.mint [count]? [url] - mint [count] NFTs from the provided url
+.mint [count]? [url] - mint [count] NFTs from the provided [url]
 
 Packing
 .packs [@user|nftid] - check packed ft balances of [@user] or [nftid]
