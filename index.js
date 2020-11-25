@@ -180,6 +180,13 @@ const makePromise = () => {
       Item: store,
     }).promise();
   }; */
+  const getStores = async () => {
+    const numStores = await contracts['sidechain'].Trade.methods.getNumStores().call();
+    const stores = Array(numStores);
+    for (let i = 0; i < numStores; i++) {
+      stores[i] = {};
+    }
+  };
 
   const txQueues = [];
   const runSidechainTransaction = mnemonic => {
@@ -1079,11 +1086,7 @@ Help
             }
 
             // XXX
-            const numStores = await contracts.Trade.methods.getNumStores().call();
-            const stores = Array(numStores);
-            for (let i = 0; i < numStores; i++) {
-              stores[i] = {};
-            }
+            const booths = await getStores();
 
             let s = '';
             /* const store = await getStore();
@@ -1152,9 +1155,14 @@ Help
                 }
               }
 
-              const store = await getStore();
+              // const store = await getStore();
               if (ownTokenIds.includes(tokenId)) {
-                let booth = store.booths.find(store => store.address === address);
+                // XXX
+                const stores = await getStores();
+
+                await runSidechainTransaction(mnemonic)('Trade', 'addStore', tokenId, price);
+
+                /* let booth = store.booths.find(store => store.address === address);
                 if (!booth) {
                   booth = {
                     address,
@@ -1173,9 +1181,14 @@ Help
                   message.channel.send('<@!' + message.author.id + '>: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price);
                 } else {
                   message.channel.send('<@!' + message.author.id + '>: already selling nft: ' + tokenId);
-                }
+                } */
               } else if (treasuryTokenIds.includes(tokenId)) {
-                const address = treasuryAddress;
+                // XXX
+                const stores = await getStores();
+
+                await runSidechainTransaction(mnemonic)('Trade', 'addStore', tokenId, price);
+
+                /* const address = treasuryAddress;
                 let booth = store.booths.find(store => store.address === address);
                 if (!booth) {
                   booth = {
@@ -1195,7 +1208,7 @@ Help
                   message.channel.send('treasury: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price);
                 } else {
                   message.channel.send('treasury: already selling nft: ' + tokenId);
-                }
+                } */
               } else {
                 message.channel.send('<@!' + message.author.id + '>: not your nft: ' + tokenId);
               }
@@ -1213,7 +1226,9 @@ Help
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
 
-              const store = await getStore();
+              await runSidechainTransaction(mnemonic)('Trade', 'removeStore', buyId);
+
+              /* const store = await getStore();
               let booth = store.booths.find(store => store.address === address);
               let entryIndex = booth ? booth.entries.findIndex(entry => entry.id === buyId) : -1;
               if (entryIndex === -1) {
@@ -1231,15 +1246,17 @@ Help
                 message.channel.send('<@!' + message.author.id + '>: unlisted sell ' + buyId);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: unknown sell id: ' + buyId);
-              }
+              } */
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid sell id: ' + split[1]);
             }
           } else if (split[0] === prefix + 'buy' && split.length >= 2) {
-            const store = await getStore();
-
+            // XXX
             const buyId = parseInt(split[1], 10);
-            let booth = null;
+
+            await runSidechainTransaction(mnemonic)('Trade', 'buy', buyId);
+
+            /* let booth = null;
             let entry = null;
             for (const b of store.booths) {
               for (const e of b.entries) {
@@ -1308,17 +1325,6 @@ Help
                   addresses.push(address);
                 }
                 
-                /* console.log('got addresses', addresses[0], addresses[1]);
-                
-                console.log('transferring', [
-                    'Trade',
-                    'trade',
-                    addresses[0], addresses[1],
-                    price, 0,
-                    0, tokenId,
-                    0, 0,
-                    0, 0,]); */
-                
                 let status;
                 try {
                   await runSidechainTransaction(mnemonic)(
@@ -1346,7 +1352,7 @@ Help
                 }
               } else {
                 message.channel.send('no such sale for user: ' + buyId);
-              }
+              } */
             } else {
               message.channel.send('invalid buy id');
             }
