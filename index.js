@@ -1191,7 +1191,7 @@ Help
                 if (status) {
                   message.channel.send('<@!' + message.author.id + '>: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price);
                 } else {
-                  message.channel.send('<@!' + message.author.id + '>: already selling nft: ' + tokenId);
+                  message.channel.send('<@!' + message.author.id + '>: failed to list nft: ' + tokenId);
                 }
 
                 /* let booth = store.booths.find(store => store.address === address);
