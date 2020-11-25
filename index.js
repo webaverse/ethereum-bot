@@ -1176,8 +1176,23 @@ Help
               if (ownTokenIds.includes(tokenId)) {
                 // const stores = await getStores();
 
-                await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
-                await runSidechainTransaction(mnemonic)('Trade', 'addStore', tokenId, price);
+                let status, buyId;
+                try {
+                  await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                  buyId = await runSidechainTransaction(mnemonic)('Trade', 'addStore', tokenId, price);
+                  
+                  status = true;
+                } catch (err) {
+                  console.warn(err.stack);
+                  status = false;
+                  buyId = -1;
+                }
+
+                if (status) {
+                  message.channel.send('<@!' + message.author.id + '>: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price);
+                } else {
+                  message.channel.send('<@!' + message.author.id + '>: already selling nft: ' + tokenId);
+                }
 
                 /* let booth = store.booths.find(store => store.address === address);
                 if (!booth) {
@@ -1187,23 +1202,27 @@ Help
                   };
                   store.booths.push(booth);
                 }
-                if (!booth.entries.some(entry => entry.tokenId === tokenId)) {
-                  const buyId = ++store.nextBuyId;
-                  booth.entries.push({
-                    id: buyId,
-                    tokenId,
-                    price,
-                  });
-                  await setStore(store);
-                  message.channel.send('<@!' + message.author.id + '>: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price);
-                } else {
-                  message.channel.send('<@!' + message.author.id + '>: already selling nft: ' + tokenId);
-                } */
+                 */
               } else if (treasuryTokenIds.includes(tokenId)) {
                 // const stores = await getStores();
 
-                await runSidechainTransaction(treasuryMnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
-                await runSidechainTransaction(treasuryMnemonic)('Trade', 'addStore', tokenId, price);
+                let status, buyId;
+                try {
+                  await runSidechainTransaction(treasuryMnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                  buyId = await runSidechainTransaction(treasuryMnemonic)('Trade', 'addStore', tokenId, price);
+                  
+                  status = true;
+                } catch (err) {
+                  console.warn(err.stack);
+                  status = false;
+                  buyId = -1;
+                }
+
+                if (status) {
+                  message.channel.send('<@!' + message.author.id + '>: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price);
+                } else {
+                  message.channel.send('<@!' + message.author.id + '>: already selling nft: ' + tokenId);
+                }
 
                 /* const address = treasuryAddress;
                 let booth = store.booths.find(store => store.address === address);
