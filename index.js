@@ -155,7 +155,7 @@ const makePromise = () => {
   let nextTradeId = 0;
   let nextBuyId = 0;
 
-  let store = null;
+  /* let store = null;
   const getStore = async () => {
     if (store) {
       return store;
@@ -165,10 +165,6 @@ const makePromise = () => {
         Key: {
           id: 'store',
         },
-        /* Item: {
-          email: {S: id},
-          mnemonic: {S: mnemonic},
-        }, */
       }).promise();
       const store = (result && result.Item) || {
         id: 'store',
@@ -183,7 +179,7 @@ const makePromise = () => {
       TableName: storeTableName,
       Item: store,
     }).promise();
-  };
+  }; */
 
   const txQueues = [];
   const runSidechainTransaction = mnemonic => {
@@ -1082,8 +1078,15 @@ Help
               address = treasuryAddress;
             }
 
+            // XXX
+            const numStores = await contracts.Trade.methods.getNumStores().call();
+            const stores = Array(numStores);
+            for (let i = 0; i < numStores; i++) {
+              stores[i] = {};
+            }
+
             let s = '';
-            const store = await getStore();
+            /* const store = await getStore();
             let booth = store.booths.find(store => store.address === address);
             if (!booth) {
               booth = {
@@ -1113,7 +1116,7 @@ Help
               }
             } else {
               s += (booth.address !== treasuryAddress ? booth.address : 'treasury') + '\'s store: ```empty```';
-            }
+            } */
             message.channel.send(s);
           /* } else if (split[0] === prefix + 'treasury') {
             const member = await message.channel.guild.members.fetch(message.author.id);
