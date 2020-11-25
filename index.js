@@ -181,11 +181,35 @@ const makePromise = () => {
     }).promise();
   }; */
   const getStores = async () => {
-    const numStores = await contracts['sidechain'].Trade.methods.getNumStores().call();
-    const stores = Array(numStores);
+    const numStores = await contracts.Trade.methods.numStores().call();
+    const booths = [];
     for (let i = 0; i < numStores; i++) {
-      stores[i] = {};
+      const store = await contracts.Trade.methods.getStoreByIndex(i + 1).call();
+      if (store.live) {
+        const id = parseInt(store.id, 10);
+        const seller = store.seller.toLowerCase();
+        const tokenId = parseInt(store.tokenId, 10);
+        const price = '0x' + new web3.utils.BN(store.price).toString(16)
+        const entry = {
+          id,
+          seller,
+          tokenId,
+          price,
+        };
+        
+        let booth = booths.find(booth => booth.seller === seller);
+        if (!booth) {
+          booth = {
+            seller,
+            entries: [],
+          };
+          booths.push(booth);
+        }
+        booth.entries.push(entry);
+      }
     }
+    // console.log('got stores', stores);
+    return booths;
   };
 
   const txQueues = [];
@@ -1085,20 +1109,11 @@ Help
               address = treasuryAddress;
             }
 
-            // XXX
             const booths = await getStores();
 
             let s = '';
-            /* const store = await getStore();
-            let booth = store.booths.find(store => store.address === address);
-            if (!booth) {
-              booth = {
-                address,
-                entries: [],
-              };
-              store.booths.push(booth);
-            }
-            if (booth.entries.length > 0) {
+            const booth = booths.find(booth => booth.seller === address);
+            if (booth && booth.entries.length > 0) {
               try {
                 const [filenames, packedBalances] = await Promise.all([
                   Promise.all(booth.entries.map(async entry => {
@@ -1113,13 +1128,13 @@ Help
                   })),
                 ]);
 
-                s += (booth.address !== treasuryAddress ? booth.address : 'treasury') + '\'s store: ```' + booth.entries.map((entry, i) => `#${entry.id}: NFT ${entry.tokenId} (${filenames[i]}${packedBalances[i] > 0 ? (' + ' + packedBalances[i] + ' FT') : ''}) for ${entry.price} FT`).join('\n') + '```';
+                s += (booth.seller !== treasuryAddress ? booth.seller : 'treasury') + '\'s store: ```' + booth.entries.map((entry, i) => `#${entry.id}: NFT ${entry.tokenId} (${filenames[i]}${packedBalances[i] > 0 ? (' + ' + packedBalances[i] + ' FT') : ''}) for ${entry.price} FT`).join('\n') + '```';
               } catch(err) {
                 console.warn(err);
               }
             } else {
-              s += (booth.address !== treasuryAddress ? booth.address : 'treasury') + '\'s store: ```empty```';
-            } */
+              s += (address !== treasuryAddress ? address : 'treasury') + '\'s store: ```empty```';
+            }
             message.channel.send(s);
           /* } else if (split[0] === prefix + 'treasury') {
             const member = await message.channel.guild.members.fetch(message.author.id);
@@ -1160,6 +1175,7 @@ Help
                 // XXX
                 const stores = await getStores();
 
+                await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
                 await runSidechainTransaction(mnemonic)('Trade', 'addStore', tokenId, price);
 
                 /* let booth = store.booths.find(store => store.address === address);
@@ -1186,7 +1202,8 @@ Help
                 // XXX
                 const stores = await getStores();
 
-                await runSidechainTransaction(mnemonic)('Trade', 'addStore', tokenId, price);
+                await runSidechainTransaction(treasuryMnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                await runSidechainTransaction(treasuryMnemonic)('Trade', 'addStore', tokenId, price);
 
                 /* const address = treasuryAddress;
                 let booth = store.booths.find(store => store.address === address);
