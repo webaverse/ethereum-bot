@@ -1179,8 +1179,11 @@ Help
                 let status, buyId;
                 try {
                   await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
-                  buyId = await runSidechainTransaction(mnemonic)('Trade', 'addStore', tokenId, price);
-                  
+                  // buyId = await contracts.Trade.methods.addStore(tokenId, price).call();
+                  const buySpec = await runSidechainTransaction(mnemonic)('Trade', 'addStore', tokenId, price);
+                  // console.log('got buy spec', JSON.stringify(buySpec, null, 2));
+                  buyId = parseInt(buySpec.logs[0].topics[1]);
+
                   status = true;
                 } catch (err) {
                   console.warn(err.stack);
