@@ -1289,8 +1289,6 @@ Help
             }
 
             if (status) {
-              booth.entries.splice(booth.entries.indexOf(entry), 1);
-              await setStore(store);
               message.channel.send('<@!' + message.author.id + '>: got sale #' + tokenId + ' for ' + price + '. noice!');
             } else {
               message.channel.send('<@!' + message.author.id + '>: buy failed');
