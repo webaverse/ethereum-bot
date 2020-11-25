@@ -1268,10 +1268,33 @@ Help
               message.channel.send('<@!' + message.author.id + '>: invalid sell id: ' + split[1]);
             }
           } else if (split[0] === prefix + 'buy' && split.length >= 2) {
-            // XXX
             const buyId = parseInt(split[1], 10);
 
-            await runSidechainTransaction(mnemonic)('Trade', 'buy', buyId);
+            const fullAmount = {
+              t: 'uint256',
+              v: new web3.utils.BN(1e9)
+                .mul(new web3.utils.BN(1e9))
+                .mul(new web3.utils.BN(1e9)),
+            };
+
+            let status;
+            try {
+              await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
+              await runSidechainTransaction(mnemonic)('Trade', 'buy', buyId);
+              
+              status = true;
+            } catch (err) {
+              console.warn(err.stack);
+              status = false;
+            }
+
+            if (status) {
+              booth.entries.splice(booth.entries.indexOf(entry), 1);
+              await setStore(store);
+              message.channel.send('<@!' + message.author.id + '>: got sale #' + tokenId + ' for ' + price + '. noice!');
+            } else {
+              message.channel.send('<@!' + message.author.id + '>: buy failed');
+            }
 
             /* let booth = null;
             let entry = null;
