@@ -189,13 +189,15 @@ const makePromise = () => {
         const id = parseInt(store.id, 10);
         const seller = store.seller.toLowerCase();
         const tokenId = parseInt(store.tokenId, 10);
-        const price = '0x' + new web3.utils.BN(store.price).toString(16)
+        const price = new web3.utils.BN(store.price);
         const entry = {
           id,
           seller,
           tokenId,
           price,
         };
+        
+        // console.log('got store', store, entry);
         
         let booth = booths.find(booth => booth.seller === seller);
         if (!booth) {
@@ -1128,7 +1130,7 @@ Help
                   })),
                 ]);
 
-                s += (booth.seller !== treasuryAddress ? booth.seller : 'treasury') + '\'s store: ```' + booth.entries.map((entry, i) => `#${entry.id}: NFT ${entry.tokenId} (${filenames[i]}${packedBalances[i] > 0 ? (' + ' + packedBalances[i] + ' FT') : ''}) for ${entry.price} FT`).join('\n') + '```';
+                s += (booth.seller !== treasuryAddress ? booth.seller : 'treasury') + '\'s store: ```' + booth.entries.map((entry, i) => `#${entry.id}: NFT ${entry.tokenId} (${filenames[i]}${packedBalances[i] > 0 ? (' + ' + packedBalances[i] + ' FT') : ''}) for ${entry.price.toNumber()} FT`).join('\n') + '```';
               } catch(err) {
                 console.warn(err);
               }
@@ -1172,8 +1174,7 @@ Help
 
               // const store = await getStore();
               if (ownTokenIds.includes(tokenId)) {
-                // XXX
-                const stores = await getStores();
+                // const stores = await getStores();
 
                 await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
                 await runSidechainTransaction(mnemonic)('Trade', 'addStore', tokenId, price);
@@ -1199,8 +1200,7 @@ Help
                   message.channel.send('<@!' + message.author.id + '>: already selling nft: ' + tokenId);
                 } */
               } else if (treasuryTokenIds.includes(tokenId)) {
-                // XXX
-                const stores = await getStores();
+                // const stores = await getStores();
 
                 await runSidechainTransaction(treasuryMnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
                 await runSidechainTransaction(treasuryMnemonic)('Trade', 'addStore', tokenId, price);
