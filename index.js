@@ -2224,24 +2224,6 @@ Help
                       
                       console.log('minted 1', status);
 
-                      /* const contractSource = await blockchain.getContractSource('mintNft.cdc');
-
-                      const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                          address: addr,
-                          mnemonic,
-
-                          limit: 100,
-                          transaction: contractSource
-                            .replace(/ARG0/g, hash)
-                            .replace(/ARG1/g, name)
-                            .replace(/ARG2/g, quantity),
-                          wait: true,
-                        }),
-                      });
-                      const response2 = await res.json(); */
-
                       if (status) {
                         message.channel.send('<@!' + message.author.id + '>: minted ' + (tokenIds[0] === tokenIds[1] ? ('#' + tokenIds[0]) : tokenIds.map(n => '#' + n).join(' - ')) + ' (' + hash + ')');
                       } else {
