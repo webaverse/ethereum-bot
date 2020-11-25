@@ -1260,29 +1260,23 @@ Help
                 mnemonic = spec.mnemonic;
               }
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-              const address = wallet.getAddressString();
-
-              await runSidechainTransaction(mnemonic)('Trade', 'removeStore', buyId);
-
-              /* const store = await getStore();
-              let booth = store.booths.find(store => store.address === address);
-              let entryIndex = booth ? booth.entries.findIndex(entry => entry.id === buyId) : -1;
-              if (entryIndex === -1) {
-                const member = await message.channel.guild.members.fetch(message.author.id);
-                const treasurer = member.roles.cache.some(role => role.name === treasurerRoleName);
-                if (treasurer) {
-                  const address = treasuryAddress;
-                  booth = store.booths.find(store => store.address === address);
-                  entryIndex = booth ? booth.entries.findIndex(entry => entry.id === buyId) : -1;
-                }
+              // const address = wallet.getAddressString();
+              
+              let status;
+              try {
+                await runSidechainTransaction(mnemonic)('Trade', 'removeStore', buyId);
+                
+                status = true;
+              } catch (err) {
+                console.warn(err.stack);
+                status = false;
               }
-              if (entryIndex !== -1) {
-                booth.entries.splice(entryIndex, 1);
-                await setStore(store);
+
+              if (status) {
                 message.channel.send('<@!' + message.author.id + '>: unlisted sell ' + buyId);
               } else {
-                message.channel.send('<@!' + message.author.id + '>: unknown sell id: ' + buyId);
-              } */
+                message.channel.send('<@!' + message.author.id + '>: unlist failed: ' + buyId);
+              }
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid sell id: ' + split[1]);
             }
