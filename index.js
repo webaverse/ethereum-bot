@@ -1352,10 +1352,10 @@ Help
                 }
               } else {
                 message.channel.send('no such sale for user: ' + buyId);
-              } */
+              }
             } else {
               message.channel.send('invalid buy id');
-            }
+            } */
           } else if (split[0] === prefix + 'addnft' && split.length >= 3) {
             const tradeId = parseInt(split[1], 10);
             const trade = trades.find(trade => trade.tradeId === tradeId);
