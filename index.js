@@ -1172,8 +1172,9 @@ Help
                 let status, buyId;
                 try {
                   await runSidechainTransaction(treasuryMnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
-                  buyId = await runSidechainTransaction(treasuryMnemonic)('Trade', 'addStore', tokenId, price);
-                  
+                  const buySpec = await runSidechainTransaction(treasuryMnemonic)('Trade', 'addStore', tokenId, price);
+                  buyId = parseInt(buySpec.logs[0].topics[1]);
+
                   status = true;
                 } catch (err) {
                   console.warn(err.stack);
@@ -1184,30 +1185,8 @@ Help
                 if (status) {
                   message.channel.send('<@!' + message.author.id + '>: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price + ' FT');
                 } else {
-                  message.channel.send('<@!' + message.author.id + '>: already selling nft: ' + tokenId);
+                  message.channel.send('<@!' + message.author.id + '>: failed to list nft: ' + tokenId);
                 }
-
-                /* const address = treasuryAddress;
-                let booth = store.booths.find(store => store.address === address);
-                if (!booth) {
-                  booth = {
-                    address,
-                    entries: [],
-                  };
-                  store.booths.push(booth);
-                }
-                if (!booth.entries.some(entry => entry.tokenId === tokenId)) {
-                  const buyId = ++store.nextBuyId;
-                  booth.entries.push({
-                    id: buyId,
-                    tokenId,
-                    price,
-                  });
-                  await setStore(store);
-                  message.channel.send('treasury: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price);
-                } else {
-                  message.channel.send('treasury: already selling nft: ' + tokenId);
-                } */
               } else {
                 message.channel.send('<@!' + message.author.id + '>: not your nft: ' + tokenId);
               }
