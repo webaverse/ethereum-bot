@@ -1286,6 +1286,12 @@ Help
           } else if (split[0] === prefix + 'buy' && split.length >= 2) {
             const buyId = parseInt(split[1], 10);
 
+            let {mnemonic} = await _getUser();
+            if (!mnemonic) {
+              const spec = await _genKey();
+              mnemonic = spec.mnemonic;
+            }
+
             const fullAmount = {
               t: 'uint256',
               v: new web3.utils.BN(1e9)
