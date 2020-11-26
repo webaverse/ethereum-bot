@@ -1148,8 +1148,6 @@ Help
 
               // const store = await getStore();
               if (ownTokenIds.includes(tokenId)) {
-                // const stores = await getStores();
-
                 let status, buyId;
                 try {
                   await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
@@ -1170,16 +1168,6 @@ Help
                 } else {
                   message.channel.send('<@!' + message.author.id + '>: failed to list nft: ' + tokenId);
                 }
-
-                /* let booth = store.booths.find(store => store.address === address);
-                if (!booth) {
-                  booth = {
-                    address,
-                    entries: [],
-                  };
-                  store.booths.push(booth);
-                }
-                 */
               } else if (treasuryTokenIds.includes(tokenId)) {
                 // const stores = await getStores();
 
