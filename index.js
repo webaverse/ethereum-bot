@@ -1262,7 +1262,7 @@ Help
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
               }
-              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              // const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               // const address = wallet.getAddressString();
               
               let status;
