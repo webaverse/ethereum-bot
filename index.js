@@ -1164,7 +1164,7 @@ Help
                 }
 
                 if (status) {
-                  message.channel.send('<@!' + message.author.id + '>: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price);
+                  message.channel.send('<@!' + message.author.id + '>: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price + ' FT');
                 } else {
                   message.channel.send('<@!' + message.author.id + '>: failed to list nft: ' + tokenId);
                 }
@@ -1184,7 +1184,7 @@ Help
                 }
 
                 if (status) {
-                  message.channel.send('<@!' + message.author.id + '>: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price);
+                  message.channel.send('<@!' + message.author.id + '>: sale #' + buyId + ': NFT ' + tokenId + ' for ' + price + ' FT');
                 } else {
                   message.channel.send('<@!' + message.author.id + '>: already selling nft: ' + tokenId);
                 }
