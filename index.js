@@ -153,33 +153,7 @@ const makePromise = () => {
   // const stores = [];
   const helps = [];
   let nextTradeId = 0;
-  let nextBuyId = 0;
 
-  /* let store = null;
-  const getStore = async () => {
-    if (store) {
-      return store;
-    } else {
-      const result = await ddbd.get({
-        TableName: storeTableName,
-        Key: {
-          id: 'store',
-        },
-      }).promise();
-      const store = (result && result.Item) || {
-        id: 'store',
-        nextBuyId: 0,
-        booths: [],
-      };
-      return store;
-    }
-  };
-  const setStore = async store => {
-    await ddbd.put({
-      TableName: storeTableName,
-      Item: store,
-    }).promise();
-  }; */
   const getStores = async () => {
     const numStores = await contracts.Trade.methods.numStores().call();
     const booths = [];
