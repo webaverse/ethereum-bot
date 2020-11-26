@@ -1169,8 +1169,6 @@ Help
                   message.channel.send('<@!' + message.author.id + '>: failed to list nft: ' + tokenId);
                 }
               } else if (treasuryTokenIds.includes(tokenId)) {
-                // const stores = await getStores();
-
                 let status, buyId;
                 try {
                   await runSidechainTransaction(treasuryMnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
