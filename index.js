@@ -1238,10 +1238,15 @@ Help
                 .mul(new web3.utils.BN(1e9)),
             };
 
-            let status;
+            let status, tokenId, price;
             try {
               await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
               await runSidechainTransaction(mnemonic)('Trade', 'buy', buyId);
+              
+              const store = await contracts.Trade.methods.getStoreByIndex(buyId).call();
+              tokenId = parseInt(store.id, 10);
+              // const seller = store.seller.toLowerCase();
+              price = new web3.utils.BN(store.price);
               
               status = true;
             } catch (err) {
@@ -1250,7 +1255,7 @@ Help
             }
 
             if (status) {
-              message.channel.send('<@!' + message.author.id + '>: got sale #' + tokenId + ' for ' + price + '. noice!');
+              message.channel.send('<@!' + message.author.id + '>: got sale #' + tokenId + ' for ' + price.toNumber() + ' FT. noice!');
             } else {
               message.channel.send('<@!' + message.author.id + '>: buy failed');
             }
