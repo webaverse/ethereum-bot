@@ -1857,7 +1857,7 @@ Help
             };
             if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
               await _loadFromUserId(match[1]);
-            } else if (split.length >= 2 && (match = split[1].match(/^0x([0-9a-f]+)$/i))) {
+            } else if (split.length >= 2 && (match = split[1].match(/^(0x[0-9a-f]+)$/i))) {
               _loadFromAddress(match[1]);
             } else if (split.length >= 2 && split[1] === 'treasury') {
               _loadFromTreasury();
