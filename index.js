@@ -1848,7 +1848,7 @@ Help
             };
             const _loadFromAddress = a => {
               address = a;
-              userLabel = '`0x' + a + '`';
+              userLabel = a;
             };
             const _loadFromTreasury = () => {
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
