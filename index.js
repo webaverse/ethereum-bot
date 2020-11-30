@@ -2067,7 +2067,6 @@ Help
 
             let status, transactionHash;
             try {
-              // console.log('minting', ['NFT', 'mint', address, '0x' + hash, name, quantity]);
               const result = await runSidechainTransaction(mnemonic)('NFT', 'setMetadata', hash, key, value);
               status = result.status;
               transactionHash = result.transactionHash;
