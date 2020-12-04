@@ -586,7 +586,7 @@ Help
               const address = wallet.getAddressString();
               const monetizationPointer = await contracts.Account.methods.getMetadata(address, 'monetizationPointer').call();
               
-              message.channel.send('<@!' + message.author.id + '>: monetizationPointer is ' + JSON.stringify(monetizationPointer));
+              message.channel.send('<@!' + message.author.id + '>: monetization pointer is ' + JSON.stringify(monetizationPointer));
             }
           } else if (split[0] === prefix + 'avatar') {
             let {mnemonic} = await _getUser();
