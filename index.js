@@ -1769,7 +1769,7 @@ Help
                   const response2 = await res.json(); */
 
                   if (status) {
-                    message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to 0x' + address2);
+                    message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to ' + address2);
                   } else {
                     message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + status);
                   }
