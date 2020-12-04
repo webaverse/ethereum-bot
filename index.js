@@ -513,7 +513,7 @@ Help
             const response2 = await res.json();
             const [name, avatarUrl] = response2.encodedData.value.map(value => value.value && value.value.value); */
 
-            message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nAvatar: ${avatarUrl}\n\`\`\``);
+            message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nMonetization Pointer: ${monetizationPointer}\nAvatar: ${avatarUrl}\n\`\`\``);
           } else if (split[0] === prefix + 'name') {
             let {mnemonic} = await _getUser();
             if (!mnemonic) {
