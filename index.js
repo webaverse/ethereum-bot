@@ -446,6 +446,7 @@ Tokens
 
 Account
 .name [newname] - set your name to [name] on the chain
+.monetizationpointer [monetizationpointer] - set your monetization pointer to [monetizationpointer] on the chain
 .avatar [id] - set your avatar to [id] on the chain
 
 Minting
@@ -564,6 +565,28 @@ Help
               const [name, avatarUrl] = response2.encodedData.value.map(value => value.value && value.value.value); */
 
               message.channel.send('<@!' + message.author.id + '>: name is ' + JSON.stringify(name));
+            }
+          }  else if (split[0] === prefix + 'monetizationpointer') {
+            let {mnemonic} = await _getUser();
+            if (!mnemonic) {
+              const spec = await _genKey();
+              mnemonic = spec.mnemonic;
+            }
+
+            if (split[1]) {
+              const monetizationPointer = split[1];
+
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+              const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'monetizationPointer', monetizationPointer);
+              
+              message.channel.send('<@!' + message.author.id + '>: set monetization pointer to ' + JSON.stringify(monetizationPointer));
+            } else {
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+              const monetizationPointer = await contracts.Account.methods.getMetadata(address, 'monetizationPointer').call();
+              
+              message.channel.send('<@!' + message.author.id + '>: monetizationPointer is ' + JSON.stringify(monetizationPointer));
             }
           } else if (split[0] === prefix + 'avatar') {
             let {mnemonic} = await _getUser();
