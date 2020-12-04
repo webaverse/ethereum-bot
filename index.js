@@ -497,6 +497,7 @@ Help
             const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
             const address = wallet.getAddressString();
             const name = await contracts.Account.methods.getMetadata(address, 'name').call();
+            const monetizationPointer = await contracts.Account.methods.getMetadata(address, 'monetizationPointer').call();
             const avatarUrl = await contracts.Account.methods.getMetadata(address, 'avatarUrl').call();
 
             /* const contractSource = await blockchain.getContractSource('getUserData.cdc');
