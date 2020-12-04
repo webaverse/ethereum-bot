@@ -497,6 +497,7 @@ Help
             const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
             const address = wallet.getAddressString();
             const name = await contracts.Account.methods.getMetadata(address, 'name').call();
+            const monetizationPointer = await contracts.Account.methods.getMetadata(address, 'monetizationPointer').call();
             const avatarUrl = await contracts.Account.methods.getMetadata(address, 'avatarUrl').call();
 
             /* const contractSource = await blockchain.getContractSource('getUserData.cdc');
@@ -512,7 +513,7 @@ Help
             const response2 = await res.json();
             const [name, avatarUrl] = response2.encodedData.value.map(value => value.value && value.value.value); */
 
-            message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nAvatar: ${avatarUrl}\n\`\`\``);
+            message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nMonetization Pointer: ${monetizationPointer}\nAvatar: ${avatarUrl}\n\`\`\``);
           } else if (split[0] === prefix + 'name') {
             let {mnemonic} = await _getUser();
             if (!mnemonic) {
