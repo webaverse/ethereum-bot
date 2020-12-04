@@ -433,7 +433,6 @@ Info
 .inventory [@user|0xaddr]? - show your NFTs, or those of a user/address
 .address [@user]? - print your address, or that of a user
 .key - get your private key in a DM
-     - can be used to log into the app
 
 Tokens
 .send [@user|0xaddr|treasury] [amount] - send [amount] FT to user/address
@@ -446,7 +445,7 @@ Tokens
 
 Account
 .name [newname] - set your name to [name] on the chain
-.monetizationpointer [monetizationpointer] - set your monetization pointer to [monetizationpointer] on the chain
+.monetizationpointer [mp] - set your monetization pointer to [mp] on the chain
 .avatar [id] - set your avatar to [id] on the chain
 
 Minting
@@ -475,7 +474,7 @@ Key Management (DM to bot)
 .key reset - generate and set a new Discord private key
 
 Help
-.help - show this info
+.help - show help
 \`\`\``);
 
             m.react('❌');
