@@ -2273,6 +2273,113 @@ Help
               } else {
                 message.channel.send('<@!' + message.author.id + '>: no files to mint');
               }
+            } else if (split[0] === prefix + 'update') {
+              const tokenId = parseInt(split[1], 10);
+              const manualUrl = split[2];
+
+              let {mnemonic} = await _getUser();
+              if (!mnemonic) {
+                const spec = await _genKey();
+                mnemonic = spec.mnemonic;
+              }
+
+              const files = [];
+              if (manualUrl) {
+                const match = manualUrl.match(/^http(s)?:\/\//);
+                if (match) {
+                  const proxyRes = await new Promise((accept, reject) => {
+                    const proxyReq = (match[1] ? https : http).request(manualUrl, proxyRes => {
+                      proxyRes.name = manualUrl.match(/\/([^\/]+?)(?:\?.*)?$/)[1];
+                      if (!/\/..+$/.test(proxyRes.name)) {
+                        const contentType = proxyRes.headers['content-type'];
+                        if (contentType) {
+                          const ext = mime.getExtension(contentType) || 'bin';
+                          proxyRes.name += '.' + ext;
+                        }
+                      }
+                      accept(proxyRes);
+                    });
+                    proxyReq.once('error', reject);
+                    proxyReq.end();
+                  });
+                  files.push(proxyRes);
+                }
+              } else if (message.attachments.size > 0) {
+                for (const [key, attachment] of message.attachments) {
+                  const {name, url} = attachment;
+                  
+                  const proxyRes = await new Promise((accept, reject) => {
+                    const proxyReq = https.request(url, proxyRes => {
+                      proxyRes.name = name;
+                      accept(proxyRes);
+                    });
+                    proxyReq.once('error', reject);
+                    proxyReq.end();
+                  });
+                  files.push(proxyRes);
+                }
+              }
+              if (files.length > 0) {
+                const oldHashNumberString = await contracts.NFT.methods.getHash(tokenId).call();
+                const oldHash = '0x' + web3.utils.padLeft(new web3.utils.BN(oldHashNumberString, 10).toString(16), 32);
+                
+                console.log('got old hash', tokenId, oldHash.toString(16));
+
+                await Promise.all(files.map(async file => {
+                  const req = https.request(storageHost, {
+                    method: 'POST',
+                  }, res => {
+                    const bs = [];
+                    res.on('data', d => {
+                      bs.push(d);
+                    });
+                    res.on('end', async () => {
+                      const b = Buffer.concat(bs);
+                      const s = b.toString('utf8');
+                      const j = JSON.parse(s);
+                      const {hash} = j;
+
+                      const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                      const address = wallet.getAddressString();
+
+                      const fullAmount = {
+                        t: 'uint256',
+                        v: new web3.utils.BN(1e9)
+                          .mul(new web3.utils.BN(1e9))
+                          .mul(new web3.utils.BN(1e9)),
+                      };
+
+                      let status, transactionHash;
+                      try {
+                        const result = await runSidechainTransaction(mnemonic)('NFT', 'updateHash', oldHash, '0x' + hash);
+                        status = result.status;
+                        transactionHash = '0x0';
+                      } catch(err) {
+                        console.warn(err.stack);
+                        status = false;
+                        transactionHash = '0x0';
+                      }
+
+                      if (status) {
+                        message.channel.send('<@!' + message.author.id + '>: updated ' + tokenId + ' to ' + hash);
+                      } else {
+                        message.channel.send('<@!' + message.author.id + '>: update transaction failed: ' + transactionHash);
+                      }
+                    });
+                    res.on('error', err => {
+                      console.warn(err.stack);
+                      message.channel.send('<@!' + message.author.id + '>: update failed: ' + err.message);
+                    });
+                  });
+                  req.on('error', err => {
+                    console.warn(err.stack);
+                    message.channel.send('<@!' + message.author.id + '>: update failed: ' + err.message);
+                  });
+                  file.pipe(req);
+                }));
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: no files to update');
+              }
             }
           }
         } else if (message.channel.type === 'dm') {
