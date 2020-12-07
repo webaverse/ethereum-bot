@@ -2323,8 +2323,6 @@ Help
               if (files.length > 0) {
                 const oldHashNumberString = await contracts.NFT.methods.getHash(tokenId).call();
                 const oldHash = '0x' + web3.utils.padLeft(new web3.utils.BN(oldHashNumberString, 10).toString(16), 32);
-                
-                console.log('got old hash', tokenId, oldHash.toString(16));
 
                 await Promise.all(files.map(async file => {
                   const req = https.request(storageHost, {
