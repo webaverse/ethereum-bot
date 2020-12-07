@@ -444,9 +444,9 @@ Tokens
 .set [id] [key] [value] - set metadata key [key] to [value] for NFT [id]
 
 Account
-.name [newname] - set your name to [name] on the chain
-.monetizationpointer [mp] - set your monetization pointer to [mp] on the chain
-.avatar [id] - set your avatar to [id] on the chain
+.name [newname] - set your name to [name]
+.monetizationpointer [mp] - set your monetization pointer to [mp]
+.avatar [id] - set your avatar to [id]
 
 Minting
 .mint [count]? (in upload comment) - mint [count] NFTs from file upload
