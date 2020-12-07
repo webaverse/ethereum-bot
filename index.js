@@ -2350,9 +2350,16 @@ Help
 
                       let status, transactionHash;
                       try {
-                        const result = await runSidechainTransaction(mnemonic)('NFT', 'updateHash', oldHash, '0x' + hash);
-                        status = result.status;
-                        transactionHash = '0x0';
+                        {
+                          const result = await runSidechainTransaction(mnemonic)('NFT', 'updateHash', oldHash, '0x' + hash);
+                          status = result.status;
+                          transactionHash = '0x0';
+                        }
+                        if (status) {
+                          const result = await runSidechainTransaction(mnemonic)('NFT', 'setMetadata', '0x' + hash, 'filename', file.name);
+                          status = result.status;
+                          transactionHash = result.transactionHash;
+                        }
                       } catch(err) {
                         console.warn(err.stack);
                         status = false;
