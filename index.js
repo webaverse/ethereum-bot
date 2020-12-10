@@ -288,6 +288,15 @@ const makePromise = () => {
               help.delete();
               helps.splice(helpIndex, 1);
             }
+          } else {
+            const trade = trades.find(trade => trade.id === message.id);
+            if (trade) {
+              const index = trade.userIds.indexOf(user.id);
+              if (index >= 0) {
+                trade.cancel();
+                trades.splice(trades.indexOf(trade), 1);
+              }
+            }
           }
         }
       } else if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
@@ -320,15 +329,6 @@ const makePromise = () => {
               trade.finish();
               trades.splice(trades.indexOf(trade), 1);
             }
-          }
-        }
-      } else if (user.id !== client.user.id && emoji.identifier === '%E2%9D%8C') { // x
-        const trade = trades.find(trade => trade.id === message.id);
-        if (trade) {
-          const index = trade.userIds.indexOf(user.id);
-          if (index >= 0) {
-            trade.cancel();
-            trades.splice(trades.indexOf(trade), 1);
           }
         }
       }
