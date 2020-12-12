@@ -608,7 +608,7 @@ Help
               const address = wallet.getAddressString();
               
               const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-              const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+              const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
               const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
               const match = filename.match(/^(.+)\.([^\.]+)$/);
               const ext = match ? match[2] : '';
@@ -1118,7 +1118,7 @@ Help
                 const [filenames, packedBalances] = await Promise.all([
                   Promise.all(booth.entries.map(async entry => {
                     const hashNumberString = await contracts.NFT.methods.getHash(entry.tokenId).call();
-                    const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+                    const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
                     const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
                     return filename;
                   })),
@@ -1396,7 +1396,7 @@ Help
                 if (!trade.nfts[index].includes(id)) {
                   const hashNumberString = await contracts.NFT.methods.getHash(id).call();
                   if (hashNumberString !== '0') {
-                    const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+                    const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
                     
                     let {mnemonic} = await _getUser();
                     if (!mnemonic) {
@@ -1708,14 +1708,14 @@ Help
                     let status = true, transactionHash;
                     try {
                       const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-                      const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+                      const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
 
                       const ids = [];
                       const nftBalance = await contracts.NFT.methods.balanceOf(address).call();
                       for (let i = 0; i < nftBalance; i++) {
                         const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
                         const hashNumberString2 = await contracts.NFT.methods.getHash(id).call();
-                        const hash2 = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString2, 10).toString(16), 32);
+                        const hash2 = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString2, 10).toString(16), 64);
                         if (hash2 === hash) {
                           ids.push(id);
                         }
@@ -1894,7 +1894,7 @@ Help
             for (let i = 0; i < nftBalance; i++) {
               const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
               const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-              const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+              const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
               if (!hashToIds[hash]) {
                 hashToIds[hash] = [];
               }
@@ -1965,7 +1965,7 @@ Help
               owner = owner.toLowerCase();
               if (owner === address) {
                 const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-                const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+                const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
                 const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
 
                 const buffer = await _readStorageHashAsBuffer(hash.slice(2));
@@ -1983,7 +1983,7 @@ Help
             const id = parseInt(split[1], 10);
 
             const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
             const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
             const match = filename.match(/^(.+)\.([^\.]+)$/);
 
@@ -2016,7 +2016,7 @@ Help
             const id = parseInt(split[1], 10);
             
             const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
             const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
             const match = filename.match(/^(.+)\.([^\.]+)$/);
 
@@ -2056,7 +2056,7 @@ Help
             const key = split[2];
             
             const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
             const value = await contracts.NFT.methods.getMetadata(hash, key).call();
 
             /* const contractSource = await blockchain.getContractSource('getNftMetadata.cdc');
@@ -2087,7 +2087,7 @@ Help
             }
             
             const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 32);
+            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
 
             let status, transactionHash;
             try {
@@ -2270,6 +2270,9 @@ Help
                     message.channel.send('<@!' + message.author.id + '>: mint failed: ' + err.message);
                   });
                   file.pipe(req);
+                  file.on('data', d => {
+                    console.log('got data', d.length);
+                  });
                 }));
               } else {
                 message.channel.send('<@!' + message.author.id + '>: no files to mint');
@@ -2322,7 +2325,7 @@ Help
               }
               if (files.length > 0) {
                 const oldHashNumberString = await contracts.NFT.methods.getHash(tokenId).call();
-                const oldHash = '0x' + web3.utils.padLeft(new web3.utils.BN(oldHashNumberString, 10).toString(16), 32);
+                const oldHash = '0x' + web3.utils.padLeft(new web3.utils.BN(oldHashNumberString, 10).toString(16), 64);
 
                 await Promise.all(files.map(async file => {
                   const req = https.request(storageHost, {
