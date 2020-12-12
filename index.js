@@ -2270,9 +2270,6 @@ Help
                     message.channel.send('<@!' + message.author.id + '>: mint failed: ' + err.message);
                   });
                   file.pipe(req);
-                  file.on('data', d => {
-                    console.log('got data', d.length);
-                  });
                 }));
               } else {
                 message.channel.send('<@!' + message.author.id + '>: no files to mint');
