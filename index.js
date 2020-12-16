@@ -949,9 +949,9 @@ Help
               const user = member ? member.user : null;
               if (user) {
                 const tradeId = ++nextTradeId;
-                const headerLeft = '   Trade #' + tradeId + ' ' + message.author.username.padLeft(8);
+                const headerLeft = '   Trade #' + tradeId + ' ' + message.author.username.padStart(8);
                 const headerMiddle = ' | ';
-                const headerRight = user.username.padLeft(8);
+                const headerRight = user.username.padStart(8);
                 const header = headerLeft + headerMiddle + headerRight;
                 const userIds = [message.author.id, userId];
                 const fts = [0, 0];
