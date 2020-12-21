@@ -1065,6 +1065,11 @@ Help
                       .mul(new web3.utils.BN(1e9))
                       .mul(new web3.utils.BN(1e9)),
                   };
+                  const fullAmountD2 = {
+                    t: 'uint256',
+                    v: fullAmount.v.div(new web3.utils.BN(2)),
+                  };
+
                   const mnemonics = [];
                   const addresses = [];
                   for (const userId of userIds) {
@@ -1073,13 +1078,24 @@ Help
                       const spec = await _genKey(userId);
                       mnemonic = spec.mnemonic;
                     }
-
-                    await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
-                    await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
-                    
-                    mnemonics.push(mnemonic);
                     const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                     const address = wallet.getAddressString();
+
+                    {
+                      let allowance = await contracts.FT.methods.allowance(address, contracts['Trade']._address).call();
+                      allowance = new web3.utils.BN(allowance, 10);
+                      if (allowance.lt(fullAmountD2.v)) {
+                        await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
+                      }
+                    }
+                    {
+                      const isApproved = await contracts.NFT.methods.isApprovedForAll(address, contracts['Trade']._address).call();
+                      if (!isApproved) {
+                        await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                      }
+                    }
+                    
+                    mnemonics.push(mnemonic);
                     addresses.push(address);
                   }
                   
@@ -1191,7 +1207,10 @@ Help
               if (ownTokenIds.includes(tokenId)) {
                 let status, buyId;
                 try {
-                  await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                  const isApproved = await contracts.NFT.methods.isApprovedForAll(address, contracts['Trade']._address).call();
+                  if (!isApproved) {
+                    await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                  }
                   // buyId = await contracts.Trade.methods.addStore(tokenId, price).call();
                   const buySpec = await runSidechainTransaction(mnemonic)('Trade', 'addStore', tokenId, price);
                   console.log('got buy spec', JSON.stringify(buySpec, null, 2));
@@ -1212,7 +1231,10 @@ Help
               } else if (treasuryTokenIds.includes(tokenId)) {
                 let status, buyId;
                 try {
-                  await runSidechainTransaction(treasuryMnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                  const isApproved = await contracts.NFT.methods.isApprovedForAll(address, contracts['Trade']._address).call();
+                  if (!isApproved) {
+                    await runSidechainTransaction(treasuryMnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                  }
                   const buySpec = await runSidechainTransaction(treasuryMnemonic)('Trade', 'addStore', tokenId, price);
                   buyId = parseInt(buySpec.logs[0].topics[1]);
 
@@ -1271,6 +1293,8 @@ Help
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
             }
+            const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+            const address = wallet.getAddressString();
 
             const fullAmount = {
               t: 'uint256',
@@ -1278,10 +1302,20 @@ Help
                 .mul(new web3.utils.BN(1e9))
                 .mul(new web3.utils.BN(1e9)),
             };
+            const fullAmountD2 = {
+              t: 'uint256',
+              v: fullAmount.v.div(new web3.utils.BN(2)),
+            };
 
             let status, tokenId, price;
             try {
-              await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
+              {
+                let allowance = await contracts.FT.methods.allowance(address, contracts['Trade']._address).call();
+                allowance = new web3.utils.BN(allowance, 10);
+                if (allowance.lt(fullAmountD2.v)) {
+                  await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
+                }
+              }
               await runSidechainTransaction(mnemonic)('Trade', 'buy', buyId);
               
               const store = await contracts.Trade.methods.getStoreByIndex(buyId).call();
@@ -1624,12 +1658,22 @@ Help
                   .mul(new web3.utils.BN(1e9))
                   .mul(new web3.utils.BN(1e9)),
               };
+              const fullAmountD2 = {
+                t: 'uint256',
+                v: fullAmount.v.div(new web3.utils.BN(2)),
+              };
 
               let status;
               try {
                 {
-                  const result = await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['NFT']._address, fullAmount.v);
-                  status = result.status;
+                  let allowance = await contracts.FT.methods.allowance(address, contracts['NFT']._address).call();
+                  allowance = new web3.utils.BN(allowance, 10);
+                  if (allowance.lt(fullAmountD2.v)) {
+                    const result = await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['NFT']._address, fullAmount.v);
+                    status = result.status;
+                  } else {
+                    status = true;
+                  }
                 }
                 if (status) {
                   const result = await runSidechainTransaction(mnemonic)('NFT', 'pack', address, tokenId, amount);
@@ -1740,7 +1784,10 @@ Help
                       ids.sort();
                       
                       if (ids.length >= quantity) {
-                        await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                        const isApproved = await contracts.NFT.methods.isApprovedForAll(address, contracts['Trade']._address).call();
+                        if (!isApproved) {
+                          await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                        }
 
                         for (let i = 0; i < quantity; i++) {
                           const id = ids[i];
@@ -1781,7 +1828,10 @@ Help
                   let status = true;
                   for (let i = 0; i < quantity; i++) {
                     try {
-                      await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                      const isApproved = await contracts.NFT.methods.isApprovedForAll(address, contracts['Trade']._address).call();
+                      if (!isApproved) {
+                        await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                      }
                       
                       const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
                       status = status && result.status;
@@ -1830,7 +1880,10 @@ Help
                   let status = true;
                   for (let i = 0; i < quantity; i++) {
                     try {
-                      await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                      const isApproved = await contracts.NFT.methods.isApprovedForAll(address, contracts['Trade']._address).call();
+                      if (!isApproved) {
+                        await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
+                      }
                       
                       const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
                       status = status && result.status;
@@ -2242,14 +2295,20 @@ Help
                           .mul(new web3.utils.BN(1e9))
                           .mul(new web3.utils.BN(1e9)),
                       };
+                      const fullAmountD2 = {
+                        t: 'uint256',
+                        v: fullAmount.v.div(new web3.utils.BN(2)),
+                      };
 
                       let status, transactionHash, tokenIds;
                       try {
-                        {
+                        let allowance = await contracts.FT.methods.allowance(address, contracts['NFT']._address).call();
+                        allowance = new web3.utils.BN(allowance, 10);
+                        if (allowance.lt(fullAmountD2.v)) {
                           const result = await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['NFT']._address, fullAmount.v);
                           status = result.status;
-                          transactionHash = '0x0';
-                          tokenIds = [];
+                        } else {
+                          status = true;
                         }
                         if (status) {
                           const description = '';
