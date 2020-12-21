@@ -19,7 +19,7 @@ const {Transaction} = require('@ethereumjs/tx');
 const {default: Common} = require('@ethereumjs/common');
 const {hdkey} = require('ethereumjs-wallet');
 
-const {accessKeyId, secretAccessKey, discordApiToken, mnemonic, infuraProjectId, treasuryMnemonic} = require('../exokit-backend/config.json');
+const {accessKeyId, secretAccessKey, discordApiToken, mnemonic, treasuryMnemonic} = require('../exokit-backend/config.json');
 const awsConfig = new AWS.Config({
   credentials: new AWS.Credentials({
     accessKeyId,
