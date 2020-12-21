@@ -1,5 +1,6 @@
 const http = require('http');
 const https = require('https');
+const dns = require('dns');
 // const followRedirects = require('follow-redirects');
 const mime = require('mime');
 const AWS = require('aws-sdk');
@@ -41,6 +42,7 @@ const previewExt = 'png';
 const treasurerRoleName = 'Treasurer';
 const treasuryWallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
 const treasuryAddress = treasuryWallet.getAddressString();
+const ethereumHost = 'ethereum.exokit.org';
 
 Error.stackTraceLimit = 300;
 
@@ -127,7 +129,22 @@ const makePromise = () => {
 };
 
 (async () => {
-  const web3 = new Web3(new Web3.providers.HttpProvider('http://13.56.80.83:8545'));
+  const ethereumHostAddress = await new Promise((accept, reject) => {
+    dns.resolve4(ethereumHost, (err, addresses) => {
+      if (!err) {
+        if (addresses.length > 0) {
+          accept(addresses[0]);
+        } else {
+          reject(new Error('no addresses resolved for ' + ethereumHostname));
+        }
+      } else {
+        reject(err);
+      }
+    });
+  });
+  const web3 = new Web3(new Web3.providers.HttpProvider(`http://${ethereumHostAddress}:8545`));
+  web3.eth.transactionConfirmationBlocks = 1;
+  // console.log('got blocks', web3.eth.transactionConfirmationBlocks);
   const addresses = await fetch('https://contracts.webaverse.com/ethereum/address.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')).sidechain);
   const abis = await fetch('https://contracts.webaverse.com/ethereum/abi.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')));
   // const chainIds = await fetch('https://contracts.webaverse.com/ethereum/chain-id.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')).sidechain);
