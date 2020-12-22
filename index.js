@@ -638,19 +638,6 @@ Keys (DM bot)
 
               message.channel.send('<@!' + message.author.id + '>: set avatar to ' + id);
             } else {
-              /* const contractSource = await blockchain.getContractSource('getUserData.cdc');
-
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  limit: 100,
-                  script: contractSource.replace(/ARG0/g, '0x' + addr),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json();
-              const [name, avatarUrl] = response2.encodedData.value.map(value => value.value && value.value.value); */
-              
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
               const avatarUrl = await contracts.Account.methods.getMetadata(address, 'avatarUrl').call();
