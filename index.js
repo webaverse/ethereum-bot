@@ -710,6 +710,48 @@ Keys (DM bot)
 
               message.channel.send('<@!' + message.author.id + '>: loadout:\n```' + loadout.map((item, index) => `${index + 1}. ${item !== null ? item[0] : 'empty'}`).join('\n') + '```');
             }
+          } else if (split[0] === prefix + 'homespace') {
+            let {mnemonic} = await _getUser();
+            if (!mnemonic) {
+              const spec = await _genKey();
+              mnemonic = spec.mnemonic;
+            }
+
+            const id = parseInt(split[1], 10);
+
+            if (!isNaN(id)) {
+              let {mnemonic} = await _getUser();
+              if (!mnemonic) {
+                const spec = await _genKey();
+                mnemonic = spec.mnemonic;
+              }
+              
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+              
+              const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+              const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
+              const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
+              const match = filename.match(/^(.+)\.([^\.]+)$/);
+              const ext = match ? match[2] : '';
+
+              const homeSpaceUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
+              const homeSpacePreview = `${previewHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
+              
+              console.log('set 1');
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceUrl', homeSpaceUrl);
+              console.log('set 2');
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceFileName', homeSpaceUrl);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpacePreview', homeSpacePreview);
+
+              message.channel.send('<@!' + message.author.id + '>: set home space to ' + id);
+            } else {
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+              const homeSpaceUrl = await contracts.Account.methods.getMetadata(address, 'homeSpaceUrl').call();
+
+              message.channel.send('<@!' + message.author.id + '>: home space is ' + JSON.stringify(homeSpaceUrl));
+            }
           } else if (split[0] === prefix + 'balance') {
             let match;
             if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
