@@ -637,10 +637,11 @@ Keys (DM bot)
               const ext = match ? match[2] : '';
 
               const avatarUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
+              const avatarFileName = avatarUrl.replace(/.*\/([^\/]+)$/, '$1');
               const avatarPreview = `${previewHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
               
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarUrl', avatarUrl);
-              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarFileName', avatarUrl);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarFileName', avatarFileName);
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarPreview', avatarPreview);
 
               message.channel.send('<@!' + message.author.id + '>: set avatar to ' + id);
@@ -690,13 +691,14 @@ Keys (DM bot)
               const ext = match ? match[2] : '';
 
               const itemUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
+              const itemFileName = itemUrl.replace(/.*\/([^\/]+)$/, '$1');
               const itemPreview = `${previewHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
 
               const loadout = await getLoadout(address);
               loadout.splice(index - 1, 1, [
-                itemUrl, // url
-                itemUrl, // file name
-                itemPreview, // preview url
+                itemUrl,
+                itemFileName,
+                itemPreview
               ]);
               
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'loadout', JSON.stringify(loadout));
@@ -708,7 +710,7 @@ Keys (DM bot)
 
               const loadout = await getLoadout(address);
 
-              message.channel.send('<@!' + message.author.id + '>: loadout:\n```' + loadout.map((item, index) => `${index + 1}. ${item !== null ? item[0] : 'empty'}`).join('\n') + '```');
+              message.channel.send('<@!' + message.author.id + '>: loadout:\n```' + loadout.map((item, index) => `${index + 1}. ${item !== null ? item[1] : 'empty'}`).join('\n') + '```');
             }
           } else if (split[0] === prefix + 'homespace') {
             let {mnemonic} = await _getUser();
@@ -736,12 +738,11 @@ Keys (DM bot)
               const ext = match ? match[2] : '';
 
               const homeSpaceUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
+              const homeSpaceFileName = homeSpaceUrl.replace(/.*\/([^\/]+)$/, '$1');
               const homeSpacePreview = `${previewHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
               
-              console.log('set 1');
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceUrl', homeSpaceUrl);
-              console.log('set 2');
-              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceFileName', homeSpaceUrl);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceFileName', homeSpaceFileName);
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpacePreview', homeSpacePreview);
 
               message.channel.send('<@!' + message.author.id + '>: set home space to ' + id);
