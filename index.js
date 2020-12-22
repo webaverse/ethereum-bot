@@ -446,11 +446,11 @@ const makePromise = () => {
             const m = await message.channel.send(`\`\`\`\
 Info
 .status - show your account details
-.balance - show your FT balance, or that of a user/address
-.inventory [@user|0xaddr]? - show your NFTs, or those of a user/address
-.loadout [1-8] [id] - set NFT on your loadout
-.homespace [id] - set NFT as your home space
-.address [@user]? - print your address, or that of a user
+.balance [@user|0xaddr]? - show your/user's/address's FT balance
+.inventory [@user|0xaddr]? - show your/user's/address's NFTs
+.loadout [num] [id] - set NFT [num] (1-8) on loadout
+.homespace [id] - set NFT as home space
+.address [@user]? - print your/[@user]'s address
 .key - get your private key in a DM
 
 Tokens
@@ -468,11 +468,11 @@ Account
 .avatar [id] - set your avatar to [id]
 
 Minting
-.mint [count]? (in upload comment) - mint [count] NFTs from file upload
+.mint [count]? (upload comment) - mint [count] NFTs from file upload
 .mint [count]? [url] - mint [count] NFTs from the provided [url]
-.update [id] (in upload comment) - update nft content
+.update [id] (upload comment) - update nft content
 
-Packing
+Packs
 .packs [@user|nftid] - check packed ft balances of [@user] or [nftid]
 .pack [nftid] [amount] - pack [amount] ft from yourself into [nftid]
 .unpack [nftid] [amount] - unpack [amount] ft from [nftid] to yourself
@@ -487,9 +487,9 @@ Store
 .store [@user]? - show the treasury store, or that of a user
 .sell [nftid] [price] - list [nftid] for sale at [price]
 .unsell [saleid] - unlist [saleid] from the store
-.buy [saleid] - buy the [saleid] from [@user]
+.buy [saleid] - buy the [saleid]
 
-Key Management (DM to bot)
+Keys (DM bot)
 .key [new mnemonic key] - set your Discord private key
 .key reset - generate and set a new Discord private key
 \`\`\``);
