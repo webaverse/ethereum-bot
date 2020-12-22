@@ -452,8 +452,8 @@ Info
 .key - get your private key in a DM
 
 Tokens
-.send [@user|0xaddr|treasury] [amount] - send [amount] FT to user/address
-.transfer [@user|0xaddr|treasury] [id] [quantity]? - send [quantity] [id] NFTs to user/addr/treasury
+.send [@user|0xaddr|treasury] [amount] - send FT to user/address
+.transfer [@user|0xaddr|treasury] [id] [quantity]? - send NFT to user/addr/treasury
 .preview [id] - show preview of NFT [id] in channel
 .gif [id] - show animated gif of NFT [id] in channel
 .wget [id] - get NFT [id] delivered in DM
