@@ -448,8 +448,6 @@ Info
 .status - show your account details
 .balance [@user|0xaddr]? - show your/user's/address's FT balance
 .inventory [@user|0xaddr]? - show your/user's/address's NFTs
-.loadout [num] [id] - set NFT [num] (1-8) on loadout
-.homespace [id] - set NFT as home space
 .address [@user]? - print your/[@user]'s address
 .key - get your private key in a DM
 
@@ -466,6 +464,8 @@ Account
 .name [newname] - set your name to [name]
 .monetizationpointer [mp] - set your monetization pointer to [mp]
 .avatar [id] - set your avatar to [id]
+.loadout [num] [id] - set NFT [num] (1-8) on loadout
+.homespace [id] - set NFT as home space
 
 Minting
 .mint [count]? (upload comment) - mint [count] NFTs from file upload
