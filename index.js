@@ -50,6 +50,13 @@ function getExt(fileName) {
   const match = fileName.match(/\.([^\.]+)$/);
   return match && match[1].toLowerCase();
 }
+function jsonParse(s, d = null) {
+  try {
+    return JSON.parse(s);
+  } catch (err) {
+    return d;
+  }
+}
 
 const _runTransaction = async (userKeys, transaction) => {
   const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
@@ -643,6 +650,65 @@ Keys (DM bot)
               const avatarUrl = await contracts.Account.methods.getMetadata(address, 'avatarUrl').call();
 
               message.channel.send('<@!' + message.author.id + '>: avatar is ' + JSON.stringify(avatarUrl));
+            }
+          } else if (split[0] === prefix + 'loadout') {
+            let {mnemonic} = await _getUser();
+            if (!mnemonic) {
+              const spec = await _genKey();
+              mnemonic = spec.mnemonic;
+            }
+
+            const index = parseInt(split[1], 10);
+            const id = parseInt(split[2], 10);
+            
+            async function getLoadout(address) {
+              const loadoutString = await contracts.Account.methods.getMetadata(address, 'loadout').call();
+              let loadout = jsonParse(loadoutString);
+              if (!Array.isArray(loadout)) {
+                loadout = [];
+              }
+              while (loadout.length < 8) {
+                loadout.push(null);
+              }
+              return loadout;
+            }
+
+            if (index >= 1 && index <= 8 && !isNaN(id)) {
+              let {mnemonic} = await _getUser();
+              if (!mnemonic) {
+                const spec = await _genKey();
+                mnemonic = spec.mnemonic;
+              }
+              
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+              
+              const hashNumberString = await contracts.NFT.methods.getHash(id).call();
+              const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
+              const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
+              const match = filename.match(/^(.+)\.([^\.]+)$/);
+              const ext = match ? match[2] : '';
+
+              const itemUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
+              const itemPreview = `${previewHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
+
+              const loadout = await getLoadout(address);
+              loadout.splice(index - 1, 1, [
+                itemUrl, // url
+                itemUrl, // file name
+                itemPreview, // preview url
+              ]);
+              
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'loadout', JSON.stringify(loadout));
+
+              message.channel.send('<@!' + message.author.id + '>: updated loadout');
+            } else {
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+
+              const loadout = await getLoadout(address);
+
+              message.channel.send('<@!' + message.author.id + '>: loadout:\n```' + loadout.map((item, index) => `${index + 1}. ${item !== null ? item[0] : 'empty'}`).join('\n') + '```');
             }
           } else if (split[0] === prefix + 'balance') {
             let match;
