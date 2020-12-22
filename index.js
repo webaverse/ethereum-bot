@@ -448,6 +448,8 @@ Info
 .status - show your account details
 .balance - show your FT balance, or that of a user/address
 .inventory [@user|0xaddr]? - show your NFTs, or those of a user/address
+.loadout [1-8] [id] - set NFT on your loadout
+.homespace [id] - set NFT as your home space
 .address [@user]? - print your address, or that of a user
 .key - get your private key in a DM
 
