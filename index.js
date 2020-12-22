@@ -490,9 +490,6 @@ Store
 Key Management (DM to bot)
 .key [new mnemonic key] - set your Discord private key
 .key reset - generate and set a new Discord private key
-
-Help
-.help - show help
 \`\`\``);
 
             m.react('❌');
