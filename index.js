@@ -2400,7 +2400,7 @@ Keys (DM bot)
                         tokenIds = [];
                       }
                       
-                      console.log('minted 1', status);
+                      // console.log('minted 1', status);
 
                       if (status) {
                         message.channel.send('<@!' + message.author.id + '>: minted ' + (tokenIds[0] === tokenIds[1] ? ('#' + tokenIds[0]) : tokenIds.map(n => '#' + n).join(' - ')) + ' (' + hash + ')');
@@ -2408,7 +2408,7 @@ Keys (DM bot)
                         message.channel.send('<@!' + message.author.id + '>: mint transaction failed: ' + transactionHash);
                       }
                       
-                      console.log('minted 2', status);
+                      // console.log('minted 2', status);
                     });
                     res.on('error', err => {
                       console.warn(err.stack);
