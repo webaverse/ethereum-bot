@@ -2054,7 +2054,7 @@ Keys (DM bot)
                 balance,
                 totalSupply,
               });
-            });
+            }));
 
             let s = userLabel + '\'s inventory:\n';
             if (entries.length > 0) {
