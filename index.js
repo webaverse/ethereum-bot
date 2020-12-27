@@ -2025,7 +2025,6 @@ Keys (DM bot)
             for (let i = 0; i < nftBalance; i++) {
               const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
               const hash = await contracts.NFT.methods.getHash(id).call();
-              console.log('got hash', {hash});
               if (!hashToIds[hash]) {
                 hashToIds[hash] = [];
               }
