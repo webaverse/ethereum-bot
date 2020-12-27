@@ -533,7 +533,7 @@ Keys (DM bot)
               contracts.Account.methods.getMetadata(address, 'monetizationPointer').call(),
             ]);
 
-            message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nAvatar: ${avatarId}\Home Space: ${homeSpaceId}\nMonetization Pointer: ${monetizationPointer}\n\`\`\``);
+            message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nAvatar: ${avatarId}\nHome Space: ${homeSpaceId}\nMonetization Pointer: ${monetizationPointer}\n\`\`\``);
           } else if (split[0] === prefix + 'name') {
             let {mnemonic} = await _getUser();
             if (!mnemonic) {
