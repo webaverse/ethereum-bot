@@ -715,14 +715,21 @@ Keys (DM bot)
               const address = wallet.getAddressString();
               
               const hash = await contracts.NFT.methods.getHash(id).call();
-              const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
+              const [
+                name,
+                ext,
+              ] = await Promise.all([
+                contracts.NFT.methods.getMetadata(hash, 'name').call(),
+                contracts.NFT.methods.getMetadata(hash, 'ext').call(),
+              ]);
 
-              const homeSpaceUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
-              const homeSpaceFileName = homeSpaceUrl.replace(/.*\/([^\/]+)$/, '$1');
-              const homeSpacePreview = `${previewHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
+              // const homeSpaceUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
+              // const homeSpaceFileName = homeSpaceUrl.replace(/.*\/([^\/]+)$/, '$1');
+              const homeSpacePreview = `${previewHost}/${hash}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
               
-              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceUrl', homeSpaceUrl);
-              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceFileName', homeSpaceFileName);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceId', id);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceName', name);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceExt', ext);
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpacePreview', homeSpacePreview);
 
               message.channel.send('<@!' + message.author.id + '>: set home space to ' + id);
