@@ -2358,7 +2358,7 @@ Keys (DM bot)
                     res.on('end', async () => {
                       const b = Buffer.concat(bs);
                       const s = b.toString('utf8');
-                      console.log('got s', s);
+                      // console.log('got s', s);
                       const j = JSON.parse(s);
                       const {hash} = j;
 
