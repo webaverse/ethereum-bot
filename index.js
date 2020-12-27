@@ -618,7 +618,7 @@ Keys (DM bot)
               // const avatarFileName = avatarUrl.replace(/.*\/([^\/]+)$/, '$1');
               const avatarPreview = `${previewHost}/${hash}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
               
-              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarId', id);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarId', id + '');
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarName', name);
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarExt', ext);
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarPreview', avatarPreview);
@@ -678,7 +678,7 @@ Keys (DM bot)
 
               const loadout = await getLoadout(address);
               loadout.splice(index - 1, 1, [
-                id,
+                id: id + '',
                 name,
                 ext,
                 itemPreview
@@ -727,7 +727,7 @@ Keys (DM bot)
               // const homeSpaceFileName = homeSpaceUrl.replace(/.*\/([^\/]+)$/, '$1');
               const homeSpacePreview = `${previewHost}/${hash}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
               
-              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceId', id);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceId', id + '');
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceName', name);
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceExt', ext);
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpacePreview', homeSpacePreview);
