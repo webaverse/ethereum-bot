@@ -632,9 +632,7 @@ Keys (DM bot)
               const address = wallet.getAddressString();
               
               const hash = await contracts.NFT.methods.getHash(id).call();
-              const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
-              const match = filename.match(/^(.+)\.([^\.]+)$/);
-              const ext = match ? match[2] : '';
+              const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
 
               const avatarUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
               const avatarFileName = avatarUrl.replace(/.*\/([^\/]+)$/, '$1');
@@ -685,9 +683,7 @@ Keys (DM bot)
               const address = wallet.getAddressString();
               
               const hash = await contracts.NFT.methods.getHash(id).call();
-              const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
-              const match = filename.match(/^(.+)\.([^\.]+)$/);
-              const ext = match ? match[2] : '';
+              const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
 
               const itemUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
               const itemFileName = itemUrl.replace(/.*\/([^\/]+)$/, '$1');
@@ -731,9 +727,7 @@ Keys (DM bot)
               const address = wallet.getAddressString();
               
               const hash = await contracts.NFT.methods.getHash(id).call();
-              const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
-              const match = filename.match(/^(.+)\.([^\.]+)$/);
-              const ext = match ? match[2] : '';
+              const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
 
               const homeSpaceUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
               const homeSpaceFileName = homeSpaceUrl.replace(/.*\/([^\/]+)$/, '$1');
@@ -1220,11 +1214,11 @@ Keys (DM bot)
             const booth = booths.find(booth => booth.seller === address);
             if (booth && booth.entries.length > 0) {
               try {
-                const [filenames, packedBalances] = await Promise.all([
+                const [names, packedBalances] = await Promise.all([
                   Promise.all(booth.entries.map(async entry => {
                     const hash = await contracts.NFT.methods.getHash(entry.tokenId).call();
-                    const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
-                    return filename;
+                    const name = await contracts.NFT.methods.getMetadata(hash, 'name').call();
+                    return name;
                   })),
                   Promise.all(booth.entries.map(async entry => {
                     const packedBalance = await contracts.NFT.methods.getPackedBalance(entry.tokenId).call();
@@ -2031,31 +2025,40 @@ Keys (DM bot)
             for (let i = 0; i < nftBalance; i++) {
               const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
               const hash = await contracts.NFT.methods.getHash(id).call();
+              console.log('got hash', {hash});
               if (!hashToIds[hash]) {
                 hashToIds[hash] = [];
               }
               hashToIds[hash].push(id);
             }
             const entries = [];
-            for (const hash in hashToIds) {
+            await Promise.all(Object.keys(hashToIds).map(async hash => {
               const ids = hashToIds[hash].sort();
               const id = ids[0];
-              const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
+              const [
+                name,
+                ext,
+                totalSupply,
+              ] = await Promise.all([
+                contracts.NFT.methods.getMetadata(hash, 'name').call(),
+                contracts.NFT.methods.getMetadata(hash, 'ext').call(),
+                contracts.NFT.methods.totalSupplyOfHash(hash).call(),
+              ]);
               const balance = ids.length;
-              const totalSupply = await contracts.NFT.methods.totalSupplyOfHash(hash).call();
               entries.push({
                 id,
                 ids,
                 hash,
-                filename,
+                name,
+                ext,
                 balance,
                 totalSupply,
               });
-            }
+            });
 
             let s = userLabel + '\'s inventory:\n';
             if (entries.length > 0) {
-              s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.filename} ${entry.hash} (${entry.balance}/${entry.totalSupply})${entry.ids.length > 1 ? ` [${entry.ids.join(',')}]` : ''}`).join('\n') + '```';
+              s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply})${entry.ids.length > 1 ? ` [${entry.ids.join(',')}]` : ''}`).join('\n') + '```';
             } else {
               s += '```inventory empty```';
             }
@@ -2079,10 +2082,11 @@ Keys (DM bot)
               owner = owner.toLowerCase();
               if (owner === address) {
                 const hash = await contracts.NFT.methods.getHash(id).call();
-                const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
+                const name = await contracts.NFT.methods.getMetadata(hash, 'name').call();
+                const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
 
                 const buffer = await _readStorageHashAsBuffer(hash.slice(2));
-                const attachment = new Discord.MessageAttachment(buffer, filename);
+                const attachment = new Discord.MessageAttachment(buffer, name + (ext ? '.' + ext : ''));
                 
                 const m = await message.author.send('<@!' + message.author.id + '>: ' + id + ' is this', attachment);
                 // m.react('❌');
@@ -2096,62 +2100,26 @@ Keys (DM bot)
             const id = parseInt(split[1], 10);
 
             const hash = await contracts.NFT.methods.getHash(id).call();
-            const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
-            const match = filename.match(/^(.+)\.([^\.]+)$/);
+            const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
 
-            /* const contractSource = await blockchain.getContractSource('getNft.cdc');
-
-            const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-              method: 'POST',
-              body: JSON.stringify({
-                limit: 100,
-                script: contractSource
-                  .replace(/ARG0/g, n),
-                wait: true,
-              }),
-            });
-            const response2 = await res.json();
-            const [hash, filename] = response2.encodedData.value.map(value => value.value && value.value.value);
-            const match = filename.match(/^(.+)\.([^\.]+)$/); */
-
-            if (match) {
-              const basename = match[1];
-              const ext = match[2];
-              const m = await message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash.slice(2) + '.' + ext + '/' + basename + '.png');
+            if (ext) {
+              const m = await message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash.slice(2) + '.' + ext + '/preview.png');
               m.react('❌');
               m.requester = message.author;
               helps.push(m);
             } else {
-              message.channel.send('<@!' + message.author.id + '>: ' + id + ': no preview available');
+              message.channel.send('<@!' + message.author.id + '>: ' + id + ': cannot preview file type: ' + ext);
             }
           } else if (split[0] === prefix + 'gif' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
             
             const hash = await contracts.NFT.methods.getHash(id).call();
-            const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
-            const match = filename.match(/^(.+)\.([^\.]+)$/);
+            const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
 
-            /* const contractSource = await blockchain.getContractSource('getNft.cdc');
-
-            const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-              method: 'POST',
-              body: JSON.stringify({
-                limit: 100,
-                script: contractSource
-                  .replace(/ARG0/g, n),
-                wait: true,
-              }),
-            });
-            const response2 = await res.json();
-            const [hash, filename] = response2.encodedData.value.map(value => value.value && value.value.value);
-            const match = filename.match(/^(.+)\.([^\.]+)$/); */
-
-            if (match) {
-              const basename = match[1];
-              const ext = match[2];
-              message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash.slice(2) + '.' + ext + '/' + basename + '.gif');
+            if (ext) {
+              message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash.slice(2) + '.' + ext + '/preview.gif');
             } else {
-              message.channel.send('<@!' + message.author.id + '>: ' + id + ': no preview available');
+              message.channel.send('<@!' + message.author.id + '>: ' + id + ': cannot preview file type: ' + ext);
             }
           } else if (split[0] === prefix + 'key') {
             let {mnemonic} = await _getUser();
@@ -2468,14 +2436,19 @@ Keys (DM bot)
                       let status, transactionHash;
                       try {
                         {
-                          const result = await runSidechainTransaction(mnemonic)('NFT', 'updateHash', oldHash, '0x' + hash);
+                          const result = await runSidechainTransaction(mnemonic)('NFT', 'updateHash', oldHash, hash);
                           status = result.status;
                           transactionHash = '0x0';
                         }
                         if (status) {
-                          const result = await runSidechainTransaction(mnemonic)('NFT', 'setMetadata', '0x' + hash, 'filename', file.name);
-                          status = result.status;
-                          transactionHash = result.transactionHash;
+                          const extName = path.extname(file.name).slice(1);
+                          const fileName = extName ? file.name.slice(0, -(extName.length + 1)) : file.name;
+                          await Promise.all([
+                            runSidechainTransaction(mnemonic)('NFT', 'setMetadata', hash, 'name', fileName),
+                            runSidechainTransaction(mnemonic)('NFT', 'setMetadata', hash, 'ext', extName)
+                          ]);
+                          status = true;
+                          transactionHash = '0x0';
                         }
                       } catch(err) {
                         console.warn(err.stack);
