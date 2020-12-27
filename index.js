@@ -631,8 +631,7 @@ Keys (DM bot)
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
               
-              const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-              const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
+              const hash = await contracts.NFT.methods.getHash(id).call();
               const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
               const match = filename.match(/^(.+)\.([^\.]+)$/);
               const ext = match ? match[2] : '';
@@ -685,8 +684,7 @@ Keys (DM bot)
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
               
-              const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-              const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
+              const hash = await contracts.NFT.methods.getHash(id).call();
               const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
               const match = filename.match(/^(.+)\.([^\.]+)$/);
               const ext = match ? match[2] : '';
@@ -732,8 +730,7 @@ Keys (DM bot)
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
               
-              const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-              const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
+              const hash = await contracts.NFT.methods.getHash(id).call();
               const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
               const match = filename.match(/^(.+)\.([^\.]+)$/);
               const ext = match ? match[2] : '';
@@ -1225,8 +1222,7 @@ Keys (DM bot)
               try {
                 const [filenames, packedBalances] = await Promise.all([
                   Promise.all(booth.entries.map(async entry => {
-                    const hashNumberString = await contracts.NFT.methods.getHash(entry.tokenId).call();
-                    const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
+                    const hash = await contracts.NFT.methods.getHash(entry.tokenId).call();
                     const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
                     return filename;
                   })),
@@ -1520,10 +1516,8 @@ Keys (DM bot)
                 const amount = 1;
                 
                 if (!trade.nfts[index].includes(id)) {
-                  const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-                  if (hashNumberString !== '0') {
-                    const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
-                    
+                  const hash = await contracts.NFT.methods.getHash(id).call();
+                  if (hash) {
                     let {mnemonic} = await _getUser();
                     if (!mnemonic) {
                       const spec = await _genKey();
@@ -1843,15 +1837,13 @@ Keys (DM bot)
 
                     let status = true, transactionHash;
                     try {
-                      const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-                      const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
+                      const hash = await contracts.NFT.methods.getHash(id).call();
 
                       const ids = [];
                       const nftBalance = await contracts.NFT.methods.balanceOf(address).call();
                       for (let i = 0; i < nftBalance; i++) {
                         const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
-                        const hashNumberString2 = await contracts.NFT.methods.getHash(id).call();
-                        const hash2 = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString2, 10).toString(16), 64);
+                        const hash2 = await contracts.NFT.methods.getHash(id).call();
                         if (hash2 === hash) {
                           ids.push(id);
                         }
@@ -2054,34 +2046,12 @@ Keys (DM bot)
               entries.push({
                 id,
                 ids,
-                hash: hash.slice(2),
+                hash,
                 filename,
                 balance,
                 totalSupply,
               });
             }
-
-            /* const contractSource = await blockchain.getContractSource('getHashes.cdc');
-
-            const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-              method: 'POST',
-              body: JSON.stringify({
-                limit: 100,
-                script: contractSource
-                  .replace(/ARG0/g, '0x' + addr),
-                wait: true,
-              }),
-            });
-            const response2 = await res.json();
-
-            const entries = response2.encodedData.value.map(({value: {fields}}) => {
-              const id = parseInt(fields.find(field => field.name === 'id').value.value, 10);
-              const hash = fields.find(field => field.name === 'hash').value.value;
-              const filename = fields.find(field => field.name === 'filename').value.value;
-              const balance = parseInt(fields.find(field => field.name === 'balance').value.value, 10);
-              const totalSupply = parseInt(fields.find(field => field.name === 'totalSupply').value.value, 10);
-              return {id, hash, filename, balance, totalSupply};
-            }); */
 
             let s = userLabel + '\'s inventory:\n';
             if (entries.length > 0) {
@@ -2108,8 +2078,7 @@ Keys (DM bot)
               let owner = await contracts.NFT.methods.ownerOf(id).call();
               owner = owner.toLowerCase();
               if (owner === address) {
-                const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-                const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
+                const hash = await contracts.NFT.methods.getHash(id).call();
                 const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
 
                 const buffer = await _readStorageHashAsBuffer(hash.slice(2));
@@ -2126,8 +2095,7 @@ Keys (DM bot)
           } else if (split[0] === prefix + 'preview' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
 
-            const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
+            const hash = await contracts.NFT.methods.getHash(id).call();
             const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
             const match = filename.match(/^(.+)\.([^\.]+)$/);
 
@@ -2159,8 +2127,7 @@ Keys (DM bot)
           } else if (split[0] === prefix + 'gif' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
             
-            const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
+            const hash = await contracts.NFT.methods.getHash(id).call();
             const filename = await contracts.NFT.methods.getMetadata(hash, 'filename').call();
             const match = filename.match(/^(.+)\.([^\.]+)$/);
 
@@ -2199,8 +2166,7 @@ Keys (DM bot)
             const id = parseInt(split[1], 10);
             const key = split[2];
             
-            const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
+            const hash = await contracts.NFT.methods.getHash(id).call();
             const value = await contracts.NFT.methods.getMetadata(hash, key).call();
 
             /* const contractSource = await blockchain.getContractSource('getNftMetadata.cdc');
@@ -2230,8 +2196,7 @@ Keys (DM bot)
               mnemonic = spec.mnemonic;
             }
             
-            const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-            const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
+            const hash = await contracts.NFT.methods.getHash(id).call();
 
             let status, transactionHash;
             try {
@@ -2474,8 +2439,7 @@ Keys (DM bot)
                 }
               }
               if (files.length > 0) {
-                const oldHashNumberString = await contracts.NFT.methods.getHash(tokenId).call();
-                const oldHash = '0x' + web3.utils.padLeft(new web3.utils.BN(oldHashNumberString, 10).toString(16), 64);
+                const oldHash = await contracts.NFT.methods.getHash(tokenId).call();
 
                 await Promise.all(files.map(async file => {
                   const req = https.request(storageHost, {
