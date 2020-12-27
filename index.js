@@ -2038,8 +2038,7 @@ Keys (DM bot)
             const hashToIds = {};
             for (let i = 0; i < nftBalance; i++) {
               const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
-              const hashNumberString = await contracts.NFT.methods.getHash(id).call();
-              const hash = '0x' + web3.utils.padLeft(new web3.utils.BN(hashNumberString, 10).toString(16), 64);
+              const hash = await contracts.NFT.methods.getHash(id).call();
               if (!hashToIds[hash]) {
                 hashToIds[hash] = [];
               }
