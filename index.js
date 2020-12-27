@@ -539,22 +539,6 @@ Keys (DM bot)
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
               const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', name);
-              
-              /* const contractSource = await blockchain.getContractSource('setUserData.cdc');
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  address: addr,
-                  mnemonic,
-
-                  limit: 100,
-                  transaction: contractSource
-                    .replace(/ARG0/g, 'name')
-                    .replace(/ARG1/g, name),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json(); */
 
               message.channel.send('<@!' + message.author.id + '>: set name to ' + JSON.stringify(name));
             } else {
