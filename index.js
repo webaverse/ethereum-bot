@@ -523,22 +523,9 @@ Keys (DM bot)
             const address = wallet.getAddressString();
             const name = await contracts.Account.methods.getMetadata(address, 'name').call();
             const monetizationPointer = await contracts.Account.methods.getMetadata(address, 'monetizationPointer').call();
-            const avatarUrl = await contracts.Account.methods.getMetadata(address, 'avatarUrl').call();
+            const avatarId = await contracts.Account.methods.getMetadata(address, 'avatarId').call();
 
-            /* const contractSource = await blockchain.getContractSource('getUserData.cdc');
-
-            const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-              method: 'POST',
-              body: JSON.stringify({
-                limit: 100,
-                script: contractSource.replace(/ARG0/g, '0x' + addr),
-                wait: true,
-              }),
-            });
-            const response2 = await res.json();
-            const [name, avatarUrl] = response2.encodedData.value.map(value => value.value && value.value.value); */
-
-            message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nMonetization Pointer: ${monetizationPointer}\nAvatar: ${avatarUrl}\n\`\`\``);
+            message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nMonetization Pointer: ${monetizationPointer}\nAvatar: ${avatarId}\n\`\`\``);
           } else if (split[0] === prefix + 'name') {
             let {mnemonic} = await _getUser();
             if (!mnemonic) {
@@ -574,19 +561,6 @@ Keys (DM bot)
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
               const name = await contracts.Account.methods.getMetadata(address, 'name').call();
-              
-              /* const contractSource = await blockchain.getContractSource('getUserData.cdc');
-
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  limit: 100,
-                  script: contractSource.replace(/ARG0/g, '0x' + addr),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json();
-              const [name, avatarUrl] = response2.encodedData.value.map(value => value.value && value.value.value); */
 
               message.channel.send('<@!' + message.author.id + '>: name is ' + JSON.stringify(name));
             }
@@ -632,23 +606,30 @@ Keys (DM bot)
               const address = wallet.getAddressString();
               
               const hash = await contracts.NFT.methods.getHash(id).call();
-              const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
+              const [
+                name,
+                ext,
+              ] = await Promise.all([
+                contracts.NFT.methods.getMetadata(hash, 'name').call(),
+                contracts.NFT.methods.getMetadata(hash, 'ext').call(),
+              ]);
 
-              const avatarUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
-              const avatarFileName = avatarUrl.replace(/.*\/([^\/]+)$/, '$1');
-              const avatarPreview = `${previewHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
+              // const avatarUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
+              // const avatarFileName = avatarUrl.replace(/.*\/([^\/]+)$/, '$1');
+              const avatarPreview = `${previewHost}/${hash}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
               
-              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarUrl', avatarUrl);
-              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarFileName', avatarFileName);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarId', id);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarName', name);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarExt', ext);
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarPreview', avatarPreview);
 
               message.channel.send('<@!' + message.author.id + '>: set avatar to ' + id);
             } else {
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
-              const avatarUrl = await contracts.Account.methods.getMetadata(address, 'avatarUrl').call();
+              const avatarId = await contracts.Account.methods.getMetadata(address, 'avatarId').call();
 
-              message.channel.send('<@!' + message.author.id + '>: avatar is ' + JSON.stringify(avatarUrl));
+              message.channel.send('<@!' + message.author.id + '>: avatar is ' + JSON.stringify(avatarId));
             }
           } else if (split[0] === prefix + 'loadout') {
             let {mnemonic} = await _getUser();
@@ -683,16 +664,23 @@ Keys (DM bot)
               const address = wallet.getAddressString();
               
               const hash = await contracts.NFT.methods.getHash(id).call();
-              const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
+              const [
+                name,
+                ext,
+              ] = await Promise.all([
+                contracts.NFT.methods.getMetadata(hash, 'name').call(),
+                contracts.NFT.methods.getMetadata(hash, 'ext').call(),
+              ]);
 
-              const itemUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
-              const itemFileName = itemUrl.replace(/.*\/([^\/]+)$/, '$1');
+              // const itemUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
+              // const itemFileName = itemUrl.replace(/.*\/([^\/]+)$/, '$1');
               const itemPreview = `${previewHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
 
               const loadout = await getLoadout(address);
               loadout.splice(index - 1, 1, [
-                itemUrl,
-                itemFileName,
+                id,
+                name,
+                ext,
                 itemPreview
               ]);
               
@@ -2081,8 +2069,14 @@ Keys (DM bot)
               owner = owner.toLowerCase();
               if (owner === address) {
                 const hash = await contracts.NFT.methods.getHash(id).call();
-                const name = await contracts.NFT.methods.getMetadata(hash, 'name').call();
-                const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
+                const [
+                  name,
+                  ext,
+                ] = await Promise.all([
+                  contracts.NFT.methods.getMetadata(hash, 'name').call(),
+                  contracts.NFT.methods.getMetadata(hash, 'ext').call(),
+                ]);
+
 
                 const buffer = await _readStorageHashAsBuffer(hash.slice(2));
                 const attachment = new Discord.MessageAttachment(buffer, name + (ext ? '.' + ext : ''));
