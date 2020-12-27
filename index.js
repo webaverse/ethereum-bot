@@ -678,7 +678,7 @@ Keys (DM bot)
 
               const loadout = await getLoadout(address);
               loadout.splice(index - 1, 1, [
-                id: id + '',
+                id + '',
                 name,
                 ext,
                 itemPreview
