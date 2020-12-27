@@ -2085,7 +2085,7 @@ Keys (DM bot)
                 ]);
 
 
-                const buffer = await _readStorageHashAsBuffer(hash.slice(2));
+                const buffer = await _readStorageHashAsBuffer(hash);
                 const attachment = new Discord.MessageAttachment(buffer, name + (ext ? '.' + ext : ''));
                 
                 const m = await message.author.send('<@!' + message.author.id + '>: ' + id + ' is this', attachment);
