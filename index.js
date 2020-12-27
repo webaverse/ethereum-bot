@@ -674,7 +674,7 @@ Keys (DM bot)
 
               // const itemUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
               // const itemFileName = itemUrl.replace(/.*\/([^\/]+)$/, '$1');
-              const itemPreview = `${previewHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
+              const itemPreview = `${previewHost}/${hash}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
 
               const loadout = await getLoadout(address);
               loadout.splice(index - 1, 1, [
@@ -2103,7 +2103,7 @@ Keys (DM bot)
             const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
 
             if (ext) {
-              const m = await message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash.slice(2) + '.' + ext + '/preview.png');
+              const m = await message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash + '.' + ext + '/preview.png');
               m.react('❌');
               m.requester = message.author;
               helps.push(m);
@@ -2117,7 +2117,7 @@ Keys (DM bot)
             const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
 
             if (ext) {
-              message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash.slice(2) + '.' + ext + '/preview.gif');
+              message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash + '.' + ext + '/preview.gif');
             } else {
               message.channel.send('<@!' + message.author.id + '>: ' + id + ': cannot preview file type: ' + ext);
             }
