@@ -693,7 +693,7 @@ Keys (DM bot)
 
               const loadout = await getLoadout(address);
 
-              message.channel.send('<@!' + message.author.id + '>: loadout:\n```' + loadout.map((item, index) => `${index + 1}. ${item !== null ? item[1] : 'empty'}`).join('\n') + '```');
+              message.channel.send('<@!' + message.author.id + '>: loadout:\n```' + loadout.map((item, index) => `${index + 1}: ${item !== null ? (`[${item[0]}] ${item[1]} ${item[2]}`) : 'empty'}`).join('\n') + '```');
             }
           } else if (split[0] === prefix + 'homespace') {
             let {mnemonic} = await _getUser();
