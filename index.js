@@ -2358,6 +2358,7 @@ Keys (DM bot)
                     res.on('end', async () => {
                       const b = Buffer.concat(bs);
                       const s = b.toString('utf8');
+                      console.log('got s', s);
                       const j = JSON.parse(s);
                       const {hash} = j;
 
@@ -2389,8 +2390,8 @@ Keys (DM bot)
                           const description = '';
                           const extName = path.extname(file.name).slice(1);
                           const fileName = extName ? file.name.slice(0, -(extName.length + 1)) : file.name;
-                          console.log('minting', ['NFT', 'mint', address, '0x' + hash, fileName, extName, description, quantity]);
-                          const result = await runSidechainTransaction(mnemonic)('NFT', 'mint', address, '0x' + hash, fileName, extName, description, quantity);
+                          console.log('minting', ['NFT', 'mint', address, hash, fileName, extName, description, quantity]);
+                          const result = await runSidechainTransaction(mnemonic)('NFT', 'mint', address, hash, fileName, extName, description, quantity);
                           status = result.status;
                           transactionHash = result.transactionHash;
                           const tokenId = new web3.utils.BN(result.logs[0].topics[3].slice(2), 16).toNumber();
