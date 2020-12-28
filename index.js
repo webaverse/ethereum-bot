@@ -458,6 +458,7 @@ Info
 .inventory [@user|0xaddr]? - show your/user's/address's NFTs
 .address [@user]? - print your/[@user]'s address
 .key - get your private key in a DM
+.login - get Webaverse login link in a DM
 
 Tokens
 .send [@user|0xaddr|treasury] [amount] - send FT to user/address
@@ -2113,6 +2114,10 @@ Keys (DM bot)
             } else {
               message.channel.send('<@!' + message.author.id + '>: ' + id + ': cannot preview file type: ' + ext);
             }
+          } else if (split[0] === prefix + 'login') {
+            const discordOauthUrl = "https://discord.com/api/oauth2/authorize?client_id=684141574808272937&redirect_uri=https%3A%2F%2Fwebaverse.com%2Flogin&response_type=code&scope=identify";
+
+            const m = await message.author.send('Login: ' + discordOauthUrl);
           } else if (split[0] === prefix + 'key') {
             let {mnemonic} = await _getUser();
             if (!mnemonic) {
