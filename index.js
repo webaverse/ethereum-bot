@@ -2,6 +2,7 @@ const path = require('path');
 const http = require('http');
 const https = require('https');
 const dns = require('dns');
+const crypto = require('crypto');
 // const followRedirects = require('follow-redirects');
 const mime = require('mime');
 const AWS = require('aws-sdk');
@@ -2114,6 +2115,8 @@ Keys (DM bot)
               message.channel.send('<@!' + message.author.id + '>: ' + id + ': cannot preview file type: ' + ext);
             }
           } else if (split[0] === prefix + 'login') {
+            const id = message.author.id;
+
             const _getUser = async id => {
               const tokenItem = await ddb.getItem({
                 TableName: usersTableName,
@@ -2145,7 +2148,7 @@ Keys (DM bot)
             
             const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
             await ddb.putItem({
-              TableName: tableName,
+              TableName: usersTableName,
               Item: {
                 email: {S: id + '.code'},
                 code: {S: code},
