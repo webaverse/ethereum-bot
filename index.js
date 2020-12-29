@@ -2142,7 +2142,6 @@ Keys (DM bot)
             };
             const user = await _getUser(id) || _genKey(id);
             const {mnemonic} = user;
-            const user = await _getUser(message.author.id);
             
             const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
             await ddb.putItem({
