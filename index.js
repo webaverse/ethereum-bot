@@ -2113,6 +2113,47 @@ Keys (DM bot)
             } else {
               message.channel.send('<@!' + message.author.id + '>: ' + id + ': cannot preview file type: ' + ext);
             }
+          } else if (split[0] === prefix + 'login') {
+            const _getUser = async id => {
+              const tokenItem = await ddb.getItem({
+                TableName: usersTableName,
+                Key: {
+                  email: {S: id + '.discordtoken'},
+                }
+              }).promise();
+
+              let mnemonic = (tokenItem.Item && tokenItem.Item.mnemonic) ? tokenItem.Item.mnemonic.S : null;
+              return {mnemonic};
+            };
+            const _genKey = async id => {
+              const mnemonic = bip39.generateMnemonic();
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              const address = wallet.getAddressString();
+
+              await ddb.putItem({
+                TableName: usersTableName,
+                Item: {
+                  email: {S: id + '.discordtoken'},
+                  mnemonic: {S: mnemonic},
+                  address: {S: address},
+                }
+              }).promise();
+              return {mnemonic};
+            };
+            const user = await _getUser(id) || _genKey(id);
+            const {mnemonic} = user;
+            const user = await _getUser(message.author.id);
+            
+            const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
+            await ddb.putItem({
+              TableName: tableName,
+              Item: {
+                email: {S: id + '.code'},
+                code: {S: code},
+              }
+            }).promise();
+            
+            const m = await message.author.send('Login: https://webaverse.com/discordlogin');
           } else if (split[0] === prefix + 'key') {
             let {mnemonic} = await _getUser();
             if (!mnemonic) {
