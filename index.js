@@ -2116,35 +2116,6 @@ Keys (DM bot)
             }
           } else if (split[0] === prefix + 'login') {
             const id = message.author.id;
-
-            const _getUser = async id => {
-              const tokenItem = await ddb.getItem({
-                TableName: usersTableName,
-                Key: {
-                  email: {S: id + '.discordtoken'},
-                }
-              }).promise();
-
-              let mnemonic = (tokenItem.Item && tokenItem.Item.mnemonic) ? tokenItem.Item.mnemonic.S : null;
-              return {mnemonic};
-            };
-            const _genKey = async id => {
-              const mnemonic = bip39.generateMnemonic();
-              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-              const address = wallet.getAddressString();
-
-              await ddb.putItem({
-                TableName: usersTableName,
-                Item: {
-                  email: {S: id + '.discordtoken'},
-                  mnemonic: {S: mnemonic},
-                  address: {S: address},
-                }
-              }).promise();
-              return {mnemonic};
-            };
-            const user = await _getUser(id) || _genKey(id);
-            const {mnemonic} = user;
             
             const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
             await ddb.putItem({
@@ -2155,7 +2126,7 @@ Keys (DM bot)
               }
             }).promise();
             
-            const m = await message.author.send('Login: https://webaverse.com/discordlogin');
+            const m = await message.author.send(`Login: https://webaverse.com/login?id=${id}&code=${code}`);
           } else if (split[0] === prefix + 'key') {
             let {mnemonic} = await _getUser();
             if (!mnemonic) {
