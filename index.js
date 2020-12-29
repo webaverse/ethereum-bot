@@ -2518,19 +2518,17 @@ Keys (DM bot)
 
           const split = message.content.split(/\s+/);
           if (split[0] === prefix + 'key') {
-            if (split.length === 12) {
-              const mnemonic = split.join(' ');
+            if (split.length === 1 + 12) {
+              const mnemonic = split.slice(1).join(' ');
               if (bip39.validateMnemonic(mnemonic)) {
                 await ddb.putItem({
                   TableName: usersTableName,
                   Item: {
-                    email: {S: id + '.discord'},
+                    email: {S: message.author.id + '.discordtoken'},
                     mnemonic: {S: mnemonic},
                   }
                 }).promise();
-                message.author.send('set key to ```' + JSON.stringify({
-                  mnemonic,
-                }) + '```');
+                message.author.send('set key to ```' + JSON.stringify(mnemonic) + '```');
               } else {
                 message.author.send('invalid key');
               }
