@@ -2091,15 +2091,22 @@ Keys (DM bot)
             }
           } else if (split[0] === prefix + 'preview' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
+            const raw = split[2] === 'raw';
 
             const hash = await contracts.NFT.methods.getHash(id).call();
             const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
 
             if (ext) {
-              const m = await message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash + '.' + ext + '/preview.png');
-              m.react('❌');
-              m.requester = message.author;
-              helps.push(m);
+              if (!raw) {
+                const m = await message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash + '.' + ext + '/preview.png');
+                m.react('❌');
+                m.requester = message.author;
+                helps.push(m);
+              } else {
+                const url = `https://ipfs.exokit.org/${hash}/src.${ext}`;
+                const screenshotUrl = `https://app.webaverse.com/screenshot.html?url=${url}&hash=${hash}&ext=${ext}&type=png`;
+                const m = await message.channel.send('<@!' + message.author.id + '>: ' + id + ': ' + screenshotUrl);
+              }
             } else {
               message.channel.send('<@!' + message.author.id + '>: ' + id + ': cannot preview file type: ' + ext);
             }
