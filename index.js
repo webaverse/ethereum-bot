@@ -2134,6 +2134,19 @@ Keys (DM bot)
             }).promise();
             
             const m = await message.author.send(`Login: https://webaverse.com/login?id=${id}&code=${code}`);
+          } else if (split[0] === prefix + 'play') {
+            const id = message.author.id;
+
+            const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
+            await ddb.putItem({
+              TableName: usersTableName,
+              Item: {
+                email: {S: id + '.code'},
+                code: {S: code},
+              }
+            }).promise();
+
+            const m = await message.author.send(`Login: https://webaverse.com/login?id=${id}&code=${code}&play=true`);
           } else if (split[0] === prefix + 'key') {
             let {mnemonic} = await _getUser();
             if (!mnemonic) {
