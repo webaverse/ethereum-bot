@@ -458,13 +458,13 @@ Info
 .balance [@user|0xaddr]? - show your/user's/address's FT balance
 .inventory [@user|0xaddr]? - show your/user's/address's NFTs
 .address [@user]? - print your/[@user]'s address
-.key - get your private key in a DM
+.key - get private key in DM
+.login - magic login link in DM; .play for world entry
 
 Tokens
 .send [@user|0xaddr|treasury] [amount] - send FT to user/address
 .transfer [@user|0xaddr|treasury] [id] [quantity]? - send NFT to user/addr/treasury
-.preview [id] - show preview of NFT [id] in channel
-.gif [id] - show animated gif of NFT [id] in channel
+.preview [id] - show preview of NFT [id]; .gif for gif
 .wget [id] - get NFT [id] delivered in DM
 .get [id] [key] - get metadata key [key] for NFT [id]
 .set [id] [key] [value] - set metadata key [key] to [value] for NFT [id]
