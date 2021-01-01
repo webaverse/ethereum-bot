@@ -459,7 +459,8 @@ Info
 .inventory [@user|0xaddr]? - show your/user's/address's NFTs
 .address [@user]? - print your/[@user]'s address
 .key - get private key in DM
-.login - magic login link in DM; .play for world entry
+.login - login link in DM
+.play - play link in DM
 
 Tokens
 .send [@user|0xaddr|treasury] [amount] - send FT to user/address
