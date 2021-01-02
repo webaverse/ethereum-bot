@@ -2480,7 +2480,7 @@ Keys (DM bot)
                       } catch(err) {
                         console.warn(err.stack);
                         status = false;
-                        transactionHash = '0x0';
+                        transactionHash = err.message;
                       }
 
                       if (status) {
