@@ -456,7 +456,7 @@ const makePromise = () => {
 Info
 .status - show your account details
 .balance [@user|0xaddr]? - show your/user's/address's FT balance
-.inventory [@user|0xaddr]? - show your/user's/address's NFTs
+.inventory [@user|0xaddr]? [page]? - show your/someone's NFTs
 .address [@user]? - print your/[@user]'s address
 .key - get private key in DM
 .login - login link in DM
