@@ -1976,6 +1976,17 @@ Keys (DM bot)
               message.channel.send('<@!' + message.author.id + '>: invalid token id: ' + split[2]);
             }
           } else if (split[0] === prefix + 'inventory') {
+            let page = parseInt(split[1], 10);
+            if (!isNaN(page)) {
+              split[2] = split[1];
+              split[1] = '';
+            } else {
+              page = parseInt(split[2], 10);
+              if (isNaN(page)) {
+                page = 1;
+              }
+            }
+           
             let address, userLabel;
             const _loadFromUserId = async userId => {
               const spec = await _getUser(userId);
@@ -2019,7 +2030,7 @@ Keys (DM bot)
               }
               hashToIds[hash].push(id);
             }
-            const entries = [];
+            let entries = [];
             await Promise.all(Object.keys(hashToIds).map(async hash => {
               const ids = hashToIds[hash].sort();
               const id = ids[0];
@@ -2044,8 +2055,16 @@ Keys (DM bot)
               });
             }));
 
+            const maxEntriesPerPage = 10;
+
             let s = userLabel + '\'s inventory:\n';
             if (entries.length > 0) {
+              if (entries.length >= maxEntriesPerPage) {
+                const numPages = Math.ceil(entries.length/maxEntriesPerPage);
+                page = Math.min(Math.max(page, 1), numPages);
+                s += `Page ${page}/${numPages}` + '\n';
+                entries = entries.slice((page-1)*maxEntriesPerPage, page*maxEntriesPerPage);
+              }
               s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply})${entry.ids.length > 1 ? ` [${entry.ids.join(',')}]` : ''}`).join('\n') + '```';
             } else {
               s += '```inventory empty```';
