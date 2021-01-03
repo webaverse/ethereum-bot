@@ -764,7 +764,7 @@ Keys (DM bot)
               const response2 = await res.json();
               const balance = parseFloat(response2.encodedData.value); */
 
-              message.channel.send('<@!' + userId + '> has ' + balance + ' grease');
+              message.channel.send('<@!' + userId + '> has ' + balance + ' flux');
             } else if (split[1] === 'treasury') {
               const balance = await contracts.FT.methods.balanceOf(treasuryAddress).call();
 
@@ -784,7 +784,7 @@ Keys (DM bot)
               const response2 = await res.json();
               const balance = parseFloat(response2.encodedData.value); */
 
-              message.channel.send('treasury has ' + balance + ' grease');
+              message.channel.send('treasury has ' + balance + ' flux');
             } else {
               let {mnemonic} = await _getUser();
               if (!mnemonic) {
@@ -812,7 +812,7 @@ Keys (DM bot)
               const response2 = await res.json();
               const balance = parseFloat(response2.encodedData.value); */
 
-              message.channel.send('<@!' + message.author.id + '> has ' + balance + ' grease');
+              message.channel.send('<@!' + message.author.id + '> has ' + balance + ' flux');
             }
           } else if (split[0] === prefix + 'address') {
             let user, address, userLabel;
