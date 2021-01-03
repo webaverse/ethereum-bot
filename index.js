@@ -452,7 +452,7 @@ const makePromise = () => {
           const split = message.content.split(/\s+/);
           let match;
           if (split[0] === prefix + 'help') {
-            const m = await message.channel.send(`\`\`\`\
+            const m = await message.channel.send(`\`\`\`\css
 Info
 .status - show your account details
 .balance [@user|0xaddr]? - show your/user's/address's FT balance
