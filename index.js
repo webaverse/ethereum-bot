@@ -1759,7 +1759,7 @@ Keys (DM bot)
               const result = await runSidechainTransaction(mnemonic)('NFT', 'unpack', address, tokenId, amount);
 
               if (result.status) {
-                message.channel.send('<@!' + message.author.id + '>: unpacked ' + amount + ' from #' + amount);
+                message.channel.send('<@!' + message.author.id + '>: unpacked ' + amount + ' from #' + tokenId);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: failed to unpack FT from NFT: ' + tokenId);
               }
