@@ -581,24 +581,19 @@ Keys (DM bot)
               message.channel.send('<@!' + message.author.id + '>: monetization pointer is ' + JSON.stringify(monetizationPointer));
             }
           } else if (split[0] === prefix + 'avatar') {
+            const contentId = split[1];
+            const id = parseInt(contentId, 10);
+
             let {mnemonic} = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
             }
+            
+            const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+            const address = wallet.getAddressString();
 
-            const id = parseInt(split[1], 10);
-
-            if (!isNaN(id)) {
-              let {mnemonic} = await _getUser();
-              if (!mnemonic) {
-                const spec = await _genKey();
-                mnemonic = spec.mnemonic;
-              }
-              
-              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-              const address = wallet.getAddressString();
-              
+            if (!isNaN(id)) {              
               const hash = await contracts.NFT.methods.getHash(id).call();
               const [
                 name,
@@ -617,7 +612,18 @@ Keys (DM bot)
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarExt', ext);
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarPreview', avatarPreview);
 
-              message.channel.send('<@!' + message.author.id + '>: set avatar to ' + id);
+              message.channel.send('<@!' + message.author.id + '>: set avatar to ' + JSON.stringify(id));
+            } else if (contentId) {
+              const name = path.basename(contentId);
+              const ext = path.extname(contentId).slice(1);
+              const avatarPreview = `https://preview.exokit.org/[${contentId}]/preview.jpg`;
+              
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarId', contentId);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarName', name);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarExt', ext);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarPreview', avatarPreview);
+
+              message.channel.send('<@!' + message.author.id + '>: set avatar to ' + JSON.stringify(contentId));
             } else {
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
