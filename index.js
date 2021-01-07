@@ -2027,8 +2027,14 @@ Keys (DM bot)
             }
 
             const nftBalance = await contracts.NFT.methods.balanceOf(address).call();
+            const maxEntriesPerPage = 10;
+            const numPages = Math.ceil(nftBalance/maxEntriesPerPage);
+            page = Math.min(Math.max(page, 1), numPages);
+            const startIndex = (page-1)*maxEntriesPerPage;
+            const endIndex = Math.min(page*maxEntriesPerPage, nftBalance);
+
             const hashToIds = {};
-            for (let i = 0; i < nftBalance; i++) {
+            for (let i = startIndex; i < endIndex; i++) {
               const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
               const hash = await contracts.NFT.methods.getHash(id).call();
               if (!hashToIds[hash]) {
@@ -2061,17 +2067,10 @@ Keys (DM bot)
               });
             }));
 
-            const maxEntriesPerPage = 10;
-
             let s = userLabel + '\'s inventory:\n';
             if (entries.length > 0) {
-              if (entries.length >= maxEntriesPerPage) {
-                const numPages = Math.ceil(entries.length/maxEntriesPerPage);
-                page = Math.min(Math.max(page, 1), numPages);
-                s += `Page ${page}/${numPages}` + '\n';
-                entries = entries.slice((page-1)*maxEntriesPerPage, page*maxEntriesPerPage);
-              }
-              s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply})${entry.ids.length > 1 ? ` [${entry.ids.join(',')}]` : ''}`).join('\n') + '```';
+              s += `Page ${page}/${numPages}` + '\n';
+              s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`).join('\n') + '```';
             } else {
               s += '```inventory empty```';
             }
