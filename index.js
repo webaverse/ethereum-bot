@@ -2181,9 +2181,10 @@ Keys (DM bot)
             }
             
             const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+            const address = wallet.getAddressString();
             const privateKey = wallet.privateKey.toString('hex');
 
-            const m = await message.author.send('Mnemonic: ||' + mnemonic + '||\nPrivate key: ||' + privateKey + '||');
+            const m = await message.author.send('Address: `' + address + '`\nMnemonic: ||' + mnemonic + '||\nPrivate key: ||' + privateKey + '||');
             m.react('❌');
           } else if (split[0] === prefix + 'get' && split.length >= 3 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
