@@ -413,104 +413,6 @@ const makePromise = () => {
           }).promise();
           return {mnemonic};
         };
-        const _items = contractName => async () => {
-          let page = parseInt(split[1], 10);
-          if (!isNaN(page)) {
-            split[2] = split[1];
-            split[1] = '';
-          } else {
-            page = parseInt(split[2], 10);
-            if (isNaN(page)) {
-              page = 1;
-            }
-          }
-         
-          let address, userLabel;
-          const _loadFromUserId = async userId => {
-            const spec = await _getUser(userId);
-            let mnemonic = spec.mnemonic;
-            if (!mnemonic) {
-              const spec = await _genKey(userId);
-              mnemonic = spec.mnemonic;
-            }
-
-            const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-            address = wallet.getAddressString();
-
-            userLabel = '<@!' + userId + '>';
-          };
-          const _loadFromAddress = a => {
-            address = a;
-            userLabel = a;
-          };
-          const _loadFromTreasury = () => {
-            const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-            address = wallet.getAddressString();
-            userLabel = 'treasury';
-          };
-          if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
-            await _loadFromUserId(match[1]);
-          } else if (split.length >= 2 && (match = split[1].match(/^(0x[0-9a-f]+)$/i))) {
-            _loadFromAddress(match[1]);
-          } else if (split.length >= 2 && split[1] === 'treasury') {
-            _loadFromTreasury();
-          } else {
-            await _loadFromUserId(message.author.id);
-          }
-
-          const nftBalance = await contracts[contractName].methods.balanceOf(address).call();
-          const maxEntriesPerPage = 10;
-          const numPages = Math.ceil(nftBalance/maxEntriesPerPage);
-          page = Math.min(Math.max(page, 1), numPages);
-          const startIndex = (page-1)*maxEntriesPerPage;
-          const endIndex = Math.min(page*maxEntriesPerPage, nftBalance);
-
-          const hashToIds = {};
-          for (let i = startIndex; i < endIndex; i++) {
-            const id = await contracts[contractName].methods.tokenOfOwnerByIndex(address, i).call();
-            const hash = await contracts[contractName].methods.getHash(id).call();
-            if (!hashToIds[hash]) {
-              hashToIds[hash] = [];
-            }
-            hashToIds[hash].push(id);
-          }
-          let entries = [];
-          await Promise.all(Object.keys(hashToIds).map(async hash => {
-            const ids = hashToIds[hash].sort();
-            const id = ids[0];
-            const [
-              name,
-              ext,
-              totalSupply,
-            ] = await Promise.all([
-              contracts[contractName].methods.getMetadata(hash, 'name').call(),
-              contracts[contractName].methods.getMetadata(hash, 'ext').call(),
-              contracts[contractName].methods.totalSupplyOfHash(hash).call(),
-            ]);
-            const balance = ids.length;
-            entries.push({
-              id,
-              ids,
-              hash,
-              name,
-              ext,
-              balance,
-              totalSupply,
-            });
-          }));
-
-          let s = userLabel + '\'s inventory:\n';
-          if (entries.length > 0) {
-            s += `Page ${page}/${numPages}` + '\n';
-            s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`).join('\n') + '```';
-          } else {
-            s += '```inventory empty```';
-          }
-          const m = await message.channel.send(s);
-          m.react('❌');
-          m.requester = message.author;
-          helps.push(m);
-        };
         /* const _ensureBaked = async ({addr, mnemonic}) => {
           const contractSource = await blockchain.getContractSource('isUserAccountBaked.cdc');
 
@@ -545,6 +447,105 @@ const makePromise = () => {
 
         if (message.channel.type === 'text') {
           // console.log('got message', message);
+
+          const _items = contractName => async () => {
+            let page = parseInt(split[1], 10);
+            if (!isNaN(page)) {
+              split[2] = split[1];
+              split[1] = '';
+            } else {
+              page = parseInt(split[2], 10);
+              if (isNaN(page)) {
+                page = 1;
+              }
+            }
+           
+            let address, userLabel;
+            const _loadFromUserId = async userId => {
+              const spec = await _getUser(userId);
+              let mnemonic = spec.mnemonic;
+              if (!mnemonic) {
+                const spec = await _genKey(userId);
+                mnemonic = spec.mnemonic;
+              }
+
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              address = wallet.getAddressString();
+
+              userLabel = '<@!' + userId + '>';
+            };
+            const _loadFromAddress = a => {
+              address = a;
+              userLabel = a;
+            };
+            const _loadFromTreasury = () => {
+              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+              address = wallet.getAddressString();
+              userLabel = 'treasury';
+            };
+            if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
+              await _loadFromUserId(match[1]);
+            } else if (split.length >= 2 && (match = split[1].match(/^(0x[0-9a-f]+)$/i))) {
+              _loadFromAddress(match[1]);
+            } else if (split.length >= 2 && split[1] === 'treasury') {
+              _loadFromTreasury();
+            } else {
+              await _loadFromUserId(message.author.id);
+            }
+
+            const nftBalance = await contracts[contractName].methods.balanceOf(address).call();
+            const maxEntriesPerPage = 10;
+            const numPages = Math.max(Math.ceil(nftBalance/maxEntriesPerPage), 1);
+            page = Math.min(Math.max(page, 1), numPages);
+            const startIndex = (page-1)*maxEntriesPerPage;
+            const endIndex = Math.min(page*maxEntriesPerPage, nftBalance);
+
+            const hashToIds = {};
+            for (let i = startIndex; i < endIndex; i++) {
+              const id = await contracts[contractName].methods.tokenOfOwnerByIndex(address, i).call();
+              const hash = await contracts[contractName].methods.getHash(id).call();
+              if (!hashToIds[hash]) {
+                hashToIds[hash] = [];
+              }
+              hashToIds[hash].push(id);
+            }
+            let entries = [];
+            await Promise.all(Object.keys(hashToIds).map(async hash => {
+              const ids = hashToIds[hash].sort();
+              const id = ids[0];
+              const [
+                name,
+                ext,
+                totalSupply,
+              ] = await Promise.all([
+                contracts[contractName].methods.getMetadata(hash, 'name').call(),
+                contracts[contractName].methods.getMetadata(hash, 'ext').call(),
+                contracts[contractName].methods.totalSupplyOfHash(hash).call(),
+              ]);
+              const balance = ids.length;
+              entries.push({
+                id,
+                ids,
+                hash,
+                name,
+                ext,
+                balance,
+                totalSupply,
+              });
+            }));
+
+            let s = userLabel + '\'s inventory:\n';
+            if (entries.length > 0) {
+              s += `Page ${page}/${numPages}` + '\n';
+              s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`).join('\n') + '```';
+            } else {
+              s += `\`\`\`you do not have any ${contractName}s\`\`\``;
+            }
+            const m = await message.channel.send(s);
+            m.react('❌');
+            m.requester = message.author;
+            helps.push(m);
+          };
 
           /* if (/grease/.test(message.content)) {
             message.author.send('i am NOT grease?!!!!');
@@ -1600,7 +1601,7 @@ Keys (DM bot)
               message.channel.send('invalid buy id');
             } */
           } else if (split[0] === prefix + 'parcels') {
-            await _items('LAND')();
+            await _items('LAND')().catch(console.warn);
           } else if (split[0] === prefix + 'addnft' && split.length >= 3) {
             const tradeId = parseInt(split[1], 10);
             const trade = trades.find(trade => trade.tradeId === tradeId);
@@ -2088,7 +2089,7 @@ Keys (DM bot)
               message.channel.send('<@!' + message.author.id + '>: invalid token id: ' + split[2]);
             }
           } else if (split[0] === prefix + 'inventory') {
-            await _items('NFT')();
+            await _items('NFT')().catch(console.warn);
           } else if (split[0] === prefix + 'wget' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
             
@@ -2579,3 +2580,10 @@ Keys (DM bot)
 
   client.login(discordApiToken);
 })();
+
+process.on('uncaughtException', err => {
+  console.warn(err);
+});
+process.on('unhandledRejection', err => {
+  console.warn(err);
+});
