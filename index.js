@@ -517,27 +517,27 @@ const makePromise = () => {
           if (split[0] === prefix + 'help') {
             const m = await message.channel.send(`\`\`\`\css
 Info
-.status - show your account details
-.balance [@user|0xaddr]? - show your/user's/address's FT balance
-.inventory [@user|0xaddr]? [page]? - show your/someone's NFTs
-.address [@user]? - print your/[@user]'s address
-.key - get private key in DM
+.status - show account details
+.balance [@user|0xaddr]? - show FT balance
+.inventory [@user|0xaddr]? [page]? - show NFTs
+.address [@user]? - print address
+.key - private key in DM
 .login - login link in DM
 .play - play link in DM
 
 Tokens
-.send [@user|0xaddr|treasury] [amount] - send FT to user/address
-.transfer [@user|0xaddr|treasury] [id] [quantity]? - send NFT to user/addr/treasury
-.preview [id] - show preview of NFT [id]; .gif for gif
+.send [@user|0xaddr|treasury] [amount] - send FT
+.transfer [@user|0xaddr|treasury] [id] [quantity]? - send NFT
+.preview [id] - preview NFT [id]; .gif for gif
 .wget [id] - get NFT [id] delivered in DM
-.get [id] [key] - get metadata key [key] for NFT [id]
-.set [id] [key] [value] - set metadata key [key] to [value] for NFT [id]
+.get [id] [key] - get metadata for NFT
+.set [id] [key] [value] - set metadata for NFT
 
 Account
 .name [newname] - set your name to [name]
-.monetizationpointer [mp] - set your monetization pointer to [mp]
-.avatar [id] - set your avatar to [id]
-.loadout [num] [id] - set NFT [num] (1-8) on loadout
+.monetizationpointer [mp] - set your monetization pointer
+.avatar [id] - set avatar
+.loadout [num] [id] - set loadout NFT [num] (1-8) to [id]
 .homespace [id] - set NFT as home space
 
 Minting
@@ -546,12 +546,12 @@ Minting
 .update [id] (upload comment) - update nft content
 
 Packs
-.packs [@user|nftid] - check packed ft balances of [@user] or [nftid]
-.pack [nftid] [amount] - pack [amount] ft from yourself into [nftid]
-.unpack [nftid] [amount] - unpack [amount] ft from [nftid] to yourself
+.packs [@user|nftid] - check packed NFT balances
+.pack [nftid] [amount] - pack [amount] FT from yourself into [nftid]
+.unpack [nftid] [amount] - unpack [amount] FT from [nftid] to yourself
 
 Trade
-.trade [@user|0xaddr] - start a trade with user/address
+.trade [@user|0xaddr] - start a trade with
 .addnft [tradeid] [nftid] - add nonfungible token to trade [tradeid]
 .removenft [tradeid] [index] - remove nonfungible token at [index] from trade [tradeid]
 .addft [tradeid] [amount] - add fungible tokens to trade [tradeid]
