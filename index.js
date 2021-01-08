@@ -1570,7 +1570,7 @@ Keys (DM bot)
                   const id = await contracts.LAND.methods.tokenOfOwnerByIndex(address, i).call();
                   const [name, deployHash] = await Promise.all([
                     (async () => {
-                      const hash = await contracts.NFT.methods.getHash(id).call();
+                      const hash = await contracts.LAND.methods.getHash(id).call();
                       const name = await contracts.LAND.methods.getMetadata(hash, 'name').call();
                       return name;
                     })(),
