@@ -1568,18 +1568,14 @@ Keys (DM bot)
               for (let i = startIndex; i < endIndex; i++) {
                 promises.push((async i => {
                   const id = await contracts.LAND.methods.tokenOfOwnerByIndex(address, i).call();
-                  const [name, deployHash] = await Promise.all([
-                    (async () => {
-                      const hash = await contracts.LAND.methods.getHash(id).call();
-                      const name = await contracts.LAND.methods.getMetadata(hash, 'name').call();
-                      return name;
-                    })(),
-                    contracts.LAND.methods.getIdMetadata(id, 'deployHash').call(),
+                  const [name, hash] = await Promise.all([
+                    contracts.LAND.methods.getHash(id).call(),
+                    contracts.LAND.methods.getSingleMetadata(id, 'hash').call(),
                   ]);
                   return {
                     id,
                     name,
-                    deployHash,
+                    hash,
                   };
                 })(i));
               }
@@ -1589,7 +1585,7 @@ Keys (DM bot)
               let s = userLabel + '\'s inventory:\n';
               if (entries.length > 0) {
                 s += `Page ${page}/${numPages}` + '\n';
-                s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} -> ${entry.deployHash}`).join('\n') + '```';
+                s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} -> ${entry.hash}`).join('\n') + '```';
               } else {
                 s += '```inventory empty```';
               }
