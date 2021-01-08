@@ -1582,12 +1582,12 @@ Keys (DM bot)
               const entries = await Promise.all(promises);
               return entries;
             }, (userLabel, page, numPages, entries) => {
-              let s = userLabel + '\'s inventory:\n';
+              let s = userLabel + '\'s parcels:\n';
               if (entries.length > 0) {
                 s += `Page ${page}/${numPages}` + '\n';
                 s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} -> ${entry.hash}`).join('\n') + '```';
               } else {
-                s += '```inventory empty```';
+                s += '```no parcels owned```';
               }
               return s;
             }).catch(console.warn);
