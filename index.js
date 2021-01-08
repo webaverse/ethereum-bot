@@ -662,7 +662,7 @@ Keys (DM bot)
 
               message.channel.send('<@!' + message.author.id + '>: name is ' + JSON.stringify(name));
             }
-          }  else if (split[0] === prefix + 'monetizationpointer') {
+          } else if (split[0] === prefix + 'monetizationpointer') {
             let {mnemonic} = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
