@@ -1567,12 +1567,13 @@ Keys (DM bot)
               const promises = [];
               for (let i = startIndex; i < endIndex; i++) {
                 promises.push((async i => {
-                  const id = await contracts[contractName].methods.tokenOfOwnerByIndex(address, i).call();
+                  const id = await contracts.LAND.methods.tokenOfOwnerByIndex(address, i).call();
                   const [name, hash] = await Promise.all([
-                    contracts[contractName].methods.getIdMetadata(id, 'name').call(),
-                    contracts[contractName].methods.getIdMetadata(id, 'hash').call(),
+                    contracts.LAND.methods.getIdMetadata(id, 'name').call(),
+                    contracts.LAND.methods.getIdMetadata(id, 'hash').call(),
                   ]);
                   return {
+                    id,
                     name,
                     hash,
                   };
@@ -1584,7 +1585,7 @@ Keys (DM bot)
               let s = userLabel + '\'s inventory:\n';
               if (entries.length > 0) {
                 s += `Page ${page}/${numPages}` + '\n';
-                s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`).join('\n') + '```';
+                s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name}`).join('\n') + '```';
               } else {
                 s += '```inventory empty```';
               }
@@ -2123,7 +2124,7 @@ Keys (DM bot)
               let s = userLabel + '\'s parcels:\n';
               if (entries.length > 0) {
                 s += `Page ${page}/${numPages}` + '\n';
-                s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} [${entry.ids.join(',')}]`).join('\n') + '```';
+                s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`).join('\n') + '```';
               } else {
                 s += '```no parcels owned```';
               }
