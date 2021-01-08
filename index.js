@@ -1571,14 +1571,15 @@ Keys (DM bot)
                   const [name, deployHash] = await Promise.all([
                     (async () => {
                       const hash = await contracts.NFT.methods.getHash(id).call();
-                      contracts.LAND.methods.getMetadata(hash, 'name').call(),
+                      const name = await contracts.LAND.methods.getMetadata(hash, 'name').call();
+                      return name;
                     })(),
                     contracts.LAND.methods.getIdMetadata(id, 'deployHash').call(),
                   ]);
                   return {
                     id,
                     name,
-                    hash,
+                    deployHash,
                   };
                 })(i));
               }
