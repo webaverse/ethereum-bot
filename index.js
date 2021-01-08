@@ -167,6 +167,8 @@ const makePromise = () => {
       'FTProxy',
       'NFTProxy',
       'Trade',
+      'LAND',
+      'LANDProxy',
     ].forEach(contractName => {
       result[contractName] = new web3.eth.Contract(abis[contractName], addresses[contractName]);
     });
