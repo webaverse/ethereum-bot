@@ -1568,9 +1568,12 @@ Keys (DM bot)
               for (let i = startIndex; i < endIndex; i++) {
                 promises.push((async i => {
                   const id = await contracts.LAND.methods.tokenOfOwnerByIndex(address, i).call();
-                  const [name, hash] = await Promise.all([
-                    contracts.LAND.methods.getIdMetadata(id, 'name').call(),
-                    contracts.LAND.methods.getIdMetadata(id, 'hash').call(),
+                  const [name, deployHash] = await Promise.all([
+                    (async () => {
+                      const hash = await contracts.NFT.methods.getHash(id).call();
+                      contracts.LAND.methods.getMetadata(hash, 'name').call(),
+                    })(),
+                    contracts.LAND.methods.getIdMetadata(id, 'deployHash').call(),
                   ]);
                   return {
                     id,
@@ -1585,7 +1588,7 @@ Keys (DM bot)
               let s = userLabel + '\'s inventory:\n';
               if (entries.length > 0) {
                 s += `Page ${page}/${numPages}` + '\n';
-                s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name}`).join('\n') + '```';
+                s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} -> ${entry.deployHash}`).join('\n') + '```';
               } else {
                 s += '```inventory empty```';
               }
