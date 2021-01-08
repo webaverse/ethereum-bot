@@ -599,6 +599,10 @@ Store
 .unsell [saleid] - unlist [saleid] from the store
 .buy [saleid] - buy the [saleid]
 
+Land
+.parcels - list owned parcels
+.deploy [parcelId] [nftId] - deploy [nftId] to [parcelId]
+
 Keys (DM bot)
 .key [new mnemonic key] - set your Discord private key
 .key reset - generate and set a new Discord private key
