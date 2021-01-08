@@ -1591,8 +1591,36 @@ Keys (DM bot)
               }
               return s;
             }).catch(console.warn);
-          } else if (split[0] === prefix + 'deploy') {
-            console.warn('not implemented'); // XXX
+          } else if (split[0] === prefix + 'deploy' && split.length >= 3) {
+            const tokenId = parseInt(split[1], 10);
+            const contentId = split[2];
+            
+            let {mnemonic} = await _getUser();
+            if (!mnemonic) {
+              const spec = await _genKey();
+              mnemonic = spec.mnemonic;
+            }
+            
+            if (!isNaN(tokenId)) {
+              let status, transactionHash;
+              try {
+                const result = await runSidechainTransaction(mnemonic)('LAND', 'setSingleMetadata', tokenId, 'hash', contentId);
+                status = result.status;
+                transactionHash = '0x0';
+              } catch(err) {
+                console.warn(err);
+                status = false;
+                transactionHash = err.message;
+              }
+              
+              if (status) {
+                message.channel.send('<@!' + message.author.id + '>: deploy successful, sarge!');
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: deploy failed');
+              }
+            } else {
+              message.channel.send('<@!' + message.author.id + '>: invalid land nft: ' + split[1]);
+            }
           } else if (split[0] === prefix + 'addnft' && split.length >= 3) {
             const tradeId = parseInt(split[1], 10);
             const trade = trades.find(trade => trade.tradeId === tradeId);
