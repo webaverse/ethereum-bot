@@ -448,7 +448,7 @@ const makePromise = () => {
         if (message.channel.type === 'text') {
           // console.log('got message', message);
 
-          const _items = contractName => async () => {
+          const _items = contractName => async (getEntries, print) => {
             let page = parseInt(split[1], 10);
             if (!isNaN(page)) {
               split[2] = split[1];
@@ -500,47 +500,9 @@ const makePromise = () => {
             const startIndex = (page-1)*maxEntriesPerPage;
             const endIndex = Math.min(page*maxEntriesPerPage, nftBalance);
 
-            const hashToIds = {};
-            for (let i = startIndex; i < endIndex; i++) {
-              const id = await contracts[contractName].methods.tokenOfOwnerByIndex(address, i).call();
-              const hash = await contracts[contractName].methods.getHash(id).call();
-              if (!hashToIds[hash]) {
-                hashToIds[hash] = [];
-              }
-              hashToIds[hash].push(id);
-            }
-            let entries = [];
-            await Promise.all(Object.keys(hashToIds).map(async hash => {
-              const ids = hashToIds[hash].sort();
-              const id = ids[0];
-              const [
-                name,
-                ext,
-                totalSupply,
-              ] = await Promise.all([
-                contracts[contractName].methods.getMetadata(hash, 'name').call(),
-                contracts[contractName].methods.getMetadata(hash, 'ext').call(),
-                contracts[contractName].methods.totalSupplyOfHash(hash).call(),
-              ]);
-              const balance = ids.length;
-              entries.push({
-                id,
-                ids,
-                hash,
-                name,
-                ext,
-                balance,
-                totalSupply,
-              });
-            }));
+            const entries = await getEntries(address, startIndex, endIndex);
 
-            let s = userLabel + '\'s inventory:\n';
-            if (entries.length > 0) {
-              s += `Page ${page}/${numPages}` + '\n';
-              s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`).join('\n') + '```';
-            } else {
-              s += `\`\`\`you do not have any ${contractName}s\`\`\``;
-            }
+            const s = print(userLabel, page, numPages, entries);
             const m = await message.channel.send(s);
             m.react('❌');
             m.requester = message.author;
@@ -1601,7 +1563,35 @@ Keys (DM bot)
               message.channel.send('invalid buy id');
             } */
           } else if (split[0] === prefix + 'parcels') {
-            await _items('LAND')().catch(console.warn);
+            await _items('LAND')(async (address, startIndex, endIndex) => {
+              const promises = [];
+              for (let i = startIndex; i < endIndex; i++) {
+                promises.push((async i => {
+                  const id = await contracts[contractName].methods.tokenOfOwnerByIndex(address, i).call();
+                  const [name, hash] = await Promise.all([
+                    contracts[contractName].methods.getIdMetadata(id, 'name').call(),
+                    contracts[contractName].methods.getIdMetadata(id, 'hash').call(),
+                  ]);
+                  return {
+                    name,
+                    hash,
+                  };
+                })(i));
+              }
+              const entries = await Promise.all(promises);
+              return entries;
+            }, (userLabel, page, numPages, entries) => {
+              let s = userLabel + '\'s inventory:\n';
+              if (entries.length > 0) {
+                s += `Page ${page}/${numPages}` + '\n';
+                s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`).join('\n') + '```';
+              } else {
+                s += '```inventory empty```';
+              }
+              return s;
+            }).catch(console.warn);
+          } else if (split[0] === prefix + 'deploy') {
+            
           } else if (split[0] === prefix + 'addnft' && split.length >= 3) {
             const tradeId = parseInt(split[1], 10);
             const trade = trades.find(trade => trade.tradeId === tradeId);
@@ -2089,7 +2079,56 @@ Keys (DM bot)
               message.channel.send('<@!' + message.author.id + '>: invalid token id: ' + split[2]);
             }
           } else if (split[0] === prefix + 'inventory') {
-            await _items('NFT')().catch(console.warn);
+            await _items('NFT')(async (address, startIndex, endIndex) => {
+              const hashToIds = {};
+              const promises = [];
+              for (let i = startIndex; i < endIndex; i++) {
+                promises.push((async i => {
+                  const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
+                  const hash = await contracts.NFT.methods.getHash(id).call();
+                  if (!hashToIds[hash]) {
+                    hashToIds[hash] = [];
+                  }
+                  hashToIds[hash].push(id);
+                })(i));
+              }
+              await Promise.all(promises);
+
+              const entries = [];
+              await Promise.all(Object.keys(hashToIds).map(async hash => {
+                const ids = hashToIds[hash].sort();
+                const id = ids[0];
+                const [
+                  name,
+                  ext,
+                  totalSupply,
+                ] = await Promise.all([
+                  contracts.NFT.methods.getMetadata(hash, 'name').call(),
+                  contracts.NFT.methods.getMetadata(hash, 'ext').call(),
+                  contracts.NFT.methods.totalSupplyOfHash(hash).call(),
+                ]);
+                const balance = ids.length;
+                entries.push({
+                  id,
+                  ids,
+                  hash,
+                  name,
+                  ext,
+                  balance,
+                  totalSupply,
+                });
+              }));
+              return entries;
+            }, (userLabel, page, numPages, entries) => {
+              let s = userLabel + '\'s parcels:\n';
+              if (entries.length > 0) {
+                s += `Page ${page}/${numPages}` + '\n';
+                s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} [${entry.ids.join(',')}]`).join('\n') + '```';
+              } else {
+                s += '```no parcels owned```';
+              }
+              return s;
+            }).catch(console.warn);
           } else if (split[0] === prefix + 'wget' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
             
