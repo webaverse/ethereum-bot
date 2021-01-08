@@ -1596,7 +1596,7 @@ Keys (DM bot)
               return s;
             }).catch(console.warn);
           } else if (split[0] === prefix + 'deploy') {
-            
+            console.warn('not implemented'); // XXX
           } else if (split[0] === prefix + 'addnft' && split.length >= 3) {
             const tradeId = parseInt(split[1], 10);
             const trade = trades.find(trade => trade.tradeId === tradeId);
