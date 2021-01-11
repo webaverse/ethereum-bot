@@ -1,4 +1,5 @@
 const path = require('path');
+const url = require('url');
 const http = require('http');
 const https = require('https');
 const dns = require('dns');
@@ -758,15 +759,15 @@ Keys (DM bot)
                 const o = url.parse(contentId);
                 const match = o.path.match(/\/([^\/]+)$/);
                 const fileName = match ? match[1] : '';
-                const extName = path.extname(fileName).slice(1);
-                const name = extName ? fileName.slice(0, -(extName.length + 1)) : fileName;
+                const ext = path.extname(fileName).slice(1);
+                const name = ext ? fileName.slice(0, -(ext.length + 1)) : fileName;
 
-                if (extName) {
+                if (ext) {
                   const itemPreview = `${previewHost}/[${contentId}]/preview.${previewExt}`;
 
                   const loadout = await getLoadout(address);
                   loadout.splice(index - 1, 1, [
-                    id + '',
+                    contentId,
                     name,
                     ext,
                     itemPreview
