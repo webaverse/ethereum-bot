@@ -706,7 +706,8 @@ Keys (DM bot)
             }
 
             const index = parseInt(split[1], 10);
-            const id = parseInt(split[2], 10);
+            const contentId = split[2];
+            const id = parseInt(contentId, 10);
             
             async function getLoadout(address) {
               const loadoutString = await contracts.Account.methods.getMetadata(address, 'loadout').call();
@@ -720,7 +721,7 @@ Keys (DM bot)
               return loadout;
             }
 
-            if (index >= 1 && index <= 8 && !isNaN(id)) {
+            if (index >= 1 && index <= 8) {
               let {mnemonic} = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
@@ -729,31 +730,55 @@ Keys (DM bot)
               
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
-              
-              const hash = await contracts.NFT.methods.getHash(id).call();
-              const [
-                name,
-                ext,
-              ] = await Promise.all([
-                contracts.NFT.methods.getMetadata(hash, 'name').call(),
-                contracts.NFT.methods.getMetadata(hash, 'ext').call(),
-              ]);
 
-              // const itemUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
-              // const itemFileName = itemUrl.replace(/.*\/([^\/]+)$/, '$1');
-              const itemPreview = `${previewHost}/${hash}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
+              if (!isNaN(id)) {
+                const hash = await contracts.NFT.methods.getHash(id).call();
+                const [
+                  name,
+                  ext,
+                ] = await Promise.all([
+                  contracts.NFT.methods.getMetadata(hash, 'name').call(),
+                  contracts.NFT.methods.getMetadata(hash, 'ext').call(),
+                ]);
 
-              const loadout = await getLoadout(address);
-              loadout.splice(index - 1, 1, [
-                id + '',
-                name,
-                ext,
-                itemPreview
-              ]);
-              
-              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'loadout', JSON.stringify(loadout));
+                const itemPreview = `${previewHost}/${hash}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
 
-              message.channel.send('<@!' + message.author.id + '>: updated loadout');
+                const loadout = await getLoadout(address);
+                loadout.splice(index - 1, 1, [
+                  id + '',
+                  name,
+                  ext,
+                  itemPreview
+                ]);
+                
+                await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'loadout', JSON.stringify(loadout));
+
+                message.channel.send('<@!' + message.author.id + '>: updated loadout');
+              } else {
+                const o = url.parse(contentId);
+                const match = o.path.match(/\/([^\/]+)$/);
+                const fileName = match ? match[1] : '';
+                const extName = path.extname(fileName).slice(1);
+                const name = extName ? fileName.slice(0, -(extName.length + 1)) : fileName;
+
+                if (extName) {
+                  const itemPreview = `${previewHost}/[${contentId}]/preview.${previewExt}`;
+
+                  const loadout = await getLoadout(address);
+                  loadout.splice(index - 1, 1, [
+                    id + '',
+                    name,
+                    ext,
+                    itemPreview
+                  ]);
+                  
+                  await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'loadout', JSON.stringify(loadout));
+
+                  message.channel.send('<@!' + message.author.id + '>: updated loadout');
+                } else {
+                  message.channel.send('<@!' + message.author.id + '>: content id is not `[number|URL with extension]`: ' + contentId);
+                }
+              }
             } else {
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
