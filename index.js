@@ -2500,7 +2500,7 @@ Keys (DM bot)
                       // console.log('minted 1', status);
 
                       if (status) {
-                        message.channel.send('<@!' + message.author.id + '>: minted ' + (tokenIds[0] === tokenIds[1] ? ('#' + tokenIds[0]) : tokenIds.map(n => '#' + n).join(' - ')) + ' (' + hash + ')');
+                        message.channel.send('<@!' + message.author.id + '>: minted ' + (tokenIds[0] === tokenIds[1] ? ('https://webaverse.com/assets/' + tokenIds[0]) : tokenIds.map(n => 'https://webaverse.com/assets/' + n).join(' - ')) + ' (' + hash + ')');
                       } else {
                         message.channel.send('<@!' + message.author.id + '>: mint transaction failed: ' + transactionHash);
                       }
