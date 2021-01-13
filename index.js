@@ -2175,12 +2175,12 @@ Keys (DM bot)
               }));
               return entries;
             }, (userLabel, page, numPages, entries) => {
-              let s = userLabel + '\'s parcels:\n';
+              let s = userLabel + '\'s inventory:\n';
               if (entries.length > 0) {
                 s += `Page ${page}/${numPages}` + '\n';
                 s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`).join('\n') + '```';
               } else {
-                s += '```no parcels owned```';
+                s += '```inventory is empty!```';
               }
               return s;
             }).catch(console.warn);
