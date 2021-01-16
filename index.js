@@ -524,7 +524,7 @@ Info
 .address [@user]? - print address
 .key - private key in DM
 .login - login link in DM
-.play - play link in DM
+.play [num] - play link in DM, optional party id (1-5)
 
 Tokens
 .send [@user|0xaddr|treasury] [amount] - send FT
@@ -2267,6 +2267,7 @@ Keys (DM bot)
             const m = await message.author.send(`Login: https://webaverse.com/login?id=${id}&code=${code}`);
           } else if (split[0] === prefix + 'play') {
             const id = message.author.id;
+            let roomId = parseInt(split[1], 10);
 
             const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
             await ddb.putItem({
@@ -2277,7 +2278,15 @@ Keys (DM bot)
               }
             }).promise();
 
-            const m = await message.author.send(`Login: https://webaverse.com/login?id=${id}&code=${code}&play=true`);
+            if (isNaN(roomId)) {
+              const m = await message.author.send(`Login: https://webaverse.com/login?id=${id}&code=${code}&play=true`);
+            } else {
+              if (roomId >= 1 && roomId <= 5) {
+                const m = await message.author.send(`Login: https://webaverse.com/login?id=${id}&code=${code}&play=true&roomId=${roomId}`);
+              } else {
+                 message.channel.send('<@!' + message.author.id + '>: party id must be between 1-5.');
+              }
+            }
           } else if (split[0] === prefix + 'key') {
             let {mnemonic} = await _getUser();
             if (!mnemonic) {
