@@ -2279,15 +2279,59 @@ Keys (DM bot)
               }
             }).promise();
 
-            if (isNaN(realmId)) {
-              message.channel.send('<@!' + message.author.id + '>: must add realm id. (1-5)');
-            } else {
-              if (realmId >= 1 && realmId <= 5) {
-                const m = await message.author.send(`Play: https://webaverse.com/login?id=${id}&code=${code}&play=true&realmId=${realmId}`);
+            let {mnemonic} = await _getUser();
+            if (!mnemonic) {
+              const spec = await _genKey();
+              mnemonic = spec.mnemonic;
+            }
+            const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+            const address = wallet.getAddressString();
+
+            const currentName = await runSidechainTransaction(mnemonic)('Account', 'getMetadata', address, 'name');
+
+            if (currentName) {
+              const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
+              await ddb.putItem({
+                TableName: usersTableName,
+                Item: {
+                  email: {S: id + '.code'},
+                  code: {S: code},
+                }
+              }).promise();
+
+              if (isNaN(realmId)) {
+                message.channel.send('<@!' + message.author.id + '>: must add realm id. (1-5)');
               } else {
-                 message.channel.send('<@!' + message.author.id + '>: realm id must be between 1-5.');
+                if (realmId >= 1 && realmId <= 5) {
+                  const m = await message.author.send(`Play: https://webaverse.com/login?id=${id}&code=${code}&play=true&realmId=${realmId}`);
+                } else {
+                   message.channel.send('<@!' + message.author.id + '>: realm id must be between 1-5.');
+                }
+              }
+            } else {
+              const discordName = Client.fetchUser(id);
+              const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', name);
+
+              const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
+              await ddb.putItem({
+                TableName: usersTableName,
+                Item: {
+                  email: {S: id + '.code'},
+                  code: {S: code},
+                }
+              }).promise();
+
+              if (isNaN(realmId)) {
+                message.channel.send('<@!' + message.author.id + '>: must add realm id. (1-5)');
+              } else {
+                if (realmId >= 1 && realmId <= 5) {
+                  const m = await message.author.send(`Play: https://webaverse.com/login?id=${id}&code=${code}&play=true&realmId=${realmId}`);
+                } else {
+                   message.channel.send('<@!' + message.author.id + '>: realm id must be between 1-5.');
+                }
               }
             }
+
 
           } else if (split[0] === prefix + 'play') {
             const id = message.author.id;
