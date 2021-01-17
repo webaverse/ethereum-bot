@@ -2292,16 +2292,42 @@ Keys (DM bot)
           } else if (split[0] === prefix + 'play') {
             const id = message.author.id;
 
-            const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
-            await ddb.putItem({
-              TableName: usersTableName,
-              Item: {
-                email: {S: id + '.code'},
-                code: {S: code},
-              }
-            }).promise();
+            let {mnemonic} = await _getUser();
+            if (!mnemonic) {
+              const spec = await _genKey();
+              mnemonic = spec.mnemonic;
+            }
+            const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+            const address = wallet.getAddressString();
 
-            const m = await message.author.send(`Login: https://webaverse.com/login?id=${id}&code=${code}&play=true`);
+            const currentName = await runSidechainTransaction(mnemonic)('Account', 'getMetadata', address, 'name');
+
+            if (currentName) {
+              const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
+              await ddb.putItem({
+                TableName: usersTableName,
+                Item: {
+                  email: {S: id + '.code'},
+                  code: {S: code},
+                }
+              }).promise();
+
+              const m = await message.author.send(`Play: https://webaverse.com/login?id=${id}&code=${code}&play=true`);
+            } else {
+              const discordName = Client.fetchUser(id);
+              const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', name);
+
+              const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
+              await ddb.putItem({
+                TableName: usersTableName,
+                Item: {
+                  email: {S: id + '.code'},
+                  code: {S: code},
+                }
+              }).promise();
+
+              const m = await message.author.send(`Play: https://webaverse.com/login?id=${id}&code=${code}&play=true`);
+            }
           } else if (split[0] === prefix + 'key') {
             let {mnemonic} = await _getUser();
             if (!mnemonic) {
