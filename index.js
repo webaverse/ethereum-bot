@@ -484,7 +484,7 @@ const makePromise = () => {
               address = wallet.getAddressString();
               userLabel = 'treasury';
             };
-            if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
+            if (split.length >= 2 && (match = split[1].match(/<@!?([0-9]+)>/))) {
               await _loadFromUserId(match[1]);
             } else if (split.length >= 2 && (match = split[1].match(/^(0x[0-9a-f]+)$/i))) {
               _loadFromAddress(match[1]);
@@ -578,7 +578,7 @@ Keys (DM bot)
             helps.push(m);
           } else if (split[0] === prefix + 'status') {
             let userId, mnemonic;
-            if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
+            if (split.length >= 2 && (match = split[1].match(/<@!?([0-9]+)>/))) {
               userId = match[1];
             } else {
               userId = message.author.id;
@@ -836,7 +836,7 @@ Keys (DM bot)
             }
           } else if (split[0] === prefix + 'balance') {
             let match;
-            if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
+            if (split.length >= 2 && (match = split[1].match(/<@!?([0-9]+)>/))) {
               const userId = match[1];
               let {mnemonic} = await _getUser(userId);
               if (!mnemonic) {
@@ -917,7 +917,7 @@ Keys (DM bot)
           } else if (split[0] === prefix + 'address') {
             let user, address, userLabel;
             if (split[1] !== 'treasury') {
-              if (split[1] && (match = split[1].match(/<@!([0-9]+)>/))) {
+              if (split[1] && (match = split[1].match(/<@!?([0-9]+)>/))) {
                 const userId = match[1];
                 const member = await message.channel.guild.members.fetch(userId);
                 user = member ? member.user : null;
@@ -949,7 +949,7 @@ Keys (DM bot)
             }
           } else if (split[0] === prefix + 'send' && split.length >= 3 && !isNaN(parseFloat(split[2]))) {
             const amount = parseFloat(split[2]);
-            if (match = split[1].match(/<@!([0-9]+)>/)) {
+            if (match = split[1].match(/<@!?([0-9]+)>/)) {
               const userId = match[1];
               const member = await message.channel.guild.members.fetch(userId);
               const user = member ? member.user : null;
@@ -1115,7 +1115,7 @@ Keys (DM bot)
               message.channel.send('unknown user');
             }
           } else if (split[0] === prefix + 'trade' && split.length >= 2) {
-            if (match = split[1].match(/<@!([0-9]+)>/)) {
+            if (match = split[1].match(/<@!?([0-9]+)>/)) {
               const userId = match[1];
               const member = await message.channel.guild.members.fetch(userId);
               const user = member ? member.user : null;
@@ -1283,7 +1283,7 @@ Keys (DM bot)
             }
           } else if (split[0] === prefix + 'store') {
             let address;
-            if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
+            if (split.length >= 2 && (match = split[1].match(/<@!?([0-9]+)>/))) {
               const userId = match[1];
               let {mnemonic} = await _getUser(userId);
               if (!mnemonic) {
@@ -1816,7 +1816,7 @@ Keys (DM bot)
                 address = wallet.getAddressString();
                 userLabel = 'treasury';
               };
-              if (split.length >= 2 && (match = split[1].match(/<@!([0-9]+)>/))) {
+              if (split.length >= 2 && (match = split[1].match(/<@!?([0-9]+)>/))) {
                 await _loadFromUserId(match[1]);
               } else if (split.length >= 2 && (match = split[1].match(/^0x([0-9a-f]+)$/i))) {
                 _loadFromAddress(match[1]);
@@ -1930,7 +1930,7 @@ Keys (DM bot)
             if (!isNaN(id)) {
               let quantity = split[3] ? parseInt(split[3], 10) : 1;
               if (!isNaN(quantity)) {
-                if (match = split[1].match(/<@!([0-9]+)>/)) {
+                if (match = split[1].match(/<@!?([0-9]+)>/)) {
                   const userId = match[1];
                   const member = await message.channel.guild.members.fetch(userId);
                   const user = member ? member.user : null;
