@@ -537,33 +537,33 @@ Tokens
 .tokencollab [@user|0xaddr] [tokenId] - add collaborator to [tokenId]
 
 Account
-.name [newname] - set your name to [name]
-.monetizationpointer [mp] - set your monetization pointer
+.name [newname] - set name to [name]
+.monetizationpointer [mp] - set monetization pointer
 .avatar [id] - set avatar
 .loadout [num] [id] - set loadout NFT [num] (1-8) to [id]
 .homespace [id] - set NFT as home space
 
 Minting
-.mint [count]? (upload comment) - mint [count] NFTs from file upload
-.mint [count]? [url] - mint [count] NFTs from the provided [url]
+.mint [count]? (upload comment) - mint NFTs from file upload
+.mint [count]? [url] - mint NFTs from [url]
 .update [id] (upload comment) - update nft content
 
 Packs
 .packs [@user|nftid] - check packed NFT balances
-.pack [nftid] [amount] - pack [amount] FT from yourself into [nftid]
-.unpack [nftid] [amount] - unpack [amount] FT from [nftid] to yourself
+.pack [nftid] [amount] - pack [amount] FT into [nftid]
+.unpack [nftid] [amount] - unpack [amount] FT from [nftid]
 
 Trade
 .trade [@user|0xaddr] - start a trade with
-.addnft [tradeid] [nftid] - add nonfungible token to trade [tradeid]
-.removenft [tradeid] [index] - remove nonfungible token at [index] from trade [tradeid]
-.addft [tradeid] [amount] - add fungible tokens to trade [tradeid]
+.addnft [tradeid] [nftid] - add NFT to trade [tradeid]
+.removenft [tradeid] [index] - remove NFT at [index] from trade [tradeid]
+.addft [tradeid] [amount] - add FT to trade [tradeid]
 
 Store
-.store [@user]? - show the treasury store, or that of a user
-.sell [nftid] [price] - list [nftid] for sale at [price]
-.unsell [saleid] - unlist [saleid] from the store
-.buy [saleid] - buy the [saleid]
+.store [@user]? - show store
+.sell [nftid] [price] - sell [nftid] for [price]
+.unsell [saleid] - unlist [saleid]
+.buy [saleid] - buy [saleid]
 
 Land
 .parcels - list owned parcels
