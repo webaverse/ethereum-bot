@@ -1026,7 +1026,7 @@ Keys (DM bot)
                 const response2 = await res.json(); */
 
                 if (status) {
-                  message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' to <@!' + userId + '>');
+                  message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' FLUX to <@!' + userId + '>');
                 } else {
                   message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
                 }
