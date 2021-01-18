@@ -2267,7 +2267,7 @@ Keys (DM bot)
             const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
             const address = wallet.getAddressString();
 
-            const currentName = await runSidechainTransaction(mnemonic)('Account', 'getMetadata', address, 'name');
+            const currentName = await contracts.Account.methods.getMetadata(address, 'name').call();
 
             if (currentName) {
               const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
@@ -2281,8 +2281,8 @@ Keys (DM bot)
 
               const m = await message.author.send(`Login: https://webaverse.com/login?id=${id}&code=${code}`);
             } else {
-              const discordName = Client.fetchUser(id);
-              const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', name);
+              const discordName = message.author.username;
+              const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', discordName);
 
               const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
               await ddb.putItem({
@@ -2317,7 +2317,7 @@ Keys (DM bot)
             const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
             const address = wallet.getAddressString();
 
-            const currentName = await runSidechainTransaction(mnemonic)('Account', 'getMetadata', address, 'name');
+            const currentName = await contracts.Account.methods.getMetadata(address, 'name').call();
 
             if (currentName) {
               const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
@@ -2339,8 +2339,8 @@ Keys (DM bot)
                 }
               }
             } else {
-              const discordName = Client.fetchUser(id);
-              const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', name);
+              const discordName = message.author.username;
+              const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', discordName);
 
               const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
               await ddb.putItem({
@@ -2361,8 +2361,6 @@ Keys (DM bot)
                 }
               }
             }
-
-
           } else if (split[0] === prefix + 'play') {
             const id = message.author.id;
 
@@ -2374,7 +2372,7 @@ Keys (DM bot)
             const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
             const address = wallet.getAddressString();
 
-            const currentName = await runSidechainTransaction(mnemonic)('Account', 'getMetadata', address, 'name');
+            const currentName = await contracts.Account.methods.getMetadata(address, 'name').call();
 
             if (currentName) {
               const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
@@ -2388,8 +2386,8 @@ Keys (DM bot)
 
               const m = await message.author.send(`Play: https://webaverse.com/login?id=${id}&code=${code}&play=true`);
             } else {
-              const discordName = Client.fetchUser(id);
-              const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', name);
+              const discordName = message.author.username;
+              const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', discordName);
 
               const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
               await ddb.putItem({
