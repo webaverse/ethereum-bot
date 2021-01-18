@@ -613,7 +613,10 @@ Keys (DM bot)
             }
 
             if (split[1]) {
-              const name = split[1];
+              let name = split[1];
+              if (/['"]{2}/.test(name)) {
+                name = '';
+              }
 
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
