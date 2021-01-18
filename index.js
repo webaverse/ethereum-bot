@@ -534,6 +534,7 @@ Tokens
 .wget [id] - get NFT [id] delivered in DM
 .get [id] [key] - get metadata for NFT
 .set [id] [key] [value] - set metadata for NFT
+.tokencollab [@user|0xaddr] [tokenId] - add collaborator to [tokenId]
 
 Account
 .name [newname] - set your name to [name]
@@ -567,6 +568,7 @@ Store
 Land
 .parcels - list owned parcels
 .deploy [parcelId] [nftId] - deploy [nftId] to [parcelId]
+.landcollab [@user|0xaddr] [parcelId] - add collaborator to [parcelId]
 
 Keys (DM bot)
 .key [new mnemonic key] - set your Discord private key
@@ -1651,6 +1653,160 @@ Keys (DM bot)
             } else {
               message.channel.send('<@!' + message.author.id + '>: invalid land nft: ' + split[1]);
             }
+          } else if (split[0] === prefix + 'landcollab' && split.length >= 3) {
+            const tokenId = parseInt(split[2]);
+            if (match = split[1].match(/<@!?([0-9]+)>/)) {
+              const userId = match[1];
+              const member = await message.channel.guild.members.fetch(userId);
+              const user = member ? member.user : null;
+              if (user) {
+                let mnemonic, mnemonic2;
+                if (userId !== message.author.id) {
+                  {
+                    const userSpec = await _getUser();
+                    mnemonic = userSpec.mnemonic;
+                    if (!mnemonic) {
+                      const spec = await _genKey();
+                      mnemonic = spec.mnemonic;
+                    }
+                  }
+                  {
+                    const userSpec = await _getUser(user.id);
+                    mnemonic2 = userSpec.mnemonic;
+                    if (!mnemonic2) {
+                      const spec = await _genKey(userId);
+                      mnemonic2 = spec.mnemonic;
+                    }
+                  }
+                }
+                const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                const address2 = wallet2.getAddressString();
+
+                let status, transactionHash;
+                try {
+                  const result = await runSidechainTransaction(mnemonic)('LAND', 'addSingleCollaborator', address2, tokenId);
+                  status = result.status;
+                  transactionHash = result.transactionHash;
+                } catch(err) {
+                  console.warn(err.stack);
+                  status = false;
+                  transactionHash = '0x0';
+                }
+
+                if (status) {
+                  message.channel.send('<@!' + message.author.id + '>: added collaborator to LAND #' + tokenId + ': ' + address2);
+                } else {
+                  message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
+                }
+              } else {
+                message.channel.send('unknown user');
+              }
+            } else if (match = split[1].match(/(0x[0-9a-f]+)/i)) {
+              let {mnemonic} = await _getUser();
+              if (!mnemonic) {
+                const spec = await _genKey();
+                mnemonic = spec.mnemonic;
+              }
+
+              const address2 = match[1];
+
+              let status, transactionHash;
+              try {
+                const result = await runSidechainTransaction(mnemonic)('LAND', 'addSingleCollaborator', address2, tokenId);
+                status = result.status;
+                transactionHash = result.transactionHash;
+              } catch(err) {
+                console.warn(err.stack);
+                status = false;
+                transactionHash = '0x0';
+              }
+
+              if (status) {
+                message.channel.send('<@!' + message.author.id + '>: added collaborator to LAND #' + tokenId + ': ' + address2);
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
+              }
+            } else {
+              message.channel.send('unknown user');
+            }
+          } else if (split[0] === prefix + 'tokencollab' && split.length >= 3) {
+            const tokenId = parseInt(split[2]);
+            const hash = await contracts.NFT.methods.getHash(tokenId).call();
+            if (match = split[1].match(/<@!?([0-9]+)>/)) {
+              const userId = match[1];
+              const member = await message.channel.guild.members.fetch(userId);
+              const user = member ? member.user : null;
+              if (user) {
+                let mnemonic, mnemonic2;
+                if (userId !== message.author.id) {
+                  {
+                    const userSpec = await _getUser();
+                    mnemonic = userSpec.mnemonic;
+                    if (!mnemonic) {
+                      const spec = await _genKey();
+                      mnemonic = spec.mnemonic;
+                    }
+                  }
+                  {
+                    const userSpec = await _getUser(user.id);
+                    mnemonic2 = userSpec.mnemonic;
+                    if (!mnemonic2) {
+                      const spec = await _genKey(userId);
+                      mnemonic2 = spec.mnemonic;
+                    }
+                  }
+                }
+                const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                const address2 = wallet2.getAddressString();
+
+                let status, transactionHash;
+                try {
+                  const result = await runSidechainTransaction(mnemonic)('NFT', 'addCollaborator', address2, hash);
+                  status = result.status;
+                  transactionHash = result.transactionHash;
+                } catch(err) {
+                  console.warn(err.stack);
+                  status = false;
+                  transactionHash = '0x0';
+                }
+
+                if (status) {
+                  message.channel.send('<@!' + message.author.id + '>: added collaborator to token #' + tokenId + ': ' + address2);
+                } else {
+                  message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
+                }
+              } else {
+                message.channel.send('unknown user');
+              }
+            } else if (match = split[1].match(/(0x[0-9a-f]+)/i)) {
+              let {mnemonic} = await _getUser();
+              if (!mnemonic) {
+                const spec = await _genKey();
+                mnemonic = spec.mnemonic;
+              }
+
+              const address2 = match[1];
+
+              let status, transactionHash;
+              try {
+                const result = await runSidechainTransaction(mnemonic)('NFT', 'addCollaborator', address2, hash);
+                status = result.status;
+                transactionHash = result.transactionHash;
+              } catch(err) {
+                console.warn(err.stack);
+                status = false;
+                transactionHash = '0x0';
+              }
+
+              if (status) {
+                message.channel.send('<@!' + message.author.id + '>: added collaborator to token #' + tokenId + ': ' + address2);
+              } else {
+                message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
+              }
+            } else {
+              message.channel.send('unknown user');
+            }
+
           } else if (split[0] === prefix + 'addnft' && split.length >= 3) {
             const tradeId = parseInt(split[1], 10);
             const trade = trades.find(trade => trade.tradeId === tradeId);
