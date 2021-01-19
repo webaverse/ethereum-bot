@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "sudo $(which node) $(which forever) start index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "sudo $(which node) $(which forever) start -a -l forever.log -o stdout.log -e stderr.log index.js"
   },
   "repository": {
     "type": "git",
