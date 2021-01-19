@@ -1,6 +1,6 @@
 {
-  "name": "flow-watch",
-  "version": "1.0.0",
+  "name": "ethereum-bot",
+  "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/avaer/flow-watch.git"
+    "url": "git+https://github.com/avaer/ethereum-bot.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/avaer/flow-watch/issues"
+    "url": "https://github.com/avaer/ethereum-bot/issues"
   },
-  "homepage": "https://github.com/avaer/flow-watch#readme",
+  "homepage": "https://github.com/avaer/ethereum-bot#readme",
   "dependencies": {
     "@ethereumjs/common": "^2.0.0-beta.1",
     "@ethereumjs/tx": "^3.0.0-beta.1",
