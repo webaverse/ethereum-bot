@@ -49,6 +49,8 @@ const ethereumHost = 'ethereum.exokit.org';
 
 Error.stackTraceLimit = 300;
 
+const isMainnet = false;
+
 function getExt(fileName) {
   const match = fileName.match(/\.([^\.]+)$/);
   return match && match[1].toLowerCase();
@@ -154,8 +156,8 @@ const makePromise = () => {
   });
   const web3 = new Web3(new Web3.providers.HttpProvider(`http://${ethereumHostAddress}:8545`));
   web3.eth.transactionConfirmationBlocks = 1;
-  const addresses = await fetch('https://contracts.webaverse.com/ethereum/address.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')).sidechain);
-  const abis = await fetch('https://contracts.webaverse.com/ethereum/abi.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')));
+  const addresses = await fetch('https://contracts.webaverse.com/config/addresses.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, ''))[isMainnet ? 'sidechain' : 'rinkebysidechain']);
+  const abis = await fetch('https://contracts.webaverse.com/config/abi.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')));
   const contracts = await (async () => {
     console.log('got addresses', addresses);
     const result = {};
