@@ -154,10 +154,8 @@ const makePromise = () => {
   });
   const web3 = new Web3(new Web3.providers.HttpProvider(`http://${ethereumHostAddress}:8545`));
   web3.eth.transactionConfirmationBlocks = 1;
-  // console.log('got blocks', web3.eth.transactionConfirmationBlocks);
   const addresses = await fetch('https://contracts.webaverse.com/ethereum/address.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')).sidechain);
   const abis = await fetch('https://contracts.webaverse.com/ethereum/abi.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')));
-  // const chainIds = await fetch('https://contracts.webaverse.com/ethereum/chain-id.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')).sidechain);
   const contracts = await (async () => {
     console.log('got addresses', addresses);
     const result = {};
@@ -235,7 +233,6 @@ const makePromise = () => {
         entry.running = true;
         
         try {
-          // console.log('run tx', contracts['sidechain'], [contractName, method]);
           const txData = contracts[contractName].methods[method](...args);
           const data = txData.encodeABI();
           const gas = await txData.estimateGas({
