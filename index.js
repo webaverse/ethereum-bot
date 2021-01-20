@@ -154,9 +154,11 @@ const makePromise = () => {
       }
     });
   });
-  const web3 = new Web3(new Web3.providers.HttpProvider(`http://${ethereumHostAddress}:8545`));
+  const gethNodeUrl = `http://${ethereumHostAddress}`;
+
+  const web3 = new Web3(new Web3.providers.HttpProvider(gethNodeUrl + ':' + (isMainnet ? '8545' : '8456')));
   web3.eth.transactionConfirmationBlocks = 1;
-  const addresses = await fetch('https://contracts.webaverse.com/config/addresses.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, ''))[isMainnet ? 'sidechain' : 'rinkebysidechain']);
+  const addresses = await fetch('https://contracts.webaverse.com/config/addresses.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, ''))[isMainnet ? 'mainnetsidechain' : 'rinkebysidechain']);
   const abis = await fetch('https://contracts.webaverse.com/config/abi.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')));
   const contracts = await (async () => {
     console.log('got addresses', addresses);
