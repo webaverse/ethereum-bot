@@ -23,7 +23,7 @@ const {Transaction} = require('@ethereumjs/tx');
 const {default: Common} = require('@ethereumjs/common');
 const {hdkey} = require('ethereumjs-wallet');
 
-const {accessKeyId, secretAccessKey, discordApiToken, mnemonic, treasuryMnemonic} = require('./config.json');
+const {accessKeyId, secretAccessKey, discordApiToken, tradeMnemonic, treasuryMnemonic} = require('./config.json');
 const awsConfig = new AWS.Config({
   credentials: new AWS.Credentials({
     accessKeyId,
@@ -1262,7 +1262,7 @@ Keys (DM bot)
                     addresses.push(address);
                   }
                   
-                  await runSidechainTransaction(mnemonic)(
+                  await runSidechainTransaction(tradeMnemonic)(
                     'Trade',
                     'trade',
                     addresses[0], addresses[1],
