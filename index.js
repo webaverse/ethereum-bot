@@ -156,7 +156,7 @@ const makePromise = () => {
   });
   const gethNodeUrl = `http://${ethereumHostAddress}`;
 
-  console.log('got web3', gethNodeUrl + ':' + (isMainnet ? '8545' : '8456');
+  console.log('got web3', gethNodeUrl + ':' + (isMainnet ? '8545' : '8456'));
 
   const web3 = new Web3(new Web3.providers.HttpProvider(gethNodeUrl + ':' + (isMainnet ? '8545' : '8456')));
   web3.eth.transactionConfirmationBlocks = 1;
