@@ -12,7 +12,6 @@ const AWS = require('aws-sdk');
   types: require('@onflow/types'),
 }; */
 const Discord = require('discord.js');
-// const blockchain = require('./blockchain.js');
 const fetch = require('node-fetch');
 // const wordList = require('./wordlist.json');
 // const config = require('./config.json');
@@ -415,37 +414,6 @@ const makePromise = () => {
           }).promise();
           return {mnemonic};
         };
-        /* const _ensureBaked = async ({addr, mnemonic}) => {
-          const contractSource = await blockchain.getContractSource('isUserAccountBaked.cdc');
-
-          const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-            method: 'POST',
-            body: JSON.stringify({
-              limit: 100,
-              script: contractSource.replace(/ARG0/g, '0x' + addr),
-              wait: true,
-            }),
-          });
-          const response = await res.json();
-          const isBaked = response.encodedData.value;
-          if (!isBaked) {
-            const contractSources = await blockchain.getContractSource('bakeUserAccount.json');
-            for (const contractSource of contractSources) {
-              contractSource.address = addr;
-              contractSource.mnemonic = mnemonic;
-              contractSource.limit = 100;
-              contractSource.wait = true;
-
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify(contractSource),
-              });
-              
-              const response = await res.json();
-              console.log('baked account result', response);
-            }
-          }
-        }; */
 
         if (message.channel.type === 'text') {
           // console.log('got message', message);
@@ -854,41 +822,9 @@ Keys (DM bot)
               const address = wallet.getAddressString();
               const balance = await contracts.FT.methods.balanceOf(address).call();
 
-              /* const contractSource = await blockchain.getContractSource('getBalance.cdc');
-
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  address: addr,
-                  mnemonic,
-
-                  limit: 100,
-                  script: contractSource.replace(/ARG0/g, '0x' + addr),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json();
-              const balance = parseFloat(response2.encodedData.value); */
-
               message.channel.send('<@!' + userId + '> has ' + balance + ' FLUX');
             } else if (split[1] === 'treasury') {
               const balance = await contracts.FT.methods.balanceOf(treasuryAddress).call();
-
-              /* const contractSource = await blockchain.getContractSource('getBalance.cdc');
-
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  address: addr,
-                  mnemonic,
-
-                  limit: 100,
-                  script: contractSource.replace(/ARG0/g, '0x' + addr),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json();
-              const balance = parseFloat(response2.encodedData.value); */
 
               message.channel.send('treasury has ' + balance + ' FLUX');
             } else {
@@ -901,22 +837,6 @@ Keys (DM bot)
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
               const balance = await contracts.FT.methods.balanceOf(address).call();
-
-              /* const contractSource = await blockchain.getContractSource('getBalance.cdc');
-
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  address: addr,
-                  mnemonic,
-
-                  limit: 100,
-                  script: contractSource.replace(/ARG0/g, '0x' + addr),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json();
-              const balance = parseFloat(response2.encodedData.value); */
 
               message.channel.send('<@!' + message.author.id + '> has ' + balance + ' FLUX');
             }
@@ -1010,22 +930,6 @@ Keys (DM bot)
                   transactionHash = '0x0';
                 }
 
-                /* const contractSource = await blockchain.getContractSource('transferToken.cdc');
-                const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    address: addr,
-                    mnemonic,
-
-                    limit: 100,
-                    transaction: contractSource
-                      .replace(/ARG0/g, amount.toFixed(8))
-                      .replace(/ARG1/g, '0x' + addr2),
-                    wait: true,
-                  }),
-                });
-                const response2 = await res.json(); */
-
                 if (status) {
                   message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' FLUX to <@!' + userId + '>');
                 } else {
@@ -1054,22 +958,6 @@ Keys (DM bot)
                 transactionHash = '0x0';
               }
 
-              /* const contractSource = await blockchain.getContractSource('transferToken.cdc');
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  address: addr,
-                  mnemonic,
-
-                  limit: 100,
-                  transaction: contractSource
-                    .replace(/ARG0/g, amount.toFixed(8))
-                    .replace(/ARG1/g, '0x' + addr2),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json(); */
-
               if (status) {
                 message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' FLUX to ' + address2);
               } else {
@@ -1095,22 +983,6 @@ Keys (DM bot)
                 status = false;
                 transactionHash = '0x0';
               }
-
-              /* const contractSource = await blockchain.getContractSource('transferToken.cdc');
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  address: addr,
-                  mnemonic,
-
-                  limit: 100,
-                  transaction: contractSource
-                    .replace(/ARG0/g, amount.toFixed(8))
-                    .replace(/ARG1/g, '0x' + addr2),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json(); */
 
               if (status) {
                 message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' FLUX to treasury');
@@ -2211,23 +2083,6 @@ Keys (DM bot)
                     }
                   }
 
-                  /* const contractSource = await blockchain.getContractSource('transferNft.cdc');
-                  const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                      address: addr,
-                      mnemonic,
-
-                      limit: 100,
-                      transaction: contractSource
-                        .replace(/ARG0/g, id)
-                        .replace(/ARG1/g, '0x' + addr2)
-                        .replace(/ARG2/g, quantity),
-                      wait: true,
-                    }),
-                  });
-                  const response2 = await res.json(); */
-
                   if (status) {
                     message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to ' + address2);
                   } else {
@@ -2262,23 +2117,6 @@ Keys (DM bot)
                       break;
                     }
                   }
-
-                  /* const contractSource = await blockchain.getContractSource('transferNft.cdc');
-                  const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                      address: addr,
-                      mnemonic,
-
-                      limit: 100,
-                      transaction: contractSource
-                        .replace(/ARG0/g, id)
-                        .replace(/ARG1/g, '0x' + addr2)
-                        .replace(/ARG2/g, quantity),
-                      wait: true,
-                    }),
-                  });
-                  const response2 = await res.json(); */
 
                   if (status) {
                     message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to treasury');
@@ -2577,21 +2415,6 @@ Keys (DM bot)
             const hash = await contracts.NFT.methods.getHash(id).call();
             const value = await contracts.NFT.methods.getMetadata(hash, key).call();
 
-            /* const contractSource = await blockchain.getContractSource('getNftMetadata.cdc');
-
-            const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-              method: 'POST',
-              body: JSON.stringify({
-                limit: 100,
-                script: contractSource
-                  .replace(/ARG0/g, id)
-                  .replace(/ARG1/g, key),
-                wait: true,
-              }),
-            });
-            const response2 = await res.json();
-            const value = response2.encodedData.value && response2.encodedData.value.value; */
-
             message.channel.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ': ' + value + '```');
           } else if (split[0] === prefix + 'set' && split.length >= 4 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
@@ -2616,24 +2439,6 @@ Keys (DM bot)
               status = false;
               transactionHash = '0x0';
             }
-
-            /* const contractSource = await blockchain.getContractSource('setNftMetadata.cdc');
-
-            const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-              method: 'POST',
-              body: JSON.stringify({
-                address: addr,
-                mnemonic,
-
-                limit: 100,
-                transaction: contractSource
-                  .replace(/ARG0/g, id)
-                  .replace(/ARG1/g, key)
-                  .replace(/ARG2/g, value),
-                wait: true,
-              }),
-            });
-            const response2 = await res.json(); */
 
             if (status) {
               message.channel.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ' = ' + value + '```');
