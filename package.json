@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "sudo $(which node) $(which forever) start -a -l forever.log -o stdout.log -e stderr.log index.js"
+    "start": "sudo $(which node) $(which forever) start -a -l forever.log -o stdout.log -e stderr.log index.js",
+    "dev": "node ./index.js"
   },
   "repository": {
     "type": "git",

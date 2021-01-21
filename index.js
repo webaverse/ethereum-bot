@@ -4,26 +4,42 @@ const http = require('http');
 const https = require('https');
 const dns = require('dns');
 const crypto = require('crypto');
-// const followRedirects = require('follow-redirects');
 const mime = require('mime');
 const AWS = require('aws-sdk');
-/* const flow = {
-  sdk: require('@onflow/sdk'),
-  types: require('@onflow/types'),
-}; */
 const Discord = require('discord.js');
-// const blockchain = require('./blockchain.js');
 const fetch = require('node-fetch');
-// const wordList = require('./wordlist.json');
-// const config = require('./config.json');
-// const flowConstants = require('./flow-constants.js');
 const Web3 = require('web3');
 const bip39 = require('bip39');
-const {Transaction} = require('@ethereumjs/tx');
-const {default: Common} = require('@ethereumjs/common');
-const {hdkey} = require('ethereumjs-wallet');
+const { Transaction } = require('@ethereumjs/tx');
+const { default: Common } = require('@ethereumjs/common');
+const { hdkey } = require('ethereumjs-wallet');
 
-const {accessKeyId, secretAccessKey, discordApiToken, tradeMnemonic, treasuryMnemonic} = require('./config.json');
+const { accessKeyId, secretAccessKey, discordApiToken, tradeMnemonic, treasuryMnemonic } = require('./config.json');
+
+const usersTableName = 'users';
+const prefix = '.';
+const storageHost = 'https://ipfs.exokit.org';
+const previewHost = 'https://preview.exokit.org';
+const previewExt = 'png';
+const treasurerRoleName = 'Treasurer';
+
+
+/* Dev Mode
+* If dev mode is true, skip trying any AWS or Web3 calls. Will still require a token for Discord and Twitter bots
+*/
+
+let devMode = (accessKeyId === undefined ||
+  secretAccessKey === undefined ||
+  discordApiToken === undefined ||
+  tradeMnemonic === undefined ||
+  treasuryMnemonic === undefined);
+
+  if(devMode) {
+    console.warn("*** Warning: Important config variables not set");
+    console.warn("*** Bot will start in dev mode");
+  }
+
+
 const awsConfig = new AWS.Config({
   credentials: new AWS.Credentials({
     accessKeyId,
@@ -31,18 +47,11 @@ const awsConfig = new AWS.Config({
   }),
   region: 'us-west-1',
 });
+
 const ddb = new AWS.DynamoDB(awsConfig);
-const ddbd = new AWS.DynamoDB.DocumentClient(awsConfig);
-// const guildId = '433492168825634816';
-// const channelName = 'token-hax';
-const adminUserId = '284377201233887233';
-const usersTableName = 'users';
-const storeTableName = 'store';
-const prefix = '.';
-const storageHost = 'https://ipfs.exokit.org';
-const previewHost = 'https://preview.exokit.org';
-const previewExt = 'png';
-const treasurerRoleName = 'Treasurer';
+
+
+
 const treasuryWallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
 const treasuryAddress = treasuryWallet.getAddressString();
 const ethereumHost = 'ethereum.exokit.org';
@@ -51,10 +60,6 @@ Error.stackTraceLimit = 300;
 
 const isMainnet = false;
 
-function getExt(fileName) {
-  const match = fileName.match(/\.([^\.]+)$/);
-  return match && match[1].toLowerCase();
-}
 function jsonParse(s, d = null) {
   try {
     return JSON.parse(s);
@@ -63,72 +68,15 @@ function jsonParse(s, d = null) {
   }
 }
 
-const _runTransaction = async (userKeys, transaction) => {
-  const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-    method: 'POST',
-    body: JSON.stringify({
-      address: userKeys.address,
-      privateKey: userKeys.privateKey,
-      publicKey: userKeys.publicKey,
-      mnemonic: userKeys.mnemonic,
-
-      limit: 100,
-      transaction,
-      wait: true,
-    }),
-  });
-  const response2 = await res.json();
-
-  // console.log('bake contract 2', response2);
-  return response2;
-};
-const _runScript = async script => {
-  const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-    method: 'POST',
-    body: JSON.stringify({
-      limit: 100,
-      script,
-      wait: true,
-    }),
-  });
-  const response2 = await res.json();
-
-  // console.log('bake contract 2', response2);
-  return response2;
-};
-const _runSpec = async (userKeys, spec) => {
-  const {transaction, script, args} = spec;
-  const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-    method: 'POST',
-    body: JSON.stringify({
-      address: userKeys.address,
-      privateKey: userKeys.privateKey,
-      publicKey: userKeys.publicKey,
-      mnemonic: userKeys.mnemonic,
-
-      limit: 100,
-      transaction,
-      script,
-      args,
-      wait: true,
-    }),
-  });
-  const response2 = await res.json();
-
-  // console.log('bake contract 2', response2);
-  return response2;
-};
 const _readStorageHashAsBuffer = async hash => {
-  const bs = [];
   const req = await fetch(`${storageHost}/${hash}`);
-  if (req.ok) {
-    const arrayBuffer = await req.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    return buffer;
-  } else {
-    return null;
-  }
+  if (!req.ok) return null;
+
+  const arrayBuffer = await req.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  return buffer;
 };
+
 const makePromise = () => {
   let accept, reject;
   const p = new Promise((a, r) => {
@@ -160,8 +108,12 @@ const makePromise = () => {
 
   const web3 = new Web3(new Web3.providers.HttpProvider(gethNodeUrl + ':' + (isMainnet ? '8545' : '8546')));
   web3.eth.transactionConfirmationBlocks = 1;
-  const addresses = await fetch('https://contracts.webaverse.com/config/addresses.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, ''))[isMainnet ? 'mainnetsidechain' : 'rinkebysidechain']);
-  const abis = await fetch('https://contracts.webaverse.com/config/abi.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')));
+  const addresses = await fetch('https://contracts.webaverse.com/config/addresses.js')
+    .then(res => res.text())
+    .then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, ''))[isMainnet ? 'mainnetsidechain' : 'rinkebysidechain']);
+  const abis = await fetch('https://contracts.webaverse.com/config/abi.js')
+    .then(res => res.text())
+    .then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')));
   const contracts = await (async () => {
     console.log('got addresses', addresses);
     const result = {};
@@ -179,11 +131,8 @@ const makePromise = () => {
     });
     return result;
   })();
-  // const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-  // const address = wallet.getAddressString();
-  
+
   const trades = [];
-  // const stores = [];
   const helps = [];
   let nextTradeId = 0;
 
@@ -203,9 +152,7 @@ const makePromise = () => {
           tokenId,
           price,
         };
-        
-        // console.log('got store', store, entry);
-        
+
         let booth = booths.find(booth => booth.seller === seller);
         if (!booth) {
           booth = {
@@ -217,7 +164,6 @@ const makePromise = () => {
         booth.entries.push(entry);
       }
     }
-    // console.log('got stores', stores);
     return booths;
   };
 
@@ -237,13 +183,10 @@ const makePromise = () => {
       }
       if (!entry.running) {
         entry.running = true;
-        
+
         try {
           const txData = contracts[contractName].methods[method](...args);
           const data = txData.encodeABI();
-          const gas = await txData.estimateGas({
-            from: address,
-          });
           let gasPrice = await web3.eth.getGasPrice();
           gasPrice = parseInt(gasPrice, 10);
 
@@ -272,7 +215,7 @@ const makePromise = () => {
           const rawTx = '0x' + tx.serialize().toString('hex');
 
           const receipt = await web3.eth.sendSignedTransaction(rawTx);
-          
+
           return receipt;
         } finally {
           entry.running = false;
@@ -287,7 +230,7 @@ const makePromise = () => {
           try {
             const result = await fn(contractName, method, ...args);
             p.accept(result);
-          } catch(err) {
+          } catch (err) {
             p.reject(err);
           }
         });
@@ -299,15 +242,13 @@ const makePromise = () => {
 
   const client = new Discord.Client();
 
-  client.on('ready', async function() {
+  client.on('ready', async function () {
     console.log(`the client becomes ready to start`);
     console.log(`I am ready! Logged in as ${client.user.tag}!`);
     console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} guilds.`);
 
-    // console.log('got', client.guilds.cache.get(guildId).members.cache);
-
     client.on('messageReactionAdd', async (reaction, user) => {
-      const {data, message, emoji} = reaction;
+      const { data, message, emoji } = reaction;
       // console.log('emoji identifier', message, data, emoji);
       if (user.id !== client.user.id && emoji.identifier === '%E2%9D%8C') { // x
         if (message.channel.type === 'dm') {
@@ -338,7 +279,7 @@ const makePromise = () => {
           if (index >= 0) {
             trade.confirmations[index] = true;
             trade.render();
- 
+
             if (trade.confirmations.every(confirmation => !!confirmation)) {
               if (trade.confirmations2.every(confirmation => !!confirmation)) {
                 trade.finish();
@@ -356,7 +297,7 @@ const makePromise = () => {
           if (index >= 0) {
             trade.confirmations2[index] = true;
             trade.render();
- 
+
             if (trade.confirmations.every(confirmation => !!confirmation) && trade.confirmations2.every(confirmation => !!confirmation)) {
               trade.finish();
               trades.splice(trades.indexOf(trade), 1);
@@ -366,7 +307,7 @@ const makePromise = () => {
       }
     });
     client.on('messageReactionRemove', async (reaction, user) => {
-      const {data, message, emoji} = reaction;
+      const { data, message, emoji } = reaction;
       if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
         const trade = trades.find(trade => trade.id === message.id);
         if (trade) {
@@ -374,9 +315,8 @@ const makePromise = () => {
           if (index >= 0) {
             trade.confirmations[index] = false;
             trade.render();
-            
+
             const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%F0%9F%92%9E');
-            // console.log('got done reactions', Array.from(doneReactions.values()).length);
             try {
               for (const reaction of doneReactions.values()) {
                 const users = Array.from(reaction.users.cache.values());
@@ -398,12 +338,12 @@ const makePromise = () => {
           const tokenItem = await ddb.getItem({
             TableName: usersTableName,
             Key: {
-              email: {S: id + '.discordtoken'},
+              email: { S: id + '.discordtoken' },
             }
           }).promise();
 
           let mnemonic = (tokenItem.Item && tokenItem.Item.mnemonic) ? tokenItem.Item.mnemonic.S : null;
-          return {mnemonic};
+          return { mnemonic };
         };
         const _genKey = async (id = message.author.id) => {
           const mnemonic = bip39.generateMnemonic();
@@ -411,47 +351,14 @@ const makePromise = () => {
           await ddb.putItem({
             TableName: usersTableName,
             Item: {
-              email: {S: id + '.discordtoken'},
-              mnemonic: {S: mnemonic},
+              email: { S: id + '.discordtoken' },
+              mnemonic: { S: mnemonic },
             }
           }).promise();
-          return {mnemonic};
+          return { mnemonic };
         };
-        /* const _ensureBaked = async ({addr, mnemonic}) => {
-          const contractSource = await blockchain.getContractSource('isUserAccountBaked.cdc');
-
-          const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-            method: 'POST',
-            body: JSON.stringify({
-              limit: 100,
-              script: contractSource.replace(/ARG0/g, '0x' + addr),
-              wait: true,
-            }),
-          });
-          const response = await res.json();
-          const isBaked = response.encodedData.value;
-          if (!isBaked) {
-            const contractSources = await blockchain.getContractSource('bakeUserAccount.json');
-            for (const contractSource of contractSources) {
-              contractSource.address = addr;
-              contractSource.mnemonic = mnemonic;
-              contractSource.limit = 100;
-              contractSource.wait = true;
-
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify(contractSource),
-              });
-              
-              const response = await res.json();
-              console.log('baked account result', response);
-            }
-          }
-        }; */
 
         if (message.channel.type === 'text') {
-          // console.log('got message', message);
-
           const _items = contractName => async (getEntries, print) => {
             let page = parseInt(split[1], 10);
             if (!isNaN(page)) {
@@ -463,7 +370,7 @@ const makePromise = () => {
                 page = 1;
               }
             }
-           
+
             let address, userLabel;
             const _loadFromUserId = async userId => {
               const spec = await _getUser(userId);
@@ -499,10 +406,10 @@ const makePromise = () => {
 
             const nftBalance = await contracts[contractName].methods.balanceOf(address).call();
             const maxEntriesPerPage = 10;
-            const numPages = Math.max(Math.ceil(nftBalance/maxEntriesPerPage), 1);
+            const numPages = Math.max(Math.ceil(nftBalance / maxEntriesPerPage), 1);
             page = Math.min(Math.max(page, 1), numPages);
-            const startIndex = (page-1)*maxEntriesPerPage;
-            const endIndex = Math.min(page*maxEntriesPerPage, nftBalance);
+            const startIndex = (page - 1) * maxEntriesPerPage;
+            const endIndex = Math.min(page * maxEntriesPerPage, nftBalance);
 
             const entries = await getEntries(address, startIndex, endIndex);
 
@@ -611,7 +518,7 @@ Keys (DM bot)
 
             message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nAvatar: ${avatarId}\nHome Space: ${homeSpaceId}\nMonetization Pointer: ${monetizationPointer}\n\`\`\``);
           } else if (split[0] === prefix + 'name') {
-            let {mnemonic} = await _getUser();
+            let { mnemonic } = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
@@ -636,7 +543,7 @@ Keys (DM bot)
               message.channel.send('<@!' + message.author.id + '>: name is ' + JSON.stringify(name));
             }
           } else if (split[0] === prefix + 'monetizationpointer') {
-            let {mnemonic} = await _getUser();
+            let { mnemonic } = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
@@ -648,29 +555,29 @@ Keys (DM bot)
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
               const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'monetizationPointer', monetizationPointer);
-              
+
               message.channel.send('<@!' + message.author.id + '>: set monetization pointer to ' + JSON.stringify(monetizationPointer));
             } else {
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
               const monetizationPointer = await contracts.Account.methods.getMetadata(address, 'monetizationPointer').call();
-              
+
               message.channel.send('<@!' + message.author.id + '>: monetization pointer is ' + JSON.stringify(monetizationPointer));
             }
           } else if (split[0] === prefix + 'avatar') {
             const contentId = split[1];
             const id = parseInt(contentId, 10);
 
-            let {mnemonic} = await _getUser();
+            let { mnemonic } = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
             }
-            
+
             const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
             const address = wallet.getAddressString();
 
-            if (!isNaN(id)) {              
+            if (!isNaN(id)) {
               const hash = await contracts.NFT.methods.getHash(id).call();
               const [
                 name,
@@ -680,10 +587,8 @@ Keys (DM bot)
                 contracts.NFT.methods.getMetadata(hash, 'ext').call(),
               ]);
 
-              // const avatarUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
-              // const avatarFileName = avatarUrl.replace(/.*\/([^\/]+)$/, '$1');
               const avatarPreview = `${previewHost}/${hash}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
-              
+
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarId', id + '');
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarName', name);
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarExt', ext);
@@ -694,7 +599,7 @@ Keys (DM bot)
               const name = path.basename(contentId);
               const ext = path.extname(contentId).slice(1);
               const avatarPreview = `https://preview.exokit.org/[${contentId}]/preview.jpg`;
-              
+
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarId', contentId);
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarName', name);
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarExt', ext);
@@ -709,7 +614,7 @@ Keys (DM bot)
               message.channel.send('<@!' + message.author.id + '>: avatar is ' + JSON.stringify(avatarId));
             }
           } else if (split[0] === prefix + 'loadout') {
-            let {mnemonic} = await _getUser();
+            let { mnemonic } = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
@@ -718,7 +623,7 @@ Keys (DM bot)
             const index = parseInt(split[1], 10);
             const contentId = split[2];
             const id = parseInt(contentId, 10);
-            
+
             async function getLoadout(address) {
               const loadoutString = await contracts.Account.methods.getMetadata(address, 'loadout').call();
               let loadout = jsonParse(loadoutString);
@@ -732,12 +637,12 @@ Keys (DM bot)
             }
 
             if (index >= 1 && index <= 8) {
-              let {mnemonic} = await _getUser();
+              let { mnemonic } = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
               }
-              
+
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
 
@@ -760,7 +665,7 @@ Keys (DM bot)
                   ext,
                   itemPreview
                 ]);
-                
+
                 await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'loadout', JSON.stringify(loadout));
 
                 message.channel.send('<@!' + message.author.id + '>: updated loadout');
@@ -781,7 +686,7 @@ Keys (DM bot)
                     ext,
                     itemPreview
                   ]);
-                  
+
                   await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'loadout', JSON.stringify(loadout));
 
                   message.channel.send('<@!' + message.author.id + '>: updated loadout');
@@ -798,7 +703,7 @@ Keys (DM bot)
               message.channel.send('<@!' + message.author.id + '>: loadout:\n```' + loadout.map((item, index) => `${index + 1}: ${item !== null ? (`[${item[0]}] ${item[1]} ${item[2]}`) : 'empty'}`).join('\n') + '```');
             }
           } else if (split[0] === prefix + 'homespace') {
-            let {mnemonic} = await _getUser();
+            let { mnemonic } = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
@@ -807,15 +712,15 @@ Keys (DM bot)
             const id = parseInt(split[1], 10);
 
             if (!isNaN(id)) {
-              let {mnemonic} = await _getUser();
+              let { mnemonic } = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
               }
-              
+
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
-              
+
               const hash = await contracts.NFT.methods.getHash(id).call();
               const [
                 name,
@@ -825,10 +730,8 @@ Keys (DM bot)
                 contracts.NFT.methods.getMetadata(hash, 'ext').call(),
               ]);
 
-              // const homeSpaceUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
-              // const homeSpaceFileName = homeSpaceUrl.replace(/.*\/([^\/]+)$/, '$1');
               const homeSpacePreview = `${previewHost}/${hash}${ext ? ('.' + ext) : ''}/preview.${previewExt}`;
-              
+
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceId', id + '');
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceName', name);
               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'homeSpaceExt', ext);
@@ -846,80 +749,29 @@ Keys (DM bot)
             let match;
             if (split.length >= 2 && (match = split[1].match(/<@!?([0-9]+)>/))) {
               const userId = match[1];
-              let {mnemonic} = await _getUser(userId);
+              let { mnemonic } = await _getUser(userId);
               if (!mnemonic) {
                 const spec = await _genKey(userId);
                 mnemonic = spec.mnemonic;
               }
-              
+
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
               const balance = await contracts.FT.methods.balanceOf(address).call();
-
-              /* const contractSource = await blockchain.getContractSource('getBalance.cdc');
-
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  address: addr,
-                  mnemonic,
-
-                  limit: 100,
-                  script: contractSource.replace(/ARG0/g, '0x' + addr),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json();
-              const balance = parseFloat(response2.encodedData.value); */
-
               message.channel.send('<@!' + userId + '> has ' + balance + ' FLUX');
             } else if (split[1] === 'treasury') {
               const balance = await contracts.FT.methods.balanceOf(treasuryAddress).call();
-
-              /* const contractSource = await blockchain.getContractSource('getBalance.cdc');
-
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  address: addr,
-                  mnemonic,
-
-                  limit: 100,
-                  script: contractSource.replace(/ARG0/g, '0x' + addr),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json();
-              const balance = parseFloat(response2.encodedData.value); */
-
               message.channel.send('treasury has ' + balance + ' FLUX');
             } else {
-              let {mnemonic} = await _getUser();
+              let { mnemonic } = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
               }
-              
+
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
               const balance = await contracts.FT.methods.balanceOf(address).call();
-
-              /* const contractSource = await blockchain.getContractSource('getBalance.cdc');
-
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  address: addr,
-                  mnemonic,
-
-                  limit: 100,
-                  script: contractSource.replace(/ARG0/g, '0x' + addr),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json();
-              const balance = parseFloat(response2.encodedData.value); */
-
               message.channel.send('<@!' + message.author.id + '> has ' + balance + ' FLUX');
             }
           } else if (split[0] === prefix + 'address') {
@@ -940,7 +792,7 @@ Keys (DM bot)
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
               }
-              
+
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               address = wallet.getAddressString();
 
@@ -997,37 +849,20 @@ Keys (DM bot)
                     return;
                   }
                 }
-                
+
                 const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                 const address2 = wallet2.getAddressString();
- 
+
                 let status, transactionHash;
                 try {
                   const result = await runSidechainTransaction(mnemonic)('FT', 'transfer', address2, amount);
                   status = result.status;
                   transactionHash = result.transactionHash;
-                } catch(err) {
+                } catch (err) {
                   console.warn(err.stack);
                   status = false;
                   transactionHash = '0x0';
                 }
-
-                /* const contractSource = await blockchain.getContractSource('transferToken.cdc');
-                const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    address: addr,
-                    mnemonic,
-
-                    limit: 100,
-                    transaction: contractSource
-                      .replace(/ARG0/g, amount.toFixed(8))
-                      .replace(/ARG1/g, '0x' + addr2),
-                    wait: true,
-                  }),
-                });
-                const response2 = await res.json(); */
-
                 if (status) {
                   message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' FLUX to <@!' + userId + '>');
                 } else {
@@ -1037,7 +872,7 @@ Keys (DM bot)
                 message.channel.send('unknown user');
               }
             } else if (match = split[1].match(/(0x[0-9a-f]+)/i)) {
-              let {mnemonic} = await _getUser();
+              let { mnemonic } = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
@@ -1050,35 +885,18 @@ Keys (DM bot)
                 const result = await runSidechainTransaction(mnemonic)('FT', 'transfer', address2, amount);
                 status = result.status;
                 transactionHash = result.transactionHash;
-              } catch(err) {
+              } catch (err) {
                 console.warn(err.stack);
                 status = false;
                 transactionHash = '0x0';
               }
-
-              /* const contractSource = await blockchain.getContractSource('transferToken.cdc');
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  address: addr,
-                  mnemonic,
-
-                  limit: 100,
-                  transaction: contractSource
-                    .replace(/ARG0/g, amount.toFixed(8))
-                    .replace(/ARG1/g, '0x' + addr2),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json(); */
-
               if (status) {
                 message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' FLUX to ' + address2);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
               }
             } else if (split[1] === 'treasury') {
-              let {mnemonic} = await _getUser();
+              let { mnemonic } = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
@@ -1092,28 +910,11 @@ Keys (DM bot)
                 const result = await runSidechainTransaction(mnemonic)('FT', 'transfer', address2, amount);
                 status = result.status;
                 transactionHash = result.transactionHash;
-              } catch(err) {
+              } catch (err) {
                 console.warn(err.stack);
                 status = false;
                 transactionHash = '0x0';
               }
-
-              /* const contractSource = await blockchain.getContractSource('transferToken.cdc');
-              const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  address: addr,
-                  mnemonic,
-
-                  limit: 100,
-                  transaction: contractSource
-                    .replace(/ARG0/g, amount.toFixed(8))
-                    .replace(/ARG1/g, '0x' + addr2),
-                  wait: true,
-                }),
-              });
-              const response2 = await res.json(); */
-
               if (status) {
                 message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' FLUX to treasury');
               } else {
@@ -1138,15 +939,15 @@ Keys (DM bot)
                 const nfts = [[], []];
                 const confirmations = [false, false];
                 const confirmations2 = [false, false];
-                const cancelledSpec = {cancelled: false};
-                const tradingSpec = {trading: false};
-                const finishedSpec = {finished: false};
+                const cancelledSpec = { cancelled: false };
+                const tradingSpec = { trading: false };
+                const finishedSpec = { finished: false };
                 const _renderFts = () => {
                   let s = '';
                   if (fts.some(ft => ft > 0)) {
-                    s += ((fts[0] ? ('+ ' + fts[0]) : '') + Array(headerLeft.length+1).join(' ')).slice(0, headerLeft.length) +
+                    s += ((fts[0] ? ('+ ' + fts[0]) : '') + Array(headerLeft.length + 1).join(' ')).slice(0, headerLeft.length) +
                       headerMiddle +
-                      ((fts[1] ? ('+ ' + fts[1]) : '') + Array(headerRight.length+1).join(' ')).slice(0, headerRight.length) +
+                      ((fts[1] ? ('+ ' + fts[1]) : '') + Array(headerRight.length + 1).join(' ')).slice(0, headerRight.length) +
                       '\n';
                   }
                   return s;
@@ -1157,17 +958,17 @@ Keys (DM bot)
                   for (let i = 0; i < maxNumItems; i++) {
                     const rowItems = [nfts[0][i], nfts[1][i]];
                     const label = (i + '.  ').slice(0, 3);
-                    s += (label + (rowItems[0] || '') + Array(headerLeft.length+1).join(' ')).slice(0, headerLeft.length) +
+                    s += (label + (rowItems[0] || '') + Array(headerLeft.length + 1).join(' ')).slice(0, headerLeft.length) +
                       headerMiddle +
-                      ((rowItems[1] || '') + Array(headerRight.length+1).join(' ')).slice(0, headerRight.length) +
+                      ((rowItems[1] || '') + Array(headerRight.length + 1).join(' ')).slice(0, headerRight.length) +
                       '\n';
                   }
                   return s;
                 };
                 const _renderConfirmations = () => {
-                  return ((confirmations[0] ? 'OK' : '') + Array(headerLeft.length+1).join(' ')).slice(0, headerLeft.length) +
-                    Array(headerMiddle.length+1).join(' ') +
-                    ((confirmations[1] ? 'OK' : '') + Array(headerRight.length+1).join(' ')).slice(0, headerLeft.length) +
+                  return ((confirmations[0] ? 'OK' : '') + Array(headerLeft.length + 1).join(' ')).slice(0, headerLeft.length) +
+                    Array(headerMiddle.length + 1).join(' ') +
+                    ((confirmations[1] ? 'OK' : '') + Array(headerRight.length + 1).join(' ')).slice(0, headerLeft.length) +
                     '\n';
                 };
                 const _renderStatus = () => {
@@ -1176,11 +977,10 @@ Keys (DM bot)
                     (finishedSpec.finished ? '[FINISHED]\n' : '');
                 };
                 const _render = () => {
-                  return '```' + header + '\n' + Array(header.length+1).join('-') + '\n' + _renderFts() + _renderNfts() + _renderConfirmations() + _renderStatus() + '```'
+                  return '```' + header + '\n' + Array(header.length + 1).join('-') + '\n' + _renderFts() + _renderNfts() + _renderConfirmations() + _renderStatus() + '```'
                 };
                 const m = await message.channel.send(_render());
-                m.react('✅')
-                  .then(() => m.react('❌'));
+                m.react('✅').then(() => m.react('❌'));
                 m.tradeId = tradeId;
                 m.userIds = userIds;
                 m.fts = fts;
@@ -1221,7 +1021,7 @@ Keys (DM bot)
                 m.finish = async () => {
                   tradingSpec.trading = true;
                   m.render();
-                  
+
                   const fullAmount = {
                     t: 'uint256',
                     v: new web3.utils.BN(1e9)
@@ -1236,7 +1036,7 @@ Keys (DM bot)
                   const mnemonics = [];
                   const addresses = [];
                   for (const userId of userIds) {
-                    let {mnemonic} = await _getUser(userId);
+                    let { mnemonic } = await _getUser(userId);
                     if (!mnemonic) {
                       const spec = await _genKey(userId);
                       mnemonic = spec.mnemonic;
@@ -1257,11 +1057,11 @@ Keys (DM bot)
                         await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
                       }
                     }
-                    
+
                     mnemonics.push(mnemonic);
                     addresses.push(address);
                   }
-                  
+
                   await runSidechainTransaction(tradeMnemonic)(
                     'Trade',
                     'trade',
@@ -1275,11 +1075,11 @@ Keys (DM bot)
                     nfts[0][2] !== undefined ? nfts[0][2] : 0,
                     nfts[1][2] !== undefined ? nfts[1][2] : 0
                   );
-                  
+
                   tradingSpec.trading = false;
                   finishedSpec.finished = true;
                   m.render();
-                  
+
                   message.channel.send('```trade #' + tradeId + ' complete! enjoy!```');
                 };
                 trades.push(m);
@@ -1293,7 +1093,7 @@ Keys (DM bot)
             let address;
             if (split.length >= 2 && (match = split[1].match(/<@!?([0-9]+)>/))) {
               const userId = match[1];
-              let {mnemonic} = await _getUser(userId);
+              let { mnemonic } = await _getUser(userId);
               if (!mnemonic) {
                 const spec = await _genKey(userId);
                 mnemonic = spec.mnemonic;
@@ -1324,22 +1124,18 @@ Keys (DM bot)
                 ]);
 
                 s += (booth.seller !== treasuryAddress ? booth.seller : 'treasury') + '\'s store: ```' + booth.entries.map((entry, i) => `#${entry.id}: NFT ${entry.tokenId} (${names[i]}${packedBalances[i] > 0 ? (' + ' + packedBalances[i] + ' FT') : ''}) for ${entry.price.toNumber()} FT`).join('\n') + '```';
-              } catch(err) {
+              } catch (err) {
                 console.warn(err);
               }
             } else {
               s += (address !== treasuryAddress ? address : 'treasury') + '\'s store: ```empty```';
             }
             message.channel.send(s);
-          /* } else if (split[0] === prefix + 'treasury') {
-            const member = await message.channel.guild.members.fetch(message.author.id);
-            const treasurer = member.roles.cache.some(role => role.name === treasurerRoleName);
-            message.channel.send('treasurer flag: ' + treasurer); */
           } else if (split[0] === prefix + 'sell' && split.length >= 3) {
             const tokenId = split[1];
             let price = parseInt(split[2], 10);
             if (!isNaN(price)) {
-              let {mnemonic} = await _getUser();
+              let { mnemonic } = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
@@ -1373,9 +1169,7 @@ Keys (DM bot)
                   if (!isApproved) {
                     await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
                   }
-                  // buyId = await contracts.Trade.methods.addStore(tokenId, price).call();
                   const buySpec = await runSidechainTransaction(mnemonic)('Trade', 'addStore', tokenId, price);
-                  // console.log('got buy spec', JSON.stringify(buySpec, null, 2));
                   buyId = parseInt(buySpec.logs[0].topics[1]);
 
                   status = true;
@@ -1421,18 +1215,16 @@ Keys (DM bot)
           } else if (split[0] === prefix + 'unsell' && split.length >= 2) {
             const buyId = parseInt(split[1], 10);
             if (!isNaN(buyId)) {
-              let {mnemonic} = await _getUser();
+              let { mnemonic } = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
               }
-              // const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-              // const address = wallet.getAddressString();
-              
+
               let status;
               try {
                 await runSidechainTransaction(mnemonic)('Trade', 'removeStore', buyId);
-                
+
                 status = true;
               } catch (err) {
                 console.warn(err.stack);
@@ -1450,7 +1242,7 @@ Keys (DM bot)
           } else if (split[0] === prefix + 'buy' && split.length >= 2) {
             const buyId = parseInt(split[1], 10);
 
-            let {mnemonic} = await _getUser();
+            let { mnemonic } = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
@@ -1479,12 +1271,12 @@ Keys (DM bot)
                 }
               }
               await runSidechainTransaction(mnemonic)('Trade', 'buy', buyId);
-              
+
               const store = await contracts.Trade.methods.getStoreByIndex(buyId).call();
               tokenId = parseInt(store.id, 10);
               // const seller = store.seller.toLowerCase();
               price = new web3.utils.BN(store.price);
-              
+
               status = true;
             } catch (err) {
               console.warn(err.stack);
@@ -1496,107 +1288,6 @@ Keys (DM bot)
             } else {
               message.channel.send('<@!' + message.author.id + '>: buy failed');
             }
-
-            /* let booth = null;
-            let entry = null;
-            for (const b of store.booths) {
-              for (const e of b.entries) {
-                if (e.id === buyId) {
-                  booth = b;
-                  entry = e;
-                  break;
-                }
-              }
-              if (entry) {
-                break;
-              }
-            }
-            if (entry) {
-              if (entry.userId !== message.author.id) {
-                const {tokenId, price} = entry;
-
-                let {mnemonic: userMnemonic} = await _getUser();
-                if (!userMnemonic) {
-                  const spec = await _genKey();
-                  userMnemonic = spec.mnemonic;
-                }
-
-                let boothMnemonic;
-                if (booth.address === treasuryAddress) {
-                  boothMnemonic = treasuryMnemonic;
-                } else {
-                  boothMnemonic = null;
-                  const tokenItem = await ddb.query({
-                    TableName: usersTableName,
-                    IndexName: 'address-index',
-                    KeyConditionExpression: "#address = :addr",
-                    ExpressionAttributeNames:{
-                      '#address': 'address',
-                    },
-                    ExpressionAttributeValues: {
-                      ':addr': {
-                        S: booth.address,
-                      },
-                    },
-                  }).promise();
-                  if (tokenItem && tokenItem.Items && tokenItem.Items.length) {
-                    boothMnemonic = tokenItem.Items[0].mnemonic.S;
-                  }
-                  if (!boothMnemonic) {
-                    message.channel.send('<@!' + message.author.id + '>: failed to look up booth user');
-                    return;
-                  }
-                }
-
-                const mnemonics = [userMnemonic, boothMnemonic];
-                const addresses = [];
-                for (const mnemonic of mnemonics) {
-                  const fullAmount = {
-                    t: 'uint256',
-                    v: new web3.utils.BN(1e9)
-                      .mul(new web3.utils.BN(1e9))
-                      .mul(new web3.utils.BN(1e9)),
-                  };
-
-                  await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['Trade']._address, fullAmount.v);
-                  await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
-
-                  const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                  const address = wallet.getAddressString();
-                  addresses.push(address);
-                }
-                
-                let status;
-                try {
-                  await runSidechainTransaction(mnemonic)(
-                    'Trade',
-                    'trade',
-                    addresses[0], addresses[1],
-                    price, 0,
-                    0, tokenId,
-                    0, 0,
-                    0, 0,
-                  );
-                  
-                  status = true;
-                } catch (err) {
-                  console.warn(err.stack);
-                  status = false;
-                }
-
-                if (status) {
-                  booth.entries.splice(booth.entries.indexOf(entry), 1);
-                  await setStore(store);
-                  message.channel.send('<@!' + message.author.id + '>: got sale #' + tokenId + ' for ' + price + '. noice!');
-                } else {
-                  message.channel.send('<@!' + message.author.id + '>: buy failed');
-                }
-              } else {
-                message.channel.send('no such sale for user: ' + buyId);
-              }
-            } else {
-              message.channel.send('invalid buy id');
-            } */
           } else if (split[0] === prefix + 'parcels') {
             await _items('LAND')(async (address, startIndex, endIndex) => {
               const promises = [];
@@ -1629,25 +1320,25 @@ Keys (DM bot)
           } else if (split[0] === prefix + 'deploy' && split.length >= 3) {
             const tokenId = parseInt(split[1], 10);
             const contentId = split[2];
-            
-            let {mnemonic} = await _getUser();
+
+            let { mnemonic } = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
             }
-            
+
             if (!isNaN(tokenId)) {
               let status, transactionHash;
               try {
                 const result = await runSidechainTransaction(mnemonic)('LAND', 'setSingleMetadata', tokenId, 'hash', contentId);
                 status = result.status;
                 transactionHash = '0x0';
-              } catch(err) {
+              } catch (err) {
                 console.warn(err);
                 status = false;
                 transactionHash = err.message;
               }
-              
+
               if (status) {
                 message.channel.send('<@!' + message.author.id + '>: deploy successful, sarge!');
               } else {
@@ -1690,7 +1381,7 @@ Keys (DM bot)
                   const result = await runSidechainTransaction(mnemonic)('LAND', 'addSingleCollaborator', address2, tokenId);
                   status = result.status;
                   transactionHash = result.transactionHash;
-                } catch(err) {
+                } catch (err) {
                   console.warn(err.stack);
                   status = false;
                   transactionHash = '0x0';
@@ -1705,7 +1396,7 @@ Keys (DM bot)
                 message.channel.send('unknown user');
               }
             } else if (match = split[1].match(/(0x[0-9a-f]+)/i)) {
-              let {mnemonic} = await _getUser();
+              let { mnemonic } = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
@@ -1718,7 +1409,7 @@ Keys (DM bot)
                 const result = await runSidechainTransaction(mnemonic)('LAND', 'addSingleCollaborator', address2, tokenId);
                 status = result.status;
                 transactionHash = result.transactionHash;
-              } catch(err) {
+              } catch (err) {
                 console.warn(err.stack);
                 status = false;
                 transactionHash = '0x0';
@@ -1767,7 +1458,7 @@ Keys (DM bot)
                   const result = await runSidechainTransaction(mnemonic)('NFT', 'addCollaborator', address2, hash);
                   status = result.status;
                   transactionHash = result.transactionHash;
-                } catch(err) {
+                } catch (err) {
                   console.warn(err.stack);
                   status = false;
                   transactionHash = '0x0';
@@ -1782,7 +1473,7 @@ Keys (DM bot)
                 message.channel.send('unknown user');
               }
             } else if (match = split[1].match(/(0x[0-9a-f]+)/i)) {
-              let {mnemonic} = await _getUser();
+              let { mnemonic } = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
@@ -1795,7 +1486,7 @@ Keys (DM bot)
                 const result = await runSidechainTransaction(mnemonic)('NFT', 'addCollaborator', address2, hash);
                 status = result.status;
                 transactionHash = result.transactionHash;
-              } catch(err) {
+              } catch (err) {
                 console.warn(err.stack);
                 status = false;
                 transactionHash = '0x0';
@@ -1818,11 +1509,11 @@ Keys (DM bot)
               if (index >= 0) {
                 const id = split[2];
                 const amount = 1;
-                
+
                 if (!trade.nfts[index].includes(id)) {
                   const hash = await contracts.NFT.methods.getHash(id).call();
                   if (hash) {
-                    let {mnemonic} = await _getUser();
+                    let { mnemonic } = await _getUser();
                     if (!mnemonic) {
                       const spec = await _genKey();
                       mnemonic = spec.mnemonic;
@@ -1876,7 +1567,7 @@ Keys (DM bot)
                 const itemNumber = parseInt(split[2], 10);
                 if (itemNumber >= 0 && itemNumber < trade.nfts.length) {
                   trade.removeNft(message.author.id, itemNumber);
-                  
+
                   const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%E2%9C%85');
                   try {
                     for (const reaction of doneReactions.values()) {
@@ -1908,16 +1599,16 @@ Keys (DM bot)
                 const amount = parseFloat(split[2]);
                 console.log('got amount', amount);
                 if (!isNaN(amount)) {
-                  let {mnemonic} = await _getUser();
+                  let { mnemonic } = await _getUser();
                   if (!mnemonic) {
                     const spec = await _genKey();
                     mnemonic = spec.mnemonic;
                   }
-                  
+
                   const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                   const address = wallet.getAddressString();
                   const balance = await contracts.FT.methods.balanceOf(address).call();
-                  
+
                   console.log('got balance', balance);
 
                   if (balance >= amount) {
@@ -1987,7 +1678,7 @@ Keys (DM bot)
               } else {
                 await _loadFromUserId(message.author.id);
               }
-              
+
               const nftBalance = await contracts.NFT.methods.balanceOf(address).call();
               const packedBalances = [];
               for (let i = 0; i < nftBalance; i++) {
@@ -2016,15 +1707,15 @@ Keys (DM bot)
             const tokenId = parseInt(split[1], 10);
             const amount = parseInt(split[2], 10);
             if (!isNaN(tokenId) && !isNaN(amount)) {
-              let {mnemonic} = await _getUser();
+              let { mnemonic } = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
               }
-              
+
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
-              
+
               const fullAmount = {
                 t: 'uint256',
                 v: new web3.utils.BN(1e9)
@@ -2052,7 +1743,7 @@ Keys (DM bot)
                   const result = await runSidechainTransaction(mnemonic)('NFT', 'pack', address, tokenId, amount);
                   status = result.status;
                 }
-              } catch(err) {
+              } catch (err) {
                 console.warn(err);
               }
 
@@ -2068,15 +1759,15 @@ Keys (DM bot)
             const tokenId = parseInt(split[1], 10);
             const amount = parseInt(split[2], 10);
             if (!isNaN(tokenId) && !isNaN(amount)) {
-              let {mnemonic} = await _getUser();
+              let { mnemonic } = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
               }
-              
+
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
-              
+
               const result = await runSidechainTransaction(mnemonic)('NFT', 'unpack', address, tokenId, amount);
 
               if (result.status) {
@@ -2132,10 +1823,10 @@ Keys (DM bot)
                         return;
                       }
                     }
-                    
+
                     const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                     const address = wallet.getAddressString();
-                    
+
                     const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                     const address2 = wallet2.getAddressString();
 
@@ -2153,7 +1844,7 @@ Keys (DM bot)
                         }
                       }
                       ids.sort();
-                      
+
                       if (ids.length >= quantity) {
                         const isApproved = await contracts.NFT.methods.isApprovedForAll(address, contracts['Trade']._address).call();
                         if (!isApproved) {
@@ -2170,7 +1861,7 @@ Keys (DM bot)
                         status = false;
                         transactionHash = 'insufficient nft balance';
                       }
-                    } catch(err) {
+                    } catch (err) {
                       console.warn(err.stack);
                       status = false;
                       transactionHash = '0x0';
@@ -2185,7 +1876,7 @@ Keys (DM bot)
                     message.channel.send('unknown user');
                   }
                 } else if (match = split[1].match(/^(0x[0-9a-f]+)$/i)) {
-                  let {mnemonic} = await _getUser();
+                  let { mnemonic } = await _getUser();
                   if (!mnemonic) {
                     const spec = await _genKey();
                     mnemonic = spec.mnemonic;
@@ -2193,7 +1884,7 @@ Keys (DM bot)
 
                   const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                   const address = wallet.getAddressString();
-                  
+
                   const address2 = match[1];
 
                   let status = true;
@@ -2203,32 +1894,15 @@ Keys (DM bot)
                       if (!isApproved) {
                         await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
                       }
-                      
+
                       const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
                       status = status && result.status;
-                    } catch(err) {
+                    } catch (err) {
                       console.warn(err.stack);
                       status = false;
                       break;
                     }
                   }
-
-                  /* const contractSource = await blockchain.getContractSource('transferNft.cdc');
-                  const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                      address: addr,
-                      mnemonic,
-
-                      limit: 100,
-                      transaction: contractSource
-                        .replace(/ARG0/g, id)
-                        .replace(/ARG1/g, '0x' + addr2)
-                        .replace(/ARG2/g, quantity),
-                      wait: true,
-                    }),
-                  });
-                  const response2 = await res.json(); */
 
                   if (status) {
                     message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to ' + address2);
@@ -2236,7 +1910,7 @@ Keys (DM bot)
                     message.channel.send('<@!' + message.author.id + '>: could not transfer: ' + status);
                   }
                 } else if (split[1] === 'treasury') {
-                  let {mnemonic} = await _getUser();
+                  let { mnemonic } = await _getUser();
                   if (!mnemonic) {
                     const spec = await _genKey();
                     mnemonic = spec.mnemonic;
@@ -2244,7 +1918,7 @@ Keys (DM bot)
 
                   const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                   const address = wallet.getAddressString();
-                  
+
                   const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                   const address2 = wallet2.getAddressString();
 
@@ -2255,33 +1929,15 @@ Keys (DM bot)
                       if (!isApproved) {
                         await runSidechainTransaction(mnemonic)('NFT', 'setApprovalForAll', contracts['Trade']._address, true);
                       }
-                      
+
                       const result = await runSidechainTransaction(mnemonic)('NFT', 'transferFrom', address, address2, id);
                       status = status && result.status;
-                    } catch(err) {
+                    } catch (err) {
                       console.warn(err.stack);
                       status = false;
                       break;
                     }
                   }
-
-                  /* const contractSource = await blockchain.getContractSource('transferNft.cdc');
-                  const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                      address: addr,
-                      mnemonic,
-
-                      limit: 100,
-                      transaction: contractSource
-                        .replace(/ARG0/g, id)
-                        .replace(/ARG1/g, '0x' + addr2)
-                        .replace(/ARG2/g, quantity),
-                      wait: true,
-                    }),
-                  });
-                  const response2 = await res.json(); */
-
                   if (status) {
                     message.channel.send('<@!' + message.author.id + '>: transferred ' + id + ' to treasury');
                   } else {
@@ -2349,14 +2005,14 @@ Keys (DM bot)
             }).catch(console.warn);
           } else if (split[0] === prefix + 'wget' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
-            
+
             if (!isNaN(id)) {
-              let {mnemonic} = await _getUser();
+              let { mnemonic } = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
               }
-              
+
               const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
               const address = wallet.getAddressString();
               let owner = await contracts.NFT.methods.ownerOf(id).call();
@@ -2374,9 +2030,8 @@ Keys (DM bot)
 
                 const buffer = await _readStorageHashAsBuffer(hash);
                 const attachment = new Discord.MessageAttachment(buffer, name + (ext ? '.' + ext : ''));
-                
-                const m = await message.author.send('<@!' + message.author.id + '>: ' + id + ' is this', attachment);
-                // m.react('❌');
+
+                await message.author.send('<@!' + message.author.id + '>: ' + id + ' is this', attachment);
               } else {
                 message.channel.send('<@!' + message.author.id + '>: not your nft: ' + id);
               }
@@ -2406,7 +2061,7 @@ Keys (DM bot)
             }
           } else if (split[0] === prefix + 'gif' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
-            
+
             const hash = await contracts.NFT.methods.getHash(id).call();
             const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
 
@@ -2418,7 +2073,7 @@ Keys (DM bot)
           } else if (split[0] === prefix + 'login') {
             const id = message.author.id;
 
-            let {mnemonic} = await _getUser();
+            let { mnemonic } = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
@@ -2433,8 +2088,8 @@ Keys (DM bot)
               await ddb.putItem({
                 TableName: usersTableName,
                 Item: {
-                  email: {S: id + '.code'},
-                  code: {S: code},
+                  email: { S: id + '.code' },
+                  code: { S: code },
                 }
               }).promise();
 
@@ -2447,12 +2102,12 @@ Keys (DM bot)
               await ddb.putItem({
                 TableName: usersTableName,
                 Item: {
-                  email: {S: id + '.code'},
-                  code: {S: code},
+                  email: { S: id + '.code' },
+                  code: { S: code },
                 }
               }).promise();
 
-              const m = await message.author.send(`Login: https://webaverse.com/login?id=${id}&code=${code}`);
+              await message.author.send(`Login: https://webaverse.com/login?id=${id}&code=${code}`);
             }
 
           } else if (split[0] === prefix + 'realm') {
@@ -2463,12 +2118,12 @@ Keys (DM bot)
             await ddb.putItem({
               TableName: usersTableName,
               Item: {
-                email: {S: id + '.code'},
-                code: {S: code},
+                email: { S: id + '.code' },
+                code: { S: code },
               }
             }).promise();
 
-            let {mnemonic} = await _getUser();
+            let { mnemonic } = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
@@ -2483,8 +2138,8 @@ Keys (DM bot)
               await ddb.putItem({
                 TableName: usersTableName,
                 Item: {
-                  email: {S: id + '.code'},
-                  code: {S: code},
+                  email: { S: id + '.code' },
+                  code: { S: code },
                 }
               }).promise();
 
@@ -2494,19 +2149,19 @@ Keys (DM bot)
                 if (realmId >= 1 && realmId <= 5) {
                   const m = await message.author.send(`Play: https://webaverse.com/login?id=${id}&code=${code}&play=true&realmId=${realmId}`);
                 } else {
-                   message.channel.send('<@!' + message.author.id + '>: realm id must be between 1-5.');
+                  message.channel.send('<@!' + message.author.id + '>: realm id must be between 1-5.');
                 }
               }
             } else {
               const discordName = message.author.username;
-              const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', discordName);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', discordName);
 
               const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
               await ddb.putItem({
                 TableName: usersTableName,
                 Item: {
-                  email: {S: id + '.code'},
-                  code: {S: code},
+                  email: { S: id + '.code' },
+                  code: { S: code },
                 }
               }).promise();
 
@@ -2516,14 +2171,14 @@ Keys (DM bot)
                 if (realmId >= 1 && realmId <= 5) {
                   const m = await message.author.send(`Play: https://webaverse.com/login?id=${id}&code=${code}&play=true&realmId=${realmId}`);
                 } else {
-                   message.channel.send('<@!' + message.author.id + '>: realm id must be between 1-5.');
+                  message.channel.send('<@!' + message.author.id + '>: realm id must be between 1-5.');
                 }
               }
             }
           } else if (split[0] === prefix + 'play') {
             const id = message.author.id;
 
-            let {mnemonic} = await _getUser();
+            let { mnemonic } = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
@@ -2538,34 +2193,34 @@ Keys (DM bot)
               await ddb.putItem({
                 TableName: usersTableName,
                 Item: {
-                  email: {S: id + '.code'},
-                  code: {S: code},
+                  email: { S: id + '.code' },
+                  code: { S: code },
                 }
               }).promise();
 
-              const m = await message.author.send(`Play: https://webaverse.com/login?id=${id}&code=${code}&play=true`);
+              await message.author.send(`Play: https://webaverse.com/login?id=${id}&code=${code}&play=true`);
             } else {
               const discordName = message.author.username;
-              const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', discordName);
+              await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', discordName);
 
               const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
               await ddb.putItem({
                 TableName: usersTableName,
                 Item: {
-                  email: {S: id + '.code'},
-                  code: {S: code},
+                  email: { S: id + '.code' },
+                  code: { S: code },
                 }
               }).promise();
 
-              const m = await message.author.send(`Play: https://webaverse.com/login?id=${id}&code=${code}&play=true`);
+              await message.author.send(`Play: https://webaverse.com/login?id=${id}&code=${code}&play=true`);
             }
           } else if (split[0] === prefix + 'key') {
-            let {mnemonic} = await _getUser();
+            let { mnemonic } = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
             }
-            
+
             const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
             const address = wallet.getAddressString();
             const privateKey = wallet.privateKey.toString('hex');
@@ -2575,24 +2230,9 @@ Keys (DM bot)
           } else if (split[0] === prefix + 'get' && split.length >= 3 && !isNaN(parseInt(split[1], 10))) {
             const id = parseInt(split[1], 10);
             const key = split[2];
-            
+
             const hash = await contracts.NFT.methods.getHash(id).call();
             const value = await contracts.NFT.methods.getMetadata(hash, key).call();
-
-            /* const contractSource = await blockchain.getContractSource('getNftMetadata.cdc');
-
-            const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-              method: 'POST',
-              body: JSON.stringify({
-                limit: 100,
-                script: contractSource
-                  .replace(/ARG0/g, id)
-                  .replace(/ARG1/g, key),
-                wait: true,
-              }),
-            });
-            const response2 = await res.json();
-            const value = response2.encodedData.value && response2.encodedData.value.value; */
 
             message.channel.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ': ' + value + '```');
           } else if (split[0] === prefix + 'set' && split.length >= 4 && !isNaN(parseInt(split[1], 10))) {
@@ -2600,12 +2240,12 @@ Keys (DM bot)
             const key = split[2];
             const value = split[3];
 
-            let {mnemonic} = await _getUser();
+            let { mnemonic } = await _getUser();
             if (!mnemonic) {
               const spec = await _genKey();
               mnemonic = spec.mnemonic;
             }
-            
+
             const hash = await contracts.NFT.methods.getHash(id).call();
 
             let status, transactionHash;
@@ -2613,57 +2253,17 @@ Keys (DM bot)
               const result = await runSidechainTransaction(mnemonic)('NFT', 'setMetadata', hash, key, value);
               status = result.status;
               transactionHash = result.transactionHash;
-            } catch(err) {
+            } catch (err) {
               console.warn(err.stack);
               status = false;
               transactionHash = '0x0';
             }
-
-            /* const contractSource = await blockchain.getContractSource('setNftMetadata.cdc');
-
-            const res = await fetch(`https://accounts.exokit.org/sendTransaction`, {
-              method: 'POST',
-              body: JSON.stringify({
-                address: addr,
-                mnemonic,
-
-                limit: 100,
-                transaction: contractSource
-                  .replace(/ARG0/g, id)
-                  .replace(/ARG1/g, key)
-                  .replace(/ARG2/g, value),
-                wait: true,
-              }),
-            });
-            const response2 = await res.json(); */
 
             if (status) {
               message.channel.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ' = ' + value + '```');
             } else {
               message.channel.send('<@!' + message.author.id + '>: could not set: ' + transactionHash);
             }
-          /* } else if (split[0] === prefix + 'createworld') {
-            const res = await fetch('https://worlds.exokit.org/create', {
-              method: 'POST',
-            });
-            if (res.ok) {
-              const j = await res.json();
-              const {id, url} = j;
-              message.channel.send('<@!' + message.author.id + '>: created world: ```' + JSON.stringify(j, null, 2) + '```');
-            } else {
-              message.channel.send('<@!' + message.author.id + '>: failed to create world: ' + res.statusCode);
-            }
-          } else if (split[0] === prefix + 'destroyworld' && split.length >= 2 && split[1]) {
-            const id = split[1];
-            const res = await fetch('https://worlds.exokit.org/' + id, {
-              method: 'DELETE',
-            });
-            if (res.ok) {
-              await res.arrayBuffer();
-              message.channel.send('<@!' + message.author.id + '>: destroyed world: ```' + id + '```');
-            } else {
-              message.channel.send('<@!' + message.author.id + '>: failed to destroy world: ' + res.statusCode);
-            } */
           } else {
             if (split[0] === prefix + 'mint') {
               let quantity = parseInt(split[1], 10);
@@ -2678,7 +2278,7 @@ Keys (DM bot)
                 manualUrl = split[2];
               }
 
-              let {mnemonic} = await _getUser();
+              let { mnemonic } = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
@@ -2707,8 +2307,8 @@ Keys (DM bot)
                 }
               } else if (message.attachments.size > 0) {
                 for (const [key, attachment] of message.attachments) {
-                  const {name, url} = attachment;
-                  
+                  const { name, url } = attachment;
+
                   const proxyRes = await new Promise((accept, reject) => {
                     const proxyReq = https.request(url, proxyRes => {
                       proxyRes.name = name;
@@ -2734,7 +2334,7 @@ Keys (DM bot)
                       const s = b.toString('utf8');
                       // console.log('got s', s);
                       const j = JSON.parse(s);
-                      const {hash} = j;
+                      const { hash } = j;
 
                       const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                       const address = wallet.getAddressString();
@@ -2771,22 +2371,19 @@ Keys (DM bot)
                           const tokenId = new web3.utils.BN(result.logs[0].topics[3].slice(2), 16).toNumber();
                           tokenIds = [tokenId, tokenId + quantity - 1];
                         }
-                      } catch(err) {
+                      } catch (err) {
                         console.warn(err.stack);
                         status = false;
                         transactionHash = err.message;
                         tokenIds = [];
                       }
-                      
-                      // console.log('minted 1', status);
 
                       if (status) {
                         message.channel.send('<@!' + message.author.id + '>: minted ' + (tokenIds[0] === tokenIds[1] ? ('https://webaverse.com/assets/' + tokenIds[0]) : tokenIds.map(n => 'https://webaverse.com/assets/' + n).join(' - ')) + ' (' + hash + ')');
                       } else {
                         message.channel.send('<@!' + message.author.id + '>: mint transaction failed: ' + transactionHash);
                       }
-                      
-                      // console.log('minted 2', status);
+
                     });
                     res.on('error', err => {
                       console.warn(err.stack);
@@ -2806,7 +2403,7 @@ Keys (DM bot)
               const tokenId = parseInt(split[1], 10);
               const manualUrl = split[2];
 
-              let {mnemonic} = await _getUser();
+              let { mnemonic } = await _getUser();
               if (!mnemonic) {
                 const spec = await _genKey();
                 mnemonic = spec.mnemonic;
@@ -2835,8 +2432,8 @@ Keys (DM bot)
                 }
               } else if (message.attachments.size > 0) {
                 for (const [key, attachment] of message.attachments) {
-                  const {name, url} = attachment;
-                  
+                  const { name, url } = attachment;
+
                   const proxyRes = await new Promise((accept, reject) => {
                     const proxyReq = https.request(url, proxyRes => {
                       proxyRes.name = name;
@@ -2863,18 +2460,10 @@ Keys (DM bot)
                       const b = Buffer.concat(bs);
                       const s = b.toString('utf8');
                       const j = JSON.parse(s);
-                      const {hash} = j;
+                      const { hash } = j;
 
                       const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                      const address = wallet.getAddressString();
-
-                      const fullAmount = {
-                        t: 'uint256',
-                        v: new web3.utils.BN(1e9)
-                          .mul(new web3.utils.BN(1e9))
-                          .mul(new web3.utils.BN(1e9)),
-                      };
-
+                      wallet.getAddressString();
                       let status, transactionHash;
                       try {
                         {
@@ -2892,7 +2481,7 @@ Keys (DM bot)
                           status = true;
                           transactionHash = '0x0';
                         }
-                      } catch(err) {
+                      } catch (err) {
                         console.warn(err.stack);
                         status = false;
                         transactionHash = err.message;
@@ -2921,7 +2510,7 @@ Keys (DM bot)
             }
           }
         } else if (message.channel.type === 'dm') {
-          let {mnemonic} = await _getUser();
+          let { mnemonic } = await _getUser();
 
           const split = message.content.split(/\s+/);
           if (split[0] === prefix + 'key') {
@@ -2931,8 +2520,8 @@ Keys (DM bot)
                 await ddb.putItem({
                   TableName: usersTableName,
                   Item: {
-                    email: {S: message.author.id + '.discordtoken'},
-                    mnemonic: {S: mnemonic},
+                    email: { S: message.author.id + '.discordtoken' },
+                    mnemonic: { S: mnemonic },
                   }
                 }).promise();
                 message.author.send('set key to ```' + JSON.stringify(mnemonic) + '```');
