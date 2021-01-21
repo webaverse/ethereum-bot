@@ -7,15 +7,16 @@ const { Transaction } = require('@ethereumjs/tx');
 const { default: Common } = require('@ethereumjs/common');
 const { hdkey } = require('ethereumjs-wallet');
 
-const { accessKeyId, secretAccessKey, discordApiToken, tradeMnemonic, treasuryMnemonic } = require('./config.json');
+const { accessKeyId, secretAccessKey, treasuryMnemonic } = require('./config.json');
 
 const { ethereumHost } = require('./constants.js');
 
 const { makePromise } = require("./utilities");
 
-const { devMode } = require("./devmode.js");
+const { web3DevMode } = require("./devmode.js");
 
 const { createDiscordClient } = require('./discordbot');
+const { createTwitterClient } = require('./twitterBot');
 
 Error.stackTraceLimit = 300;
 
@@ -23,14 +24,14 @@ const isMainnet = false;
 
 // If dev mode is true, skip trying any AWS or Web3 calls
 
-  if(devMode) {
+  if(web3DevMode) {
     console.warn("*** Warning: Important config variables not set");
     console.warn("*** Bot will start in dev mode");
   }
 
 let awsConfig, ddb, treasuryWallet, treasuryAddress = null;
 
-if(!devMode){
+if(!web3DevMode){
   awsConfig = new AWS.Config({
     credentials: new AWS.Credentials({
       accessKeyId,
@@ -192,10 +193,10 @@ if(!devMode){
     return fn;
   };
 
-  createDiscordClient(getStores, runSidechainTransaction);
+  createDiscordClient(getStores, runSidechainTransaction, ddb, treasuryAddress);
+  await createTwitterClient(getStores, runSidechainTransaction, ddb, treasuryAddress);
+  console.log("Bot started successfully");
 })();
-
-
 
 process.on('uncaughtException', err => {
   console.warn(err);

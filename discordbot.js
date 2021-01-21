@@ -6,17 +6,16 @@ const crypto = require('crypto');
 const mime = require('mime');
 const Discord = require('discord.js');
 
+const { discordApiToken, tradeMnemonic, treasuryMnemonic } = require('./config.json');
+const { jsonParse, readStorageHashAsBuffer } = require("./utilities");
+
+const { discordDevMode } = require("./devmode.js");
+
 const trades = [];
 const helps = [];
 let nextTradeId = 0;
 
-const { devMode } = require("./devmode.js");
-
-const { discordApiToken, tradeMnemonic, treasuryMnemonic } = require('./config.json');
-
-const { jsonParse, readStorageHashAsBuffer } = require("./utilities");
-
-const createDiscordClient = (getStores, runSidechainTransaction) => {
+exports.createDiscordClient = (getStores, runSidechainTransaction, ddb, treasuryAddress) => {
 
     if(discordApiToken === undefined || discordApiToken === "" || discordApiToken === null)
         return console.warn("*** WARNING: Discord API token is not defined");
@@ -2325,5 +2324,3 @@ const createDiscordClient = (getStores, runSidechainTransaction) => {
 
     client.login(discordApiToken);
 }
-
-exports.createDiscordClient = createDiscordClient;
