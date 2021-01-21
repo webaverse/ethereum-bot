@@ -13,7 +13,7 @@ const { ethereumHost } = require('./constants.js');
 
 const { makePromise } = require("./utilities");
 
-const { web3DevMode } = require("./devmode.js");
+const { devMode } = require("./devmode.js");
 
 const { createDiscordClient } = require('./discordbot');
 const { createTwitterClient } = require('./twitterBot');
@@ -24,14 +24,14 @@ const isMainnet = false;
 
 // If dev mode is true, skip trying any AWS or Web3 calls
 
-  if(web3DevMode) {
+  if(devMode) {
     console.warn("*** Warning: Important config variables not set");
     console.warn("*** Bot will start in dev mode");
   }
 
 let awsConfig, ddb, treasuryWallet, treasuryAddress = null;
 
-if(!web3DevMode){
+if(!devMode){
   awsConfig = new AWS.Config({
     credentials: new AWS.Credentials({
       accessKeyId,
