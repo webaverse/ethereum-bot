@@ -3,8 +3,18 @@ const url = require('url');
 const http = require('http');
 const https = require('https');
 const crypto = require('crypto');
+
 const mime = require('mime');
 const Discord = require('discord.js');
+
+const dns = require('dns');
+const AWS = require('aws-sdk');
+const fetch = require('node-fetch');
+const Web3 = require('web3');
+const bip39 = require('bip39');
+const { Transaction } = require('@ethereumjs/tx');
+const { default: Common } = require('@ethereumjs/common');
+const { hdkey } = require('ethereumjs-wallet');
 
 const { discordApiToken, tradeMnemonic, treasuryMnemonic } = require('./config.json');
 const { jsonParse, readStorageHashAsBuffer } = require('./utilities.js');
