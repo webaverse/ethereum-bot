@@ -230,13 +230,13 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
       .key - private key in DM
       .login - login link in DM
       .play - play link in DM
-      .realm [num] - play link in DM to realm id (1-5)
+      .realm [num] - play link in DM to realm [1-5]
       
       Tokens
       .send [@user|0xaddr|treasury] [amount] - send FT
       .transfer [@user|0xaddr|treasury] [id] [quantity]? - send NFT
       .preview [id] - preview NFT [id]; .gif for gif
-      .wget [id] - get NFT [id] delivered in DM
+      .wget [id] - get NFT [id] in DM
       .get [id] [key] - get metadata for NFT
       .set [id] [key] [value] - set metadata for NFT
       .tokencollab [@user|0xaddr] [tokenId] - add collaborator to [tokenId]
@@ -245,7 +245,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
       .name [newname] - set name to [name]
       .monetizationpointer [mp] - set monetization pointer
       .avatar [id] - set avatar
-      .loadout [num] [id] - set loadout NFT [num] (1-8) to [id]
+      .loadout [num] [id] - set loadout NFT [1-8] to [id]
       .homespace [id] - set NFT as home space
       
       Minting
@@ -277,7 +277,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
       
       Keys (DM bot)
       .key [new mnemonic key] - set your Discord private key
-      .key reset - generate and set a new Discord private key
+      .key reset - generate new Discord private key
       \`\`\``);
 
                         m.react('❌');
