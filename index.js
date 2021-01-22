@@ -157,7 +157,7 @@ if (!devMode) {
               {
                 name: 'geth',
                 networkId: 1,
-                chainId: 1337,
+                chainId: isMainnet ? 1338 : 1337,
               },
               'petersburg',
             ),
