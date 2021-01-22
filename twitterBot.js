@@ -74,7 +74,7 @@ const event_ = (event) => {
   }
 };
 
-exports.createTwitterClient = async (getStores, runSidechainTransaction, ddb, treasuryAddress) => {
+exports.createTwitterClient = async (web3, contracts, getStores, runSidechainTransaction, ddb, treasuryAddress) => {
   if (twitterConfigInvalid)
     return console.warn("*** No bot config found for Twitter client, skipping initialization")
 

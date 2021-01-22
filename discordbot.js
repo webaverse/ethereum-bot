@@ -25,7 +25,7 @@ const trades = [];
 const helps = [];
 let nextTradeId = 0;
 
-exports.createDiscordClient = (getStores, runSidechainTransaction, ddb, treasuryAddress) => {
+exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransaction, ddb, treasuryAddress) => {
 
     if (discordApiToken === undefined || discordApiToken === "" || discordApiToken === null)
         return console.warn("*** WARNING: Discord API token is not defined");
