@@ -8,6 +8,7 @@ const Discord = require('discord.js');
 
 const { discordApiToken, tradeMnemonic, treasuryMnemonic } = require('./config.json');
 const { jsonParse, readStorageHashAsBuffer } = require('./utilities.js');
+const {usersTableName, prefix, storageHost, previewHost, previewExt, treasurerRoleName} = require('./constants.js');
 const { discordDevMode } = require("./devmode.js");
 
 const trades = [];
