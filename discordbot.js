@@ -222,62 +222,62 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                     let match;
                     if (split[0] === prefix + 'help') {
                         const m = await message.channel.send(`\`\`\`\css
-      Info
-      .status - show account details
-      .balance [@user|0xaddr]? - show FT balance
-      .inventory [@user|0xaddr]? [page]? - show NFTs
-      .address [@user]? - print address
-      .key - private key in DM
-      .login - login link in DM
-      .play - play link in DM
-      .realm [num] - play link in DM to realm [1-5]
-      
-      Tokens
-      .send [@user|0xaddr|treasury] [amount] - send FT
-      .transfer [@user|0xaddr|treasury] [id] [quantity]? - send NFT
-      .preview [id] - preview NFT [id]; .gif for gif
-      .wget [id] - get NFT [id] in DM
-      .get [id] [key] - get metadata for NFT
-      .set [id] [key] [value] - set metadata for NFT
-      .tokencollab [@user|0xaddr] [tokenId] - add collaborator to [tokenId]
-      
-      Account
-      .name [newname] - set name to [name]
-      .monetizationpointer [mp] - set monetization pointer
-      .avatar [id] - set avatar
-      .loadout [num] [id] - set loadout NFT [1-8] to [id]
-      .homespace [id] - set NFT as home space
-      
-      Minting
-      .mint [count]? (upload comment) - mint NFTs from file upload
-      .mint [count]? [url] - mint NFTs from [url]
-      .update [id] (upload comment) - update nft content
-      
-      Packs
-      .packs [@user|nftid] - check packed NFT balances
-      .pack [nftid] [amount] - pack [amount] FT into [nftid]
-      .unpack [nftid] [amount] - unpack [amount] FT from [nftid]
-      
-      Trade
-      .trade [@user|0xaddr] - start a trade with
-      .addnft [tradeid] [nftid] - add NFT to trade [tradeid]
-      .removenft [tradeid] [index] - remove NFT at [index] from trade [tradeid]
-      .addft [tradeid] [amount] - add FT to trade [tradeid]
-      
-      Store
-      .store [@user]? - show store
-      .sell [nftid] [price] - sell [nftid] for [price]
-      .unsell [saleid] - unlist [saleid]
-      .buy [saleid] - buy [saleid]
-      
-      Land
-      .parcels - list owned parcels
-      .deploy [parcelId] [nftId] - deploy [nftId] to [parcelId]
-      .landcollab [@user|0xaddr] [parcelId] - add collaborator to [parcelId]
-      
-      Keys (DM bot)
-      .key [new mnemonic key] - set your Discord private key
-      .key reset - generate new Discord private key
+Info
+.status - show account details
+.balance [@user|0xaddr]? - show FT balance
+.inventory [@user|0xaddr]? [page]? - show NFTs
+.address [@user]? - print address
+.key - private key in DM
+.login - login link in DM
+.play - play link in DM
+.realm [num] - play link in DM to realm [1-5]
+
+Tokens
+.send [@user|0xaddr|treasury] [amount] - send FT
+.transfer [@user|0xaddr|treasury] [id] [quantity]? - send NFT
+.preview [id] - preview NFT [id]; .gif for gif
+.wget [id] - get NFT [id] in DM
+.get [id] [key] - get metadata for NFT
+.set [id] [key] [value] - set metadata for NFT
+.tokencollab [@user|0xaddr] [tokenId] - add collaborator to [tokenId]
+
+Account
+.name [newname] - set name to [name]
+.monetizationpointer [mp] - set monetization pointer
+.avatar [id] - set avatar
+.loadout [num] [id] - set loadout NFT [1-8] to [id]
+.homespace [id] - set NFT as home space
+
+Minting
+.mint [count]? (upload comment) - mint NFTs from file upload
+.mint [count]? [url] - mint NFTs from [url]
+.update [id] (upload comment) - update nft content
+
+Packs
+.packs [@user|nftid] - check packed NFT balances
+.pack [nftid] [amount] - pack [amount] FT into [nftid]
+.unpack [nftid] [amount] - unpack [amount] FT from [nftid]
+
+Trade
+.trade [@user|0xaddr] - start a trade with
+.addnft [tradeid] [nftid] - add NFT to trade [tradeid]
+.removenft [tradeid] [index] - remove NFT at [index] from trade [tradeid]
+.addft [tradeid] [amount] - add FT to trade [tradeid]
+
+Store
+.store [@user]? - show store
+.sell [nftid] [price] - sell [nftid] for [price]
+.unsell [saleid] - unlist [saleid]
+.buy [saleid] - buy [saleid]
+
+Land
+.parcels - list owned parcels
+.deploy [parcelId] [nftId] - deploy [nftId] to [parcelId]
+.landcollab [@user|0xaddr] [parcelId] - add collaborator to [parcelId]
+
+Keys (DM bot)
+.key [new mnemonic key] - set your Discord private key
+.key reset - generate new Discord private key
       \`\`\``);
 
                         m.react('❌');
