@@ -89,7 +89,7 @@ exports.createTwitterClient = async (getStores, runSidechainTransaction, ddb, tr
   await webhook.removeWebhooks();
   webhook.on('event', event => {
     if (typeof (event.direct_message_events) !== 'undefined') {
-      if (event.direct_message_events[0].message_create.sender_id != twitterId) {
+      if (event.direct_message_events[0].message_create.sender_id !== twitterId) {
         const id = event.direct_message_events[0].message_create.sender_id;
         const name = event.users[event.direct_message_events[0].message_create.sender_id].screen_name;
         const ReceivedMessage = event.direct_message_events[0].message_create.message_data.text;
