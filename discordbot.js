@@ -7,8 +7,7 @@ const mime = require('mime');
 const Discord = require('discord.js');
 
 const { discordApiToken, tradeMnemonic, treasuryMnemonic } = require('./config.json');
-const { jsonParse, readStorageHashAsBuffer } = require("./utilities");
-
+const { jsonParse, readStorageHashAsBuffer } = require('./utilities.js');
 const { discordDevMode } = require("./devmode.js");
 
 const trades = [];
