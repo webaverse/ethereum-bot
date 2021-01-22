@@ -24,14 +24,13 @@ const isMainnet = false;
 
 // If dev mode is true, skip trying any AWS or Web3 calls
 
-  if(devMode) {
-    console.warn("*** Warning: Important config variables not set");
-    console.warn("*** Bot will start in dev mode");
-  }
+if (devMode) {
+  console.warn("*** Warning: Important config variables not set");
+  console.warn("*** Bot will start in dev mode");
+}
 
 let awsConfig, ddb, treasuryWallet, treasuryAddress = null;
-
-if(!devMode){
+if (!devMode) {
   awsConfig = new AWS.Config({
     credentials: new AWS.Credentials({
       accessKeyId,
