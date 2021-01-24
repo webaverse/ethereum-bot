@@ -4,20 +4,25 @@ const http = require('http');
 const url = require('url');
 
 const {
+  twitterBearerToken,
   twitterConsumerKey,
   twitterConsumerSecret,
   twitterAccessToken,
   twitterAccessTokenSecret,
   twitterId,
-  twitterWebhookPort
+  twitterWebhookPort,
+  ngrokToken,
+  serverPort
 } = require('./config.json');
 
-const twitterConfigInvalid = twitterConsumerKey === undefined ||
+const twitterConfigInvalid = twitterBearerToken === undefined ||
+twitterConsumerKey === undefined ||
   twitterConsumerSecret === undefined ||
   twitterAccessToken === undefined ||
   twitterAccessTokenSecret === undefined ||
   twitterId === undefined ||
   twitterWebhookPort === undefined ||
+  twitterBearerToken === null ||
   twitterConsumerKey === null ||
   twitterConsumerSecret === null ||
   twitterAccessToken === null ||
@@ -55,6 +60,7 @@ const ResponseHandler = {
   }
 
 const validateWebhook = (token, auth) => {
+  console.log("token")
   const responseToken = crypto.createHmac('sha256', auth).update(token).digest('base64');
   return { response_token: `sha256=${responseToken}` };
 }
@@ -78,6 +84,12 @@ exports.createTwitterClient = async (getStores, runSidechainTransaction, ddb, tr
   if (twitterConfigInvalid)
     return console.warn("*** No bot config found for Twitter client, skipping initialization")
 
+console.log(twitterConsumerKey)
+console.log(twitterConsumerSecret)
+console.log(twitterAccessToken)
+console.log(twitterAccessTokenSecret)
+
+
   TwitClient = new require('twit')({
     consumer_key: twitterConsumerKey,
     consumer_secret: twitterConsumerSecret,
@@ -85,7 +97,15 @@ exports.createTwitterClient = async (getStores, runSidechainTransaction, ddb, tr
     access_token_secret: twitterAccessTokenSecret
   });
 
-  const webhook = new Autohook();
+  const webhook = new Autohook({
+    token: twitterAccessToken,
+    token_secret: twitterAccessTokenSecret,
+    consumer_key: twitterConsumerKey,
+    consumer_secret: twitterConsumerSecret,
+    ngrok_secret: ngrokToken,
+    env: 'dev',
+    port: twitterWebhookPort ?? 1337
+  });
   await webhook.removeWebhooks();
   webhook.on('event', event => {
     if (typeof (event.direct_message_events) !== 'undefined') {
@@ -115,6 +135,8 @@ exports.createTwitterClient = async (getStores, runSidechainTransaction, ddb, tr
     }
 
     if (route.query.crc_token) {
+      console.log("Validating webhook")
+      console.log(route.query.crc_token)
       const crc = validateWebhook(route.query.crc_token, twitterConsumerSecret);
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify(crc));
@@ -131,5 +153,5 @@ exports.createTwitterClient = async (getStores, runSidechainTransaction, ddb, tr
         res.end();
       });
     }
-  }).listen(twitterWebhookPort);
+  }).listen(serverPort ?? 3000);
 }

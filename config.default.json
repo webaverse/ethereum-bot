@@ -4,10 +4,13 @@
     "tradeMnemonic": null,
     "treasuryMnemonic": null,
     "discordApiToken": null,
+    "ngrokToken": null,
+    "twitterBearerToken": null,
     "twitterConsumerKey": null,
     "twitterConsumerSecret": null,
     "twitterAccessToken": null,
     "twitterAccessTokenSecret": null,
     "twitterId": null,
-    "twitterWebhookPort": 3000
+    "twitterWebhookPort": 1337,
+    "serverPort": 3001
 }
