@@ -54,7 +54,34 @@ const help = (id, name) => {
   SendMessage(id, 'For a list of commands, please visit https://docs.webaverse.com/docs/webaverse/discord-bot')
 }
 
-const status = (id, name) => {
+const status = (id, userId) => {
+  let mnemonic;
+  
+  const spec = await _getUser(userId);
+  mnemonic = spec.mnemonic;
+  if (!mnemonic) {
+      const spec = await _genKey(userId);
+      mnemonic = spec.mnemonic;
+  }
+
+  const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+  const address = wallet.getAddressString();
+  const [
+      name,
+      avatarId,
+      homeSpaceId,
+      monetizationPointer,
+  ] = await Promise.all([
+      contracts.Account.methods.getMetadata(address, 'name').call(),
+      contracts.Account.methods.getMetadata(address, 'avatarId').call(),
+      contracts.Account.methods.getMetadata(address, 'homeSpaceId').call(),
+      contracts.Account.methods.getMetadata(address, 'monetizationPointer').call(),
+  ]);
+
+  message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nAvatar: ${avatarId}\nHome Space: ${homeSpaceId}\nMonetization Pointer: ${monetizationPointer}\n\`\`\``);
+
+
+
   SendMessage(id, 'Status')
 }
 
@@ -254,6 +281,34 @@ exports.createTwitterClient = async (getStores, runSidechainTransaction, ddb, tr
   });
   await webhook.removeWebhooks();
   webhook.on('event', event => {
+
+    const _getUser = async (id) => {
+      const tokenItem = await ddb.getItem({
+          TableName: usersTableName,
+          Key: {
+              email: { S: id + '.twittertoken' },
+          }
+      }).promise();
+
+      let mnemonic = (tokenItem.Item && tokenItem.Item.mnemonic) ? tokenItem.Item.mnemonic.S : null;
+      return { mnemonic };
+  };
+  const _genKey = async (id = message.author.id) => {
+      const mnemonic = bip39.generateMnemonic();
+
+      await ddb.putItem({
+          TableName: usersTableName,
+          Item: {
+              email: { S: id + '.twittertoken' },
+              mnemonic: { S: mnemonic }
+          }
+      }).promise();
+      return { mnemonic };
+  };
+
+
+
+
     if (typeof (event.direct_message_events) !== 'undefined') {
       if (event.direct_message_events[0].message_create.sender_id !== twitterId) {
         const id = event.direct_message_events[0].message_create.sender_id;
