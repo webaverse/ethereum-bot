@@ -259,7 +259,26 @@ const validateWebhook = (token, auth) => {
   return { response_token: `sha256=${responseToken}` };
 }
 
+<<<<<<< HEAD
 exports.createTwitterClient = async (getStores, runSidechainTransaction, ddb, treasuryAddress) => {
+=======
+const event_ = (event) => {
+  if (typeof (event.direct_message_events) !== 'undefined') {
+    if (event.direct_message_events[0].message_create.sender_id == twitterId) return;
+    const id = event.direct_message_events[0].message_create.sender_id;
+    const name = event.users[event.direct_message_events[0].message_create.sender_id].screen_name;
+    const ReceivedMessage = event.direct_message_events[0].message_create.message_data.text;
+    const Response = ResponseHandler[ReceivedMessage.split(" ")[0]]
+    if (Response) {
+      Response(id, ReceivedMessage, name);
+    } else {
+      ResponseHandler['default'](id)
+    }
+  }
+};
+
+exports.createTwitterClient = async (web3, contracts, getStores, runSidechainTransaction, ddb, treasuryAddress) => {
+>>>>>>> origin/master
   if (twitterConfigInvalid)
     return console.warn("*** No bot config found for Twitter client, skipping initialization")
 

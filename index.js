@@ -11,12 +11,12 @@ const { accessKeyId, secretAccessKey, treasuryMnemonic } = require('./config.jso
 
 const { ethereumHost } = require('./constants.js');
 
-const { makePromise } = require("./utilities");
+const { makePromise } = require('./utilities.js');
 
 const { devMode } = require("./devmode.js");
 
-const { createDiscordClient } = require('./discordbot');
-const { createTwitterClient } = require('./twitterBot');
+const { createDiscordClient } = require('./discordbot.js');
+const { createTwitterClient } = require('./twitterBot.js');
 
 Error.stackTraceLimit = 300;
 
@@ -157,7 +157,7 @@ if (!devMode) {
               {
                 name: 'geth',
                 networkId: 1,
-                chainId: 1337,
+                chainId: isMainnet ? 1338 : 1337,
               },
               'petersburg',
             ),
@@ -190,7 +190,7 @@ if (!devMode) {
     return fn;
   };
 
-  // createDiscordClient(getStores, runSidechainTransaction, ddb, treasuryAddress);
+  createDiscordClient(getStores, runSidechainTransaction, ddb, treasuryAddress);
   await createTwitterClient(getStores, runSidechainTransaction, ddb, treasuryAddress);
   console.log("Bot started successfully");
 })();
