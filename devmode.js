@@ -8,14 +8,14 @@ const {
 
 exports.devMode = accessKeyId === undefined ||
     secretAccessKey === undefined ||
-    tradeMnemonic === undefined ||
-    treasuryMnemonic === undefined ||
+    // tradeMnemonic === undefined ||
+    // treasuryMnemonic === undefined ||
     accessKeyId === null ||
     secretAccessKey === null ||
-    tradeMnemonic === null ||
-    treasuryMnemonic === null ||
+    // tradeMnemonic === null ||
+    // treasuryMnemonic === null ||
     accessKeyId === "" ||
     secretAccessKey === "" ||
-    discordApiToken === "" ||
-    tradeMnemonic === "" ||
-    treasuryMnemonic === "";
+    discordApiToken === "";
+    // tradeMnemonic === "" ||
+    // treasuryMnemonic === "";

@@ -5,11 +5,9 @@ const url = require('url');
 const bip39 = require('bip39');
 const { hdkey } = require('ethereumjs-wallet');
 
-const { usersTableName } = require('./constants')
+const { twitterUsersTableName } = require('./constants')
 
-let ddb = null;
-let getStores = null;
-let runSidechainTransaction = null;
+let ddb, web3, contracts, getStores, runSidechainTransaction = null;
 
 const {
   treasuryMnemonic,
@@ -98,7 +96,7 @@ const _items = (id, twitterUserId, addressToGetFrom, page, contractName) => asyn
 
 const _getUser = async (id) => {
   const tokenItem = await ddb.getItem({
-    TableName: usersTableName,
+    TableName: twitterUsersTableName,
     Key: {
       email: { S: id + '.twittertoken' },
     }
@@ -111,7 +109,7 @@ const _getUser = async (id) => {
 const _genKey = async (id) => {
   const mnemonic = bip39.generateMnemonic();
   await ddb.putItem({
-    TableName: usersTableName,
+    TableName: twitterUsersTableName,
     Item: {
       email: { S: id + '.twittertoken' },
       mnemonic: { S: mnemonic }
@@ -1432,14 +1430,15 @@ const validateWebhook = (token, auth) => {
   return { response_token: `sha256=${responseToken}` };
 }
 
-exports.createTwitterClient = async (getStoresFunction, runSidechainTransactionFunction, database, treasuryAddress) => {
+exports.createTwitterClient = async (web3In, contractsIn, getStoresFunction, runSidechainTransactionFunction, database, treasuryAddress) => {
   if (twitterConfigInvalid)
     return console.warn("*** No bot config found for Twitter client, skipping initialization")
 
   ddb = database;
   getStores = getStoresFunction;
   runSidechainTransaction = runSidechainTransactionFunction;
-
+  web3 = web3In
+  contracts = contractsIn
   TwitClient = new require('twit')({
     consumer_key: twitterConsumerKey,
     consumer_secret: twitterConsumerSecret,
