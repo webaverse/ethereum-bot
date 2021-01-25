@@ -1,11 +1,14 @@
 const { Autohook } = require('twitter-autohook');
 const crypto = require('crypto');
 const http = require('http');
+const https = require('https');
+const path = require('path');
 const url = require('url');
+const mime = require('mime');
 const bip39 = require('bip39');
 const { hdkey } = require('ethereumjs-wallet');
 
-const { twitterUsersTableName } = require('./constants')
+const { twitterUsersTableName, storageHost, previewHost, previewExt } = require('./constants')
 
 let ddb, web3, contracts, getStores, runSidechainTransaction = null;
 
@@ -121,23 +124,23 @@ const _genKey = async (id) => {
 const SendMessage = (id, senderId, messageType, text) => {
   console.log('on SendMessage')
   console.log({ id, messageType, text })
-  if(messageType === 'DM'){
-  TwitClient.post('direct_messages/events/new', {
-    "event": {
-      "type": "message_create",
-      "message_create": {
-        "target": {
-          "recipient_id": id
-        },
-        "message_data": {
-          "text": text,
+  if (messageType === 'DM') {
+    TwitClient.post('direct_messages/events/new', {
+      "event": {
+        "type": "message_create",
+        "message_create": {
+          "target": {
+            "recipient_id": id
+          },
+          "message_data": {
+            "text": text,
+          }
         }
       }
-    }
-  }, (error, data, response) => { if (error) console.log(error) });
+    }, (error, data, response) => { if (error) console.log(error) });
   } else {
-    TwitClient.post('statuses/update', { status: '.@'+senderId + ' ' +text, id, in_reply_to_status_id: id }, function(err, data, response) {
-    console.log("Posted ", '.@'+senderId + ' ' +text)
+    TwitClient.post('statuses/update', { status: '.@' + senderId + ' ' + text, id, in_reply_to_status_id: id }, function (err, data, response) {
+      console.log("Posted ", '.@' + senderId + ' ' + text)
     })
   }
 }
@@ -272,28 +275,28 @@ const address = async (id, twitterUserId, addressToGet, messageType, senderId) =
   SendMessage(id, senderId, messageType, message)
 }
 
-const setName = async (id, twitterUserId, name, messageType, senderId) =>{
+const setName = async (id, twitterUserId, name, messageType, senderId) => {
   let { mnemonic } = await _getUser(twitterUserId);
-                        if (!mnemonic) {
-                            const spec = await _genKey(twitterUserId);
-                            mnemonic = spec.mnemonic;
-                        }
+  if (!mnemonic) {
+    const spec = await _genKey(twitterUserId);
+    mnemonic = spec.mnemonic;
+  }
 
-                        if (name) {
-                            if (/['"]{2}/.test(name)) {
-                                name = '';
-                            }
+  if (name) {
+    if (/['"]{2}/.test(name)) {
+      name = '';
+    }
 
-                            const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                            const address = wallet.getAddressString();
-                            await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', name);
-                            SendMessage(id, senderId, messageType, 'Set name to ' + name);
-                        } else {
-                            const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                            const address = wallet.getAddressString();
-                            const name = await contracts.Account.methods.getMetadata(address, 'name').call();
-                            SendMessage(id, senderId, messageType, 'Name is ' + name);
-                        }
+    const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+    const address = wallet.getAddressString();
+    await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', name);
+    SendMessage(id, senderId, messageType, 'Set name to ' + name);
+  } else {
+    const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+    const address = wallet.getAddressString();
+    const name = await contracts.Account.methods.getMetadata(address, 'name').call();
+    SendMessage(id, senderId, messageType, 'Name is ' + name);
+  }
 }
 
 const send = async (id, twitterUserId, addressToSendTo, amount, messageType, senderId) => {
@@ -761,6 +764,14 @@ const set = async (id, twitterUserId, nftId, metaDataKey, metaDataValue, message
 }
 
 const mint = async (id, twitterUserId, url, quantity = 1, attachment, messageType, senderId) => {
+  console.log("********* MINTING")
+  console.log("twitterUserId is ", twitterUserId)
+  console.log("URL IS", url)
+  console.log("QUANTITY IS", quantity)
+  console.log("messageType IS", messageType)
+  console.log("senderId IS", senderId)
+  twitterUserId = twitterUserId ?? senderId
+
   quantity = parseInt(quantity, 10);
   let manualUrl;
   if (isNaN(quantity)) {
@@ -795,6 +806,7 @@ const mint = async (id, twitterUserId, url, quantity = 1, attachment, messageTyp
         proxyReq.end();
       });
       files.push(proxyRes);
+      console.log("Pushed ", proxyRes)
     }
   } else if (attachment) {
     // TODO: Handle uploaded attachment
@@ -1354,7 +1366,40 @@ const buy = async (id, twitterUserId, buyId, messageType, senderId) => {
   }
 }
 
-const HandleResponse = (id, name, receivedMessage, messageType, senderId) => {
+const getBalance = async (id, twitterUserId, balanceUserId, messageType, senderId) => {
+  let match;
+  if (twitterUserId && (match = (balanceUserId ?? twitterUserId).match(/<@!?([0-9]+)>/))) {
+    const userId = match[1];
+    let { mnemonic } = await _getUser(userId);
+    if (!mnemonic) {
+      const spec = await _genKey(userId);
+      mnemonic = spec.mnemonic;
+    }
+
+    const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+    const address = wallet.getAddressString();
+    const balance = await contracts.FT.methods.balanceOf(address).call();
+    SendMessage(id, senderId, messageType, userId + ' has ' + balance + ' FLUX');
+  } else if ((balanceUserId ?? twitterUserId) === 'treasury') {
+    const balance = await contracts.FT.methods.balanceOf(treasuryAddress).call();
+    SendMessage(id, senderId, messageType, 'Treasury has ' + balance + ' FLUX');
+  } else {
+    let { mnemonic } = await _getUser((balanceUserId ?? twitterUserId));
+    if (!mnemonic) {
+      const spec = await _genKey((balanceUserId ?? twitterUserId));
+      mnemonic = spec.mnemonic;
+    }
+
+    const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+    const address = wallet.getAddressString();
+    const balance = await contracts.FT.methods.balanceOf(address).call();
+    SendMessage(id, senderId, messageType, (balanceUserId ?? twitterUserId) + ' has ' + balance + ' FLUX');
+  }
+}
+
+const HandleResponse = (id, name, receivedMessage, messageType, senderId, attachment) => {
+
+  if (attachment) console.log("******* ATTACHMENT")
 
   console.log("Received message is", "`" + receivedMessage + "`")
 
@@ -1387,6 +1432,9 @@ const HandleResponse = (id, name, receivedMessage, messageType, senderId) => {
     case 'name':
       setName(id, name, commandArg1, messageType, senderId);
       break;
+    case 'balance':
+      getBalance(id, name, commandArg1, messageType, senderId)
+      break;
     case 'monitizationPointer':
       monitizationPointer(id, name, commandArg1, messageType, senderId);
       break;
@@ -1415,10 +1463,10 @@ const HandleResponse = (id, name, receivedMessage, messageType, senderId) => {
       set(id, name, commandArg1, commandArg2, messageType, senderId);
       break;
     case 'mint':
-      mint(id, name, commandArg1, commandArg2, messageType, senderId);
+      mint(id, name, commandArg1, commandArg2, attachment, messageType, senderId);
       break;
     case 'update':
-      update(id, name, commandArg1, messageType, senderId);
+      update(id, name, commandArg1, commandArg2, attachment, messageType, senderId);
       break;
     case 'packs':
       packs(id, name, commandArg1, messageType, senderId);
@@ -1480,14 +1528,14 @@ exports.createTwitterClient = async (web3In, contractsIn, getStoresFunction, run
   await webhook.removeWebhooks();
   webhook.on('event', event => {
     if (typeof (event.tweet_create_events) !== 'undefined' &&
-    event.tweet_create_events[0].user.screen_name !== twitterId) {
+      event.tweet_create_events[0].user.screen_name !== twitterId) {
       const id = event.tweet_create_events[0].user.id
       const screenName = event.tweet_create_events[0].user.screen_name
       const ReceivedMessage = event.tweet_create_events[0].text;
       console.log("Processing received message")
-      const message = ReceivedMessage.replace("@"+twitterId + " ", "")
+      const message = ReceivedMessage.replace("@" + twitterId + " ", "")
       console.log(message)
-        HandleResponse(id, screenName, message, 'Tweet', screenName)
+      HandleResponse(id, screenName, message, 'Tweet', screenName)
     }
 
 
@@ -1497,7 +1545,7 @@ exports.createTwitterClient = async (web3In, contractsIn, getStoresFunction, run
         const name = event.users[event.direct_message_events[0].message_create.sender_id].screen_name;
         const ReceivedMessage = event.direct_message_events[0].message_create.message_data.text;
         if (twitterId !== name)
-          HandleResponse(id, name, ReceivedMessage, 'DM', screenName)
+          HandleResponse(id, name, ReceivedMessage, 'DM', name)
       }
     }
   });
