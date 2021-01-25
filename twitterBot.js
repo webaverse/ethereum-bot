@@ -39,7 +39,7 @@ const twitterConfigInvalid = twitterBearerToken === undefined ||
 
 let TwitClient;
 
-const _items = (id, twitterUserId, addressToGetFrom, page, contractName) => async (getEntries, print) => {
+const _items = (id, twitterUserId, addressToGetFrom, page, contractName, messageType, senderId) => async (getEntries, print) => {
   if (!isNaN(page))
     page = 1
   else
@@ -136,9 +136,8 @@ const SendMessage = (id, senderId, messageType, text) => {
     }
   }, (error, data, response) => { if (error) console.log(error) });
   } else {
-    TwitClient.post('statuses/update', { status: '.@'+senderId + ' ' +text, id }, function(err, data, response) {
-      console.log("**** DATA")
-      console.log(data)
+    TwitClient.post('statuses/update', { status: '.@'+senderId + ' ' +text, id, in_reply_to_status_id: id }, function(err, data, response) {
+    console.log("Posted ", '.@'+senderId + ' ' +text)
     })
   }
 }
@@ -186,7 +185,7 @@ const inventory = async (id, twitterUserId, addressToGetFrom, page = 1, messageT
     return;
   }
   (async () => {
-    await _items(id, twitterUserId, addressToGetFrom, page, 'NFT')(async (address, startIndex, endIndex) => {
+    await _items(id, twitterUserId, addressToGetFrom, page, 'NFT', messageType, senderId)(async (address, startIndex, endIndex) => {
       const hashToIds = {};
       const promises = [];
       for (let i = startIndex; i < endIndex; i++) {
@@ -236,7 +235,6 @@ const inventory = async (id, twitterUserId, addressToGetFrom, page = 1, messageT
       }
       return s;
     }).catch(console.warn);
-    SendMessage(id, senderId, messageType, 'Inventory')
   })();
 }
 
@@ -272,6 +270,30 @@ const address = async (id, twitterUserId, addressToGet, messageType, senderId) =
   let message = address ? user + '\'s address: ' + address : "No such user";
 
   SendMessage(id, senderId, messageType, message)
+}
+
+const setName = async (id, twitterUserId, name, messageType, senderId) =>{
+  let { mnemonic } = await _getUser(twitterUserId);
+                        if (!mnemonic) {
+                            const spec = await _genKey(twitterUserId);
+                            mnemonic = spec.mnemonic;
+                        }
+
+                        if (name) {
+                            if (/['"]{2}/.test(name)) {
+                                name = '';
+                            }
+
+                            const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                            const address = wallet.getAddressString();
+                            await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', name);
+                            SendMessage(id, senderId, messageType, 'Set name to ' + name);
+                        } else {
+                            const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                            const address = wallet.getAddressString();
+                            const name = await contracts.Account.methods.getMetadata(address, 'name').call();
+                            SendMessage(id, senderId, messageType, 'Name is ' + name);
+                        }
 }
 
 const send = async (id, twitterUserId, addressToSendTo, amount, messageType, senderId) => {
@@ -1354,7 +1376,7 @@ const HandleResponse = (id, name, receivedMessage, messageType, senderId) => {
       status(id, name, messageType, senderId);
       break;
     case 'inventory':
-      inventory(id, name, commandArg1, messageType, senderId);
+      inventory(id, name, commandArg1, commandArg2, messageType, senderId);
       break;
     case 'address':
       address(id, name, commandArg1, messageType, senderId);
@@ -1363,7 +1385,7 @@ const HandleResponse = (id, name, receivedMessage, messageType, senderId) => {
       key(id, name, commandArg1, messageType, senderId);
       break;
     case 'name':
-      name(id, name, commandArg1, messageType, senderId);
+      setName(id, name, commandArg1, messageType, senderId);
       break;
     case 'monitizationPointer':
       monitizationPointer(id, name, commandArg1, messageType, senderId);
