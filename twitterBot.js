@@ -77,8 +77,8 @@ const _items = (id, twitterUserId, addressToGetFrom, page, contractName, message
     userLabel = 'treasury';
   };
   // If it's a username
-  if (addressToGetFrom !== undefined && (match = addressToGetFrom.match(/<@!?([0-9]+)>/))) {
-    await _loadFromUserId(match[1]);
+  if (addressToGetFrom !== undefined && (match = addressToGetFrom.match(/@([a-zA-Z0-9_])*/))) {
+    await _loadFromUserId(match[0]);
     // If it's an eth address
   } else if (addressToGetFrom !== undefined && (match = addressToGetFrom.match(/^(0x[0-9a-f]+)$/i))) {
     _loadFromAddress(match[1]);
@@ -150,7 +150,7 @@ const SendMessage = (id, twitterUserId, messageType, text) => {
   }
 }
 
-const help = (id, name, messageType) => {
+const help = (id, twitterUserId, messageType) => {
   SendMessage(id, twitterUserId, messageType, 'For a list of commands, please visit https://docs.webaverse.com/docs/webaverse/discord-bot')
 }
 
@@ -187,6 +187,7 @@ const status = async (id, twitterUserId, messageType) => {
 }
 
 const inventory = async (id, twitterUserId, addressToGetFrom, page = 1, messageType) => {
+  console.log("****** INVENTORY");
   addressToGetFrom = addressToGetFrom ?? twitterUserId;
   if (ddb == null) {
     SendMessage(id, twitterUserId, messageType, `Unable to get inventory for ${addressToGetFrom} at page ${page} - database not configured.`)
@@ -253,8 +254,8 @@ const address = async (id, twitterUserId, addressToGet, messageType) => {
   }
   let user, address;
   if (addressToGet !== 'treasury') {
-    if (addressToGet && (match = addressToGet.match(/<@!?([0-9]+)>/))) {
-      user = match[1];
+    if (addressToGet && (match = addressToGet.match(/@([a-zA-Z0-9_])*/))) {
+      user = match[0];
     } else {
       user = twitterUserId;
     }
@@ -306,21 +307,28 @@ const setName = async (id, twitterUserId, name, messageType) => {
 
 const send = async (id, twitterUserId, addressToSendTo, amount, messageType) => {
   amount = parseFloat(amount);
+
+
+  console.log("Address to send to")
+  if (match = addressToSendTo.match(/@([a-zA-Z0-9_])*/)) {
+    console.log(match)
+
+  }
   // Send to user name
-  if (match = addressToSendTo.match(/<@!?([0-9]+)>/)) {
-    const userId = match[1];
+  if (addressToSendTo.match(/@([a-zA-Z0-9_])*/)) {
+    const userId = match[0];
     let mnemonic, mnemonic2;
     if (userId !== twitterUserId) {
       {
-        const userSpec = await _getUser();
+        const userSpec = await _getUser(twitterUserId);
         mnemonic = userSpec.mnemonic;
         if (!mnemonic) {
-          const spec = await _genKey();
+          const spec = await _genKey(twitterUserId);
           mnemonic = spec.mnemonic;
         }
       }
       {
-        const userSpec = await _getUser(user.id);
+        const userSpec = await _getUser(userId);
         mnemonic2 = userSpec.mnemonic;
         if (!mnemonic2) {
           const spec = await _genKey(userId);
@@ -356,7 +364,7 @@ const send = async (id, twitterUserId, addressToSendTo, amount, messageType) => 
   else if (match = addressToSendTo.match(/(0x[0-9a-f]+)/i)) {
     let { mnemonic } = await _getUser(twitterUserId);
     if (!mnemonic) {
-      const spec = await _genKey();
+      const spec = await _genKey(twitterUserId);
       mnemonic = spec.mnemonic;
     }
 
@@ -484,7 +492,9 @@ const monitizationPointer = async (id, twitterUserId, pointerAddress, messageTyp
   }
 }
 
-const key = async (id, name, commandArg1, messageType) => {
+const key = async (id, twitterUserId, commandArg1, messageType) => {
+
+  const shouldReset = commandArg1.trim().toLowerCase() === "reset";
 
   // TODO: Handle reset, etc
 
@@ -497,8 +507,10 @@ const key = async (id, name, commandArg1, messageType) => {
   const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
   const address = wallet.getAddressString();
   const privateKey = wallet.privateKey.toString('hex');
-
-  SendMessage(id, twitterUserId, messageType, 'Address: `' + address + '`\nMnemonic:' + mnemonic + '\nPrivate key: ' + privateKey)
+  if(messageType === "DM")
+    SendMessage(id, twitterUserId, messageType, 'Address: `' + address + '`\nMnemonic:' + mnemonic + '\nPrivate key: ' + privateKey)
+  else
+    SendMessage(id, twitterUserId, messageType, 'DM me to get your private key')
 }
 
 const transfer = async (id, twitterUserId, addressToTransferTo, nftId, quantity, messageType) => {
@@ -513,8 +525,8 @@ const transfer = async (id, twitterUserId, addressToTransferTo, nftId, quantity,
     return;
   }
 
-  if (match = addressToTransferTo.match(/<@!?([0-9]+)>/)) {
-    const userId = match[1];
+  if (match = addressToTransferTo.match(/@([a-zA-Z0-9_])*/)) {
+    const userId = match[0];
     let mnemonic, mnemonic2;
     if (userId !== twitterUserId) {
       {
@@ -1115,8 +1127,8 @@ const packs = async (id, twitterUserId, userOrNftId, messageType) => {
       address = wallet.getAddressString();
       userLabel = 'treasury';
     };
-    if (userOrNftId && (match = userOrNftId.match(/<@!?([0-9]+)>/))) {
-      await _loadFromUserId(match[1]);
+    if (userOrNftId && (match = userOrNftId.match(/@([a-zA-Z0-9_])*/))) {
+      await _loadFromUserId(match[0]);
     } else if (userOrNftId && (match = userOrNftId.match(/^0x([0-9a-f]+)$/i))) {
       _loadFromAddress(match[1]);
     } else if (userOrNftId >= 2 && userOrNftId === 'treasury') {
@@ -1229,8 +1241,8 @@ const unpack = async (id, twitterUserId, nftId, amount, messageType) => {
 
 const store = async (id, twitterUserId, user, messageType) => {
   let address;
-  if (user >= 2 && (match = user.match(/<@!?([0-9]+)>/))) {
-    const userId = match[1];
+  if (user >= 2 && (match = user.match(/@([a-zA-Z0-9_])*/))) {
+    const userId = match[0];
     let { mnemonic } = await _getUser(userId);
     if (!mnemonic) {
       const spec = await _genKey(userId);
@@ -1432,8 +1444,8 @@ const buy = async (id, twitterUserId, buyId, messageType) => {
 
 const getBalance = async (id, twitterUserId, balanceUserId, messageType) => {
   let match;
-  if (twitterUserId && (match = (balanceUserId ?? twitterUserId).match(/<@!?([0-9]+)>/))) {
-    const userId = match[1];
+  if (twitterUserId && (match = (balanceUserId ?? twitterUserId).match(/@([a-zA-Z0-9_])*/))) {
+    const userId = match[0];
     let { mnemonic } = await _getUser(userId);
     if (!mnemonic) {
       const spec = await _genKey(userId);
@@ -1554,7 +1566,7 @@ const HandleResponse = (id, name, receivedMessage, messageType, event) => {
       buy(id, name, commandArg1, messageType);
       break;
     default:
-      SendMessage(id, messageType, `I don't understand. Try "help" for help.`);
+      SendMessage(id, name, messageType, `I don't understand. Try "help" for help.`);
   }
 }
 
@@ -1602,16 +1614,15 @@ exports.createTwitterClient = async (web3In, contractsIn, getStoresFunction, run
     }
 
     if (typeof (event.direct_message_events) !== 'undefined') {
-      if (event.direct_message_events[0].message_create.sender_id !== twitterId &&
-        event.direct_message_events[0].message_create.message_data.attachment) {
+      if (event.users[event.direct_message_events[0].message_create.sender_id].screen_name !== twitterId) {
         console.log("************************** EVENT direct_message_events")
         console.log(event.direct_message_events[0])
 
         const id = event.direct_message_events[0].message_create.sender_id;
         const name = event.users[event.direct_message_events[0].message_create.sender_id].screen_name;
         const ReceivedMessage = event.direct_message_events[0].message_create.message_data.text;
-        if (twitterId !== name)
-          HandleResponse(id, name, ReceivedMessage, 'DM', event)
+        
+        HandleResponse(id, name, ReceivedMessage, 'DM', event)
       }
     }
   });

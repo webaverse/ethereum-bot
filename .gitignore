@@ -5,3 +5,9 @@ yarn.lock
 .dccache
 config.json
 package-lock.json
+
+tmp/*.png
+tmp/*.jpg
+tmp/*.m4v
+tmp/*.mov
+tmp/*.mp4
