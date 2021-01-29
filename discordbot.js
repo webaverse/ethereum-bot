@@ -2301,6 +2301,7 @@ Keys (DM bot)
                                                 if (status) {
                                                     const description = '';
                                                     const extName = path.extname(file.name).slice(1);
+                                                    extName = extName === "jpeg" ? "jpg" : extName
                                                     const fileName = extName ? file.name.slice(0, -(extName.length + 1)) : file.name;
                                                     console.log('minting', ['NFT', 'mint', address, hash, fileName, extName, description, quantity]);
                                                     const result = await runSidechainTransaction(mnemonic)('NFT', 'mint', address, hash, fileName, extName, description, quantity);
