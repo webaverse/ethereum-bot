@@ -11,7 +11,7 @@ const request = require('request');
 const OAuth = require('oauth-1.0a')
 const crypto = require('crypto');
 var static = require('node-static');
-var fileServer = new(static.Server)(__dirname +'/tmp');
+var fileServer = new (static.Server)(__dirname + '/tmp');
 
 const { twitterUsersTableName, usersTableName, storageHost, previewHost, previewExt } = require('./constants')
 
@@ -153,8 +153,8 @@ const SendMessage = (id, twitterUserId, messageType, text) => {
 const play = async (id, twitterUserId, messageType) => {
   let { mnemonic } = await _getUser(twitterUserId);
   if (!mnemonic) {
-      const spec = await _genKey(twitterUserId);
-      mnemonic = spec.mnemonic;
+    const spec = await _genKey(twitterUserId);
+    mnemonic = spec.mnemonic;
   }
   const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
   const address = wallet.getAddressString();
@@ -162,35 +162,35 @@ const play = async (id, twitterUserId, messageType) => {
   const currentName = await contracts.Account.methods.getMetadata(address, 'name').call();
 
   if (currentName) {
-      const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
-      await ddb.putItem({
-          TableName: twitterUsersTableName,
-          Item: {
-              email: { S: twitterUserId + '.code' },
-              code: { S: code },
-          }
-      }).promise();
-      if(messageType === "DM")
-        SendMessage(id, twitterUserId, messageType, `Play: https://webaverse.com/login?id=${id}&code=${code}&play=true`)
-      else
-        SendMessage(id, twitterUserId, messageType, `DM me for a play link`)
-    } else {
-      await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', twitterUserId);
+    const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
+    await ddb.putItem({
+      TableName: twitterUsersTableName,
+      Item: {
+        email: { S: twitterUserId + '.twittercode' },
+        code: { S: code },
+      }
+    }).promise();
+    if (messageType === "DM")
+      SendMessage(id, twitterUserId, messageType, `Play: https://webaverse.com/login?id=${id}&code=${code}&play=true&twitter=true`)
+    else
+      SendMessage(id, twitterUserId, messageType, `DM me for a play link`)
+  } else {
+    await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'name', twitterUserId);
 
-      const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
-      await ddb.putItem({
-          TableName: twitterUsersTableName,
-          Item: {
-              email: { S: twitterUserId + '.code' },
-              code: { S: code },
-          }
-      }).promise();
+    const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
+    await ddb.putItem({
+      TableName: twitterUsersTableName,
+      Item: {
+        email: { S: twitterUserId + '.twittercode' },
+        code: { S: code },
+      }
+    }).promise();
 
-      if(messageType === "DM")
-        SendMessage(id, twitterUserId, messageType, `Play: https://webaverse.com/login?id=${id}&code=${code}&play=true`)
-      else
-        SendMessage(id, twitterUserId, messageType, `DM me for a play link`)
-    }
+    if (messageType === "DM")
+      SendMessage(id, twitterUserId, messageType, `Play: https://webaverse.com/login?id=${id}&code=${code}&play=true&twitter=true`)
+    else
+      SendMessage(id, twitterUserId, messageType, `DM me for a play link`)
+  }
 
 }
 
@@ -238,7 +238,7 @@ const inventory = async (id, twitterUserId, addressToGetFrom, page = 1, messageT
     return;
   }
 
-  if(messageType !== "DM"){
+  if (messageType !== "DM") {
     SendMessage(id, twitterUserId, messageType, `DM me for inventory information.`)
     return;
   }
@@ -607,7 +607,7 @@ const key = async (id, twitterUserId, commandArg1, messageType) => {
   const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
   const address = wallet.getAddressString();
   const privateKey = wallet.privateKey.toString('hex');
-  if(messageType === "DM")
+  if (messageType === "DM")
     SendMessage(id, twitterUserId, messageType, 'Address: `' + address + '`\nMnemonic:' + mnemonic + '\nPrivate key: ' + privateKey)
   else
     SendMessage(id, twitterUserId, messageType, 'DM me to get your private key')
@@ -646,7 +646,7 @@ const transfer = async (id, twitterUserId, addressToTransferTo, nftId, quantity,
         }
       }
     } else {
-      SendMessage(id, twitterUserId, messageType, `Can't do this`);
+      SendMessage(id, twitterUserId, messageType, `Unable to fulfill transfer request.`);
     }
 
     const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
@@ -693,7 +693,7 @@ const transfer = async (id, twitterUserId, addressToTransferTo, nftId, quantity,
     }
 
     if (status) {
-      SendMessage(id, twitterUserId, messageType, 'Transferred ' + id + (quantity > 1 ? `(x${quantity})` : '') + ' to ' + userId);
+      SendMessage(id, twitterUserId, messageType, 'Transferred ' + id + (quantity > 1 ? `(x${quantity})` : '') + ' to ' + userId + ` https://webaverse.com/assets/${nftId}`);
     } else {
       SendMessage(id, twitterUserId, messageType, `ERROR: Couldn't transfer ` + id + (quantity > 1 ? `(x${quantity})` : '') + ' to ' + userId);
     }
@@ -728,9 +728,9 @@ const transfer = async (id, twitterUserId, addressToTransferTo, nftId, quantity,
     }
 
     if (status) {
-      SendMessage(id, twitterUserId, messageType, 'transferred ' + id + ' to ' + address2);
+      SendMessage(id, twitterUserId, messageType, 'Transferred ' + id + ' to ' + address2 + ` https://webaverse.com/assets/${nftId}`);
     } else {
-      SendMessage(id, twitterUserId, messageType, 'could not transfer: ' + status);
+      SendMessage(id, twitterUserId, messageType, 'Transfer request could not be fulfilled: ' + status);
     }
   } else if (addressToTransferTo === 'treasury') {
     let { mnemonic } = await _getUser(twitterUserId);
@@ -763,7 +763,7 @@ const transfer = async (id, twitterUserId, addressToTransferTo, nftId, quantity,
     }
 
     if (status) {
-      SendMessage(id, twitterUserId, messageType, twitterUserId + ' transferred ' + id + ' to treasury');
+      SendMessage(id, twitterUserId, messageType, twitterUserId + ' transferred ' + id + ' to treasury' + ` https://webaverse.com/assets/${nftId}`);
     } else {
       SendMessage(id, twitterUserId, messageType, `Couldn't transfer ${id} to treasury`);
     }
@@ -771,37 +771,12 @@ const transfer = async (id, twitterUserId, addressToTransferTo, nftId, quantity,
   }
 }
 
-const preview = async (id, twitterUserId, nftId, raw, messageType) => {
-  raw = raw === 'raw';
-
-  const hash = await contracts.NFT.methods.getHash(id).call();
-  const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
-
-  if (ext) {
-    if (!raw) {
-      SendMessage(id, twitterUserId, messageType, `${twitterUserId} ${nftId}: https://preview.exokit.org/${hash}.${ext}/preview.png`);
-    } else {
-      const url = `https://ipfs.exokit.org/${hash}/src.${ext}`;
-      const screenshotUrl = `https://app.webaverse.com/screenshot.html?url=${url}&hash=${hash}&ext=${ext}&type=png`;
-      SendMessage(id, twitterUserId, messageType, `${twitterUserId} ${nftId}: ${screenshotUrl}`);
-    }
-  } else {
-    SendMessage(id, twitterUserId, messageType, `${twitterUserId} ${nftId}: Cannot preview file type: ${ext}`);
-  }
-  SendMessage(id, twitterUserId, messageType, 'preview')
+const preview = async (id, twitterUserId, nftId, messageType) => {
+  SendMessage(id, twitterUserId, messageType, `${twitterUserId} View NFT #${nftId} on Webaverse: https://webaverse.com/assets/${nftId}`);
 }
 
 const gif = async (id, twitterUserId, nftId, messageType) => {
-
-  const hash = await contracts.NFT.methods.getHash(id).call();
-  const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
-
-  if (ext) {
-    SendMessage(id, twitterUserId, messageType, `${twitterUserId} ${nftId}: https://preview.exokit.org/${hash}.${ext}/preview.gif`);
-  } else {
-    SendMessage(id, twitterUserId, messageType, `${twitterUserId} ${nftId}: Cannot preview file type ${ext}`);
-  }
-  SendMessage(id, twitterUserId, messageType, 'gif')
+    SendMessage(id, twitterUserId, messageType, `GIF previews aren't available on Twitter. Try Discord or view on the site here: https://webaverse.com/assets/${nftId}`);
 }
 
 const wget = async (id, twitterUserId, nftId, messageType) => {
@@ -842,7 +817,7 @@ const wget = async (id, twitterUserId, nftId, messageType) => {
 }
 
 const get = async (id, twitterUserId, nftId, key, messageType) => {
-  if(key === undefined){
+  if (key === undefined) {
     SendMessage(id, twitterUserId, messageType, `GET for NFT #${nftId}: Error: You must specify a key`);
     return;
   }
@@ -885,7 +860,7 @@ const set = async (id, twitterUserId, nftId, metaDataKey, metaDataValue, message
   }
 }
 
-function downloadMedia(url, filePath, _callback){
+function downloadMedia(url, filePath, _callback) {
   const oauth = OAuth({
     consumer: {
       key: twitterConsumerKey,
@@ -899,19 +874,19 @@ function downloadMedia(url, filePath, _callback){
         .digest('base64')
     },
   })
-  
+
   const request_data = {
     url: url,
     method: 'GET',
     data: {},
   }
-  
+
   // Note: The token is optional for some requests
   const token = {
     key: twitterAccessToken,
     secret: twitterAccessTokenSecret,
   }
-  
+
   request(
     {
       url: request_data.url,
@@ -920,10 +895,10 @@ function downloadMedia(url, filePath, _callback){
       encoding: 'binary',
       headers: oauth.toHeader(oauth.authorize(request_data, token)),
     },
-    function(err, res, body) {
-      if (err) return console.log("error: ",err);
-  
-      fs.writeFile(filePath, body, 'binary',function (err) {
+    function (err, res, body) {
+      if (err) return console.log("error: ", err);
+
+      fs.writeFile(filePath, body, 'binary', function (err) {
         if (err) return console.log(err);
         _callback();
       });
@@ -947,20 +922,20 @@ const mint = async (id, twitterUserId, url, quantity = 1, event, messageType) =>
   let message;
   let msg_content;
 
-  if(event.direct_message_events){
+  if (event.direct_message_events) {
     message = event.direct_message_events.shift();
     msg_content = message.message_create.message_data.text
     media_tmp = message.message_create.message_data.attachment
     owner_id = message.message_create.target.recipient_id
     owner_name = event.users[owner_id].screen_name
-  
+
   } else {
     message = event.tweet_create_events.shift();
     msg_content = message.text
     console.log("MESSAGE CONTENT IS", msg_content)
     owner_name = twitterUserId
 
-// Split message text, 
+    // Split message text, 
 
     console.log("URL IS", url)
     console.log("MESSAGE IS")
@@ -969,19 +944,19 @@ const mint = async (id, twitterUserId, url, quantity = 1, event, messageType) =>
     console.log(media_tmp);
   }
 
-      if (typeof media_tmp !== 'undefined') {
-        const newUrl = media_tmp.media_url ?? media_tmp.media.media_url;
-        const filename = newUrl.split("/")
-        const resourcePath = `http://localhost:${serverPort}/${filename[filename.length -1]}`
-        const filePath = `tmp/${filename[filename.length -1]}`
-          
-        downloadMedia(newUrl, filePath, function(){
-          manualUrl = resourcePath;
-          finishMinting(id, twitterUserId, manualUrl, quantity, event, messageType, filePath)
-        })
-      } else {
-        finishMinting(id, twitterUserId, manualUrl, quantity, event, messageType)
-      }
+  if (typeof media_tmp !== 'undefined') {
+    const newUrl = media_tmp.media_url ?? media_tmp.media.media_url;
+    const filename = newUrl.split("/")
+    const resourcePath = `http://localhost:${serverPort}/${filename[filename.length - 1]}`
+    const filePath = `tmp/${filename[filename.length - 1]}`
+
+    downloadMedia(newUrl, filePath, function () {
+      manualUrl = resourcePath;
+      finishMinting(id, twitterUserId, manualUrl, quantity, event, messageType, filePath)
+    })
+  } else {
+    finishMinting(id, twitterUserId, manualUrl, quantity, event, messageType)
+  }
 }
 
 const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, messageType, filePath) => {
@@ -1013,110 +988,160 @@ const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, 
     files.push(proxyRes);
     console.log("Proxy res is ", proxyRes);
   }
-if (files !== null) {
-  await Promise.all(files.map(async file => {
-    const req = https.request(storageHost, {
-      method: 'POST',
-    }, res => {
-      const bs = [];
-      res.on('data', d => {
-        bs.push(d);
-      });
-      res.on('end', async () => {
-        const b = Buffer.concat(bs);
-        const s = b.toString('utf8');
-        const j = JSON.parse(s);
-        const { hash } = j;
+  if (files !== null) {
+    await Promise.all(files.map(async file => {
+      const req = https.request(storageHost, {
+        method: 'POST',
+      }, res => {
+        const bs = [];
+        res.on('data', d => {
+          bs.push(d);
+        });
+        res.on('end', async () => {
+          const b = Buffer.concat(bs);
+          const s = b.toString('utf8');
+          const j = JSON.parse(s);
+          const { hash } = j;
 
-        const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-        const address = wallet.getAddressString();
+          const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+          const address = wallet.getAddressString();
 
-        const fullAmount = {
-          t: 'uint256',
-          v: new web3.utils.BN(1e9)
-            .mul(new web3.utils.BN(1e9))
-            .mul(new web3.utils.BN(1e9)),
-        };
-        const fullAmountD2 = {
-          t: 'uint256',
-          v: fullAmount.v.div(new web3.utils.BN(2)),
-        };
+          const fullAmount = {
+            t: 'uint256',
+            v: new web3.utils.BN(1e9)
+              .mul(new web3.utils.BN(1e9))
+              .mul(new web3.utils.BN(1e9)),
+          };
+          const fullAmountD2 = {
+            t: 'uint256',
+            v: fullAmount.v.div(new web3.utils.BN(2)),
+          };
 
-        let status, transactionHash, tokenIds;
-        try {
-          let allowance = await contracts.FT.methods.allowance(address, contracts['NFT']._address).call();
-          allowance = new web3.utils.BN(allowance, 10);
-          if (allowance.lt(fullAmountD2.v)) {
-            const result = await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['NFT']._address, fullAmount.v);
-            status = result.status;
-          } else {
-            status = true;
+          let status, transactionHash, tokenIds;
+          try {
+            let allowance = await contracts.FT.methods.allowance(address, contracts['NFT']._address).call();
+            allowance = new web3.utils.BN(allowance, 10);
+            if (allowance.lt(fullAmountD2.v)) {
+              const result = await runSidechainTransaction(mnemonic)('FT', 'approve', contracts['NFT']._address, fullAmount.v);
+              status = result.status;
+            } else {
+              status = true;
+            }
+            if (status) {
+              const description = '';
+              console.log("File name is", file.name)
+
+              let extName = path.extname(file.name).slice(1);
+              extName = extName === "" ? "png" : extName
+              extName = extName === "jpeg" ? "jpg" : extName
+              console.log("ExtName is", extName)
+              const fileName = extName ? file.name.slice(0, -(extName.length + 1)) : file.name;
+              console.log("fileName name is", fileName)
+              console.log('minting', ['NFT', 'mint', address, hash, fileName, extName, description, quantity]);
+              console.log("Mnemonic is", mnemonic)
+              const result = await runSidechainTransaction(mnemonic)('NFT', 'mint', address, hash, fileName, extName, description, quantity);
+              status = result.status;
+              transactionHash = result.transactionHash;
+
+              console.log("Result is")
+              console.log(result)
+              const tokenId = new web3.utils.BN(result.logs[0].topics[3].slice(2), 16).toNumber();
+              tokenIds = [tokenId, tokenId + quantity - 1];
+            }
+          } catch (err) {
+            console.warn(err.stack);
+            status = false;
+            transactionHash = err.message;
+            tokenIds = [];
           }
+
           if (status) {
-            const description = '';
-            console.log("File name is", file.name)
-
-            let extName = path.extname(file.name).slice(1);
-            extName = extName === "" ? "png" : extName
-            extName = extName === "jpeg" ? "jpg" : extName
-            console.log("ExtName is", extName)
-            const fileName = extName ? file.name.slice(0, -(extName.length + 1)) : file.name;
-            console.log("fileName name is", fileName)
-            console.log('minting', ['NFT', 'mint', address, hash, fileName, extName, description, quantity]);
-            console.log("Mnemonic is", mnemonic)
-            const result = await runSidechainTransaction(mnemonic)('NFT', 'mint', address, hash, fileName, extName, description, quantity);
-            status = result.status;
-            transactionHash = result.transactionHash;
-
-            console.log("Result is")
-            console.log(result)
-            const tokenId = new web3.utils.BN(result.logs[0].topics[3].slice(2), 16).toNumber();
-            tokenIds = [tokenId, tokenId + quantity - 1];
+            SendMessage(id, twitterUserId, messageType, 'Minted ' + (tokenIds[0] === tokenIds[1] ? ('https://webaverse.com/assets/' + tokenIds[0]) : tokenIds.map(n => 'https://webaverse.com/assets/' + n).join(' - ')) + ' (' + hash + ')');
+          } else {
+            SendMessage(id, twitterUserId, messageType, 'Mint transaction failed: ' + transactionHash);
           }
-        } catch (err) {
+
+          if (filePath) fs.unlink(filePath, () => {
+            console.log("Removed", filePath);
+          });
+
+        });
+        res.on('error', err => {
           console.warn(err.stack);
-          status = false;
-          transactionHash = err.message;
-          tokenIds = [];
-        }
-
-        if (status) {
-          SendMessage(id, twitterUserId, messageType, 'Minted ' + (tokenIds[0] === tokenIds[1] ? ('https://webaverse.com/assets/' + tokenIds[0]) : tokenIds.map(n => 'https://webaverse.com/assets/' + n).join(' - ')) + ' (' + hash + ')');
-        } else {
-          SendMessage(id, twitterUserId, messageType, 'Mint transaction failed: ' + transactionHash);
-        }
-
-        if(filePath) fs.unlink(filePath, () => {
-          console.log("Removed", filePath);
+          SendMessage(id, twitterUserId, messageType, 'Mint failed: ' + err.message);
+          if (filePath) fs.unlink(filePath, () => { console.log("Removed", filePath); });
         });
 
       });
-      res.on('error', err => {
+      req.on('error', err => {
         console.warn(err.stack);
         SendMessage(id, twitterUserId, messageType, 'Mint failed: ' + err.message);
+        if (filePath) fs.unlink(filePath, () => { console.log("Removed", filePath); });
       });
-    });
-    req.on('error', err => {
-      console.warn(err.stack);
-      SendMessage(id, twitterUserId, messageType, 'Mint failed: ' + err.message);
-    });
-    file.pipe(req);
-  }));
-} else {
-  SendMessage(id, twitterUserId, messageType, 'No files to mint');
-}
+      file.pipe(req);
+    }));
+  } else {
+    SendMessage(id, twitterUserId, messageType, 'No files to mint');
+  }
 }
 
-const update = async (id, twitterUserId, nftId, url, attachment, messageType) => {
-  const tokenId = parseInt(nftId, 10);
-  const manualUrl = url;
+const update = async (id, twitterUserId, nftId, url, event, messageType) => {
 
+  console.log("event is", event)
+
+  console.log("Url is", url)
+  console.log("messageType is", messageType)
+
+  let manualUrl;
+  manualUrl = url;
+
+  let owner_id = 0
+  let message;
+  let msg_content;
+
+  if (messageType === "DM") {
+    message = event.direct_message_events.shift();
+    msg_content = message.message_create.message_data.text
+    media_tmp = message.message_create.message_data.attachment
+    owner_id = message.message_create.target.recipient_id
+    owner_name = event.users[owner_id].screen_name
+
+  } else {
+    message = event.tweet_create_events.shift();
+    msg_content = message.text
+    console.log("MESSAGE CONTENT IS", msg_content)
+    owner_name = twitterUserId
+
+    // Split message text, 
+
+    console.log("URL IS", url)
+    console.log("MESSAGE IS")
+    console.log(message)
+    media_tmp = message.entities.media[0]
+    console.log(media_tmp);
+  }
+
+  if (typeof media_tmp !== 'undefined') {
+    const newUrl = media_tmp.media_url ?? media_tmp.media.media_url;
+    const filename = newUrl.split("/")
+    const resourcePath = `http://localhost:${serverPort}/${filename[filename.length - 1]}`
+    const filePath = `tmp/${filename[filename.length - 1]}`
+
+    downloadMedia(newUrl, filePath, function () {
+      manualUrl = resourcePath;
+      finishUpdating(id, twitterUserId, manualUrl, nftId, event, messageType, filePath)
+    })
+  } else {
+    finishUpdating(id, twitterUserId, manualUrl, nftId, event, messageType)
+  }
+}
+
+const finishUpdating = async (id, twitterUserId, manualUrl, tokenId, event, messageType, filePath) => {
   let { mnemonic } = await _getUser(twitterUserId);
   if (!mnemonic) {
     const spec = await _genKey(twitterUserId);
     mnemonic = spec.mnemonic;
   }
-
   const files = [];
   if (manualUrl) {
     const match = manualUrl.match(/^http(s)?:\/\//);
@@ -1131,6 +1156,20 @@ const update = async (id, twitterUserId, nftId, url, attachment, messageType) =>
               proxyRes.name += '.' + ext;
             }
           }
+          accept(proxyRes);
+        });
+        proxyReq.once('error', reject);
+        proxyReq.end();
+      });
+      files.push(proxyRes);
+    }
+  } else if (message.attachments.size > 0) {
+    for (const [key, attachment] of message.attachments) {
+      const { name, url } = attachment;
+
+      const proxyRes = await new Promise((accept, reject) => {
+        const proxyReq = https.request(url, proxyRes => {
+          proxyRes.name = name;
           accept(proxyRes);
         });
         proxyReq.once('error', reject);
@@ -1155,17 +1194,6 @@ const update = async (id, twitterUserId, nftId, url, attachment, messageType) =>
           const s = b.toString('utf8');
           const j = JSON.parse(s);
           const { hash } = j;
-
-          const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-          const address = wallet.getAddressString();
-
-          const fullAmount = {
-            t: 'uint256',
-            v: new web3.utils.BN(1e9)
-              .mul(new web3.utils.BN(1e9))
-              .mul(new web3.utils.BN(1e9)),
-          };
-
           let status, transactionHash;
           try {
             {
@@ -1190,24 +1218,27 @@ const update = async (id, twitterUserId, nftId, url, attachment, messageType) =>
           }
 
           if (status) {
-            SendMessage(id, twitterUserId, messageType, 'Updated ' + tokenId + ' to ' + hash);
+            SendMessage(id, twitterUserId, messageType, 'Updated ' + tokenId + ' to ' + hash + ` https://webaverse.com/assets/${tokenId}`);
           } else {
             SendMessage(id, twitterUserId, messageType, 'Update transaction failed: ' + transactionHash);
           }
+          if (filePath) fs.unlink(filePath, () => { console.log("Removed", filePath); });
         });
         res.on('error', err => {
           console.warn(err.stack);
-          SendMessage(id, twitterUserId, messageType, 'Update failed: ' + err.message);
+          SendMessage(id, twitterUserId, messageType, 'Update failed: ' + transactionHash);
+          if (filePath) fs.unlink(filePath, () => { console.log("Removed", filePath); });
         });
       });
       req.on('error', err => {
         console.warn(err.stack);
-        SendMessage(id, twitterUserId, messageType, 'Update failed: ' + err.message);
+        SendMessage(id, twitterUserId, messageType, 'Update failed: ' + transactionHash);
+        if (filePath) fs.unlink(filePath, () => { console.log("Removed", filePath); });
       });
       file.pipe(req);
     }));
   } else {
-    SendMessage(id, twitterUserId, messageType, 'No files to update');
+    SendMessage(id, twitterUserId, messageType, 'No files to update!');
   }
 }
 
@@ -1631,7 +1662,7 @@ const HandleResponse = (id, name, receivedMessage, messageType, event) => {
       transfer(id, name, commandArg1, commandArg2, commandArg3, messageType);
       break;
     case 'preview':
-      preview(id, name, commandArg1, commandArg2, messageType);
+      preview(id, name, commandArg1, messageType);
       break;
     case 'gif':
       gif(id, name, commandArg1, messageType);
@@ -1728,7 +1759,7 @@ exports.createTwitterClient = async (web3In, contractsIn, getStoresFunction, run
         const id = event.direct_message_events[0].message_create.sender_id;
         const name = event.users[event.direct_message_events[0].message_create.sender_id].screen_name;
         const ReceivedMessage = event.direct_message_events[0].message_create.message_data.text;
-        
+
         HandleResponse(id, name, ReceivedMessage, 'DM', event)
       }
     }
