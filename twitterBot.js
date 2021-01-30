@@ -19,7 +19,6 @@ let ddb, web3, contracts, getStores, runSidechainTransaction = null;
 
 const {
   treasuryMnemonic,
-  twitterBearerToken,
   twitterConsumerKey,
   twitterConsumerSecret,
   twitterAccessToken,
@@ -30,14 +29,13 @@ const {
   serverPort
 } = require('./config.json');
 
-const twitterConfigInvalid = twitterBearerToken === undefined ||
+const twitterConfigInvalid =
   twitterConsumerKey === undefined ||
   twitterConsumerSecret === undefined ||
   twitterAccessToken === undefined ||
   twitterAccessTokenSecret === undefined ||
   twitterId === undefined ||
   twitterWebhookPort === undefined ||
-  twitterBearerToken === null ||
   twitterConsumerKey === null ||
   twitterConsumerSecret === null ||
   twitterAccessToken === null ||
