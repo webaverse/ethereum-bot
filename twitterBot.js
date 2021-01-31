@@ -948,16 +948,24 @@ const mint = async (id, twitterUserId, url, quantity = 1, event, messageType) =>
   }
 }
 
-const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, messageType, res) => {
+const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, messageType, response) => {
+  const ws = fs.createWriteStream("test.jpg");
+
+  response.on('data', data => {
+    console.log(data);
+  })
+  response.on('end', data => {
+    console.log(data);
+  })
   let { mnemonic } = await _getUser(twitterUserId);
   if (!mnemonic) {
     const spec = await _genKey(twitterUserId);
     mnemonic = spec.mnemonic;
   }
   const files = [];
-  if(res) files.push(res);
+  if(response) files.push(response);
   console.log("********* URL: ", manualUrl)
-  if(!res){
+  if(!response){
   const match = manualUrl.match(/^http(s)?:\/\//);
   if (match) {
     const proxyRes = await new Promise((accept, reject) => {
@@ -979,16 +987,19 @@ const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, 
     console.log("Proxy res is ", proxyRes);
   }
 }
+
   if (files !== null) {
     await Promise.all(files.map(async file => {
       const req = https.request(storageHost, {
         method: 'POST',
       }, res => {
+
         const bs = [];
         res.on('data', d => {
           bs.push(d);
         });
         res.on('end', async () => {
+
           const b = Buffer.concat(bs);
           const s = b.toString('utf8');
           const j = JSON.parse(s);
