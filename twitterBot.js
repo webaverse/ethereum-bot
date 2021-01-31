@@ -858,7 +858,7 @@ const set = async (id, twitterUserId, nftId, metaDataKey, metaDataValue, message
   }
 }
 
-function downloadMedia(url, filePath, _callback) {
+function downloadMedia(url, _callback) {
   const oauth = OAuth({
     consumer: {
       key: twitterConsumerKey,
@@ -895,11 +895,7 @@ function downloadMedia(url, filePath, _callback) {
     },
     function (err, res, body) {
       if (err) return console.log("error: ", err);
-
-      fs.writeFile(filePath, body, 'binary', function (err) {
-        if (err) return console.log(err);
-        _callback();
-      });
+      _callback(res);
     }
   )
 
@@ -944,28 +940,24 @@ const mint = async (id, twitterUserId, url, quantity = 1, event, messageType) =>
 
   if (typeof media_tmp !== 'undefined') {
     const newUrl = media_tmp.media_url ?? media_tmp.media.media_url;
-    const filename = newUrl.split("/")
-    const resourcePath = `http://localhost:${serverPort}/${filename[filename.length - 1]}`
-    const filePath = `tmp/${filename[filename.length - 1]}`
-
-    downloadMedia(newUrl, filePath, function () {
-      manualUrl = resourcePath;
-      finishMinting(id, twitterUserId, manualUrl, quantity, event, messageType, filePath)
+    downloadMedia(newUrl, function (res) {
+      finishMinting(id, twitterUserId, newUrl, quantity, event, messageType, res)
     })
   } else {
     finishMinting(id, twitterUserId, manualUrl, quantity, event, messageType)
   }
 }
 
-const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, messageType, filePath) => {
+const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, messageType, res) => {
   let { mnemonic } = await _getUser(twitterUserId);
   if (!mnemonic) {
     const spec = await _genKey(twitterUserId);
     mnemonic = spec.mnemonic;
   }
   const files = [];
-
+  if(res) files.push(res);
   console.log("********* URL: ", manualUrl)
+  if(!res){
   const match = manualUrl.match(/^http(s)?:\/\//);
   if (match) {
     const proxyRes = await new Promise((accept, reject) => {
@@ -986,6 +978,7 @@ const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, 
     files.push(proxyRes);
     console.log("Proxy res is ", proxyRes);
   }
+}
   if (files !== null) {
     await Promise.all(files.map(async file => {
       const req = https.request(storageHost, {
@@ -1027,13 +1020,16 @@ const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, 
             }
             if (status) {
               const description = '';
-              console.log("File name is", file.name)
 
-              let extName = path.extname(file.name).slice(1);
+              let fileName = file.name ?? manualUrl.split('/').pop()
+
+              console.log("File name is", fileName)
+
+              let extName = path.extname(fileName).slice(1);
               extName = extName === "" ? "png" : extName
               extName = extName === "jpeg" ? "jpg" : extName
               console.log("ExtName is", extName)
-              const fileName = extName ? file.name.slice(0, -(extName.length + 1)) : file.name;
+              fileName = extName ? fileName.slice(0, -(extName.length + 1)) : fileName;
               console.log("fileName name is", fileName)
               console.log('minting', ['NFT', 'mint', address, hash, fileName, extName, description, quantity]);
               console.log("Mnemonic is", mnemonic)
@@ -1059,22 +1055,16 @@ const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, 
             SendMessage(id, twitterUserId, messageType, 'Mint transaction failed: ' + transactionHash);
           }
 
-          if (filePath) fs.unlink(filePath, () => {
-            console.log("Removed", filePath);
-          });
-
         });
         res.on('error', err => {
           console.warn(err.stack);
           SendMessage(id, twitterUserId, messageType, 'Mint failed: ' + err.message);
-          if (filePath) fs.unlink(filePath, () => { console.log("Removed", filePath); });
         });
 
       });
       req.on('error', err => {
         console.warn(err.stack);
         SendMessage(id, twitterUserId, messageType, 'Mint failed: ' + err.message);
-        if (filePath) fs.unlink(filePath, () => { console.log("Removed", filePath); });
       });
       file.pipe(req);
     }));
@@ -1121,20 +1111,16 @@ const update = async (id, twitterUserId, nftId, url, event, messageType) => {
 
   if (typeof media_tmp !== 'undefined') {
     const newUrl = media_tmp.media_url ?? media_tmp.media.media_url;
-    const filename = newUrl.split("/")
-    const resourcePath = `http://localhost:${serverPort}/${filename[filename.length - 1]}`
-    const filePath = `tmp/${filename[filename.length - 1]}`
-
-    downloadMedia(newUrl, filePath, function () {
+    downloadMedia(newUrl, function (res) {
       manualUrl = resourcePath;
-      finishUpdating(id, twitterUserId, manualUrl, nftId, event, messageType, filePath)
+      finishUpdating(id, twitterUserId, manualUrl, nftId, event, messageType, res)
     })
   } else {
     finishUpdating(id, twitterUserId, manualUrl, nftId, event, messageType)
   }
 }
 
-const finishUpdating = async (id, twitterUserId, manualUrl, tokenId, event, messageType, filePath) => {
+const finishUpdating = async (id, twitterUserId, manualUrl, tokenId, event, messageType) => {
   let { mnemonic } = await _getUser(twitterUserId);
   if (!mnemonic) {
     const spec = await _genKey(twitterUserId);
@@ -1220,18 +1206,15 @@ const finishUpdating = async (id, twitterUserId, manualUrl, tokenId, event, mess
           } else {
             SendMessage(id, twitterUserId, messageType, 'Update transaction failed: ' + transactionHash);
           }
-          if (filePath) fs.unlink(filePath, () => { console.log("Removed", filePath); });
         });
         res.on('error', err => {
           console.warn(err.stack);
           SendMessage(id, twitterUserId, messageType, 'Update failed: ' + transactionHash);
-          if (filePath) fs.unlink(filePath, () => { console.log("Removed", filePath); });
         });
       });
       req.on('error', err => {
         console.warn(err.stack);
         SendMessage(id, twitterUserId, messageType, 'Update failed: ' + transactionHash);
-        if (filePath) fs.unlink(filePath, () => { console.log("Removed", filePath); });
       });
       file.pipe(req);
     }));
