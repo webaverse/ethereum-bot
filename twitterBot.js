@@ -885,19 +885,18 @@ function downloadMedia(url, _callback) {
     secret: twitterAccessTokenSecret,
   }
 
-  request(
+  
+  const req = request(
     {
       url: request_data.url,
       method: request_data.method,
       form: request_data.data,
       encoding: 'binary',
       headers: oauth.toHeader(oauth.authorize(request_data, token)),
-    },
-    function (err, res, body) {
-      if (err) return console.log("error: ", err);
-      _callback(res);
     }
   )
+  _callback(req);
+
 
 }
 
@@ -948,22 +947,16 @@ const mint = async (id, twitterUserId, url, quantity = 1, event, messageType) =>
   }
 }
 
-const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, messageType, response) => {
-  response.on('data', data => {
-    console.log(data);
-  })
-  response.on('end', data => {
-    console.log(data);
-  })
+const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, messageType, request) => {
   let { mnemonic } = await _getUser(twitterUserId);
   if (!mnemonic) {
     const spec = await _genKey(twitterUserId);
     mnemonic = spec.mnemonic;
   }
   const files = [];
-  if(response) files.push(response);
+  if(request) files.push(request);
   console.log("********* URL: ", manualUrl)
-  if(!response){
+  if(!request){
   const match = manualUrl.match(/^http(s)?:\/\//);
   if (match) {
     const proxyRes = await new Promise((accept, reject) => {
@@ -1065,16 +1058,18 @@ const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, 
           }
 
         });
-        res.on('error', err => {
-          console.warn(err.stack);
-          SendMessage(id, twitterUserId, messageType, 'Mint failed: ' + err.message);
-        });
-
+        // res.on('error', err => {
+        //   console.warn(err.stack);
+        //   SendMessage(id, twitterUserId, messageType, 'Mint failed: ' + err.message);
+        // });
+        // res.on('data', err => {
+        //   console.log(err);
+        // });
       });
-      req.on('error', err => {
-        console.warn(err.stack);
-        SendMessage(id, twitterUserId, messageType, 'Mint failed: ' + err.message);
-      });
+      // req.on('error', err => {
+      //   console.warn(err.stack);
+      //   SendMessage(id, twitterUserId, messageType, 'Mint failed: ' + err.message);
+      // });
       file.pipe(req);
     }));
   } else {
