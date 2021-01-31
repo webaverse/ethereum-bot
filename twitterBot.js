@@ -949,8 +949,6 @@ const mint = async (id, twitterUserId, url, quantity = 1, event, messageType) =>
 }
 
 const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, messageType, response) => {
-  const ws = fs.createWriteStream("test.jpg");
-
   response.on('data', data => {
     console.log(data);
   })
