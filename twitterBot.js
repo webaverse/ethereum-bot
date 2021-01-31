@@ -7,11 +7,10 @@ const mime = require('mime');
 const bip39 = require('bip39');
 const fs = require('fs');
 const { hdkey } = require('ethereumjs-wallet');
-const request = require('request');
+const request = require('request-promise');
 const OAuth = require('oauth-1.0a')
 const crypto = require('crypto');
 var static = require('node-static');
-var fileServer = new (static.Server)(__dirname + '/tmp');
 
 const { twitterUsersTableName, usersTableName, storageHost, previewHost, previewExt } = require('./constants')
 
@@ -1058,18 +1057,18 @@ const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, 
           }
 
         });
-        // res.on('error', err => {
-        //   console.warn(err.stack);
-        //   SendMessage(id, twitterUserId, messageType, 'Mint failed: ' + err.message);
-        // });
-        // res.on('data', err => {
-        //   console.log(err);
-        // });
+        res.on('error', err => {
+          console.warn(err.stack);
+          SendMessage(id, twitterUserId, messageType, 'Mint failed: ' + err.message);
+        });
+        res.on('data', err => {
+          console.log(err);
+        });
       });
-      // req.on('error', err => {
-      //   console.warn(err.stack);
-      //   SendMessage(id, twitterUserId, messageType, 'Mint failed: ' + err.message);
-      // });
+      req.on('error', err => {
+        console.warn(err.stack);
+        SendMessage(id, twitterUserId, messageType, 'Mint failed: ' + err.message);
+      });
       file.pipe(req);
     }));
   } else {
@@ -1755,7 +1754,6 @@ exports.createTwitterClient = async (web3In, contractsIn, getStoresFunction, run
   // handle this
   http.createServer((req, res) => {
     const route = url.parse(req.url, true);
-    fileServer.serve(req, res);
 
     if (!route.pathname) {
       return;
