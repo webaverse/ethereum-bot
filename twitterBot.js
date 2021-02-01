@@ -9,7 +9,7 @@ const { hdkey } = require('ethereumjs-wallet');
 const OAuth = require('oauth-1.0a')
 const crypto = require('crypto');
 
-const { twitterUsersTableName, usersTableName, storageHost, previewHost, previewExt } = require('./constants')
+const {usersTableName, storageHost, previewHost, previewExt} = require('./constants')
 
 let ddb, web3, contracts, getStores, runSidechainTransaction = null;
 
@@ -98,7 +98,7 @@ const _items = (id, twitterUserId, addressToGetFrom, page, contractName, message
 
 const _getUser = async (id) => {
   const tokenItem = await ddb.getItem({
-    TableName: twitterUsersTableName,
+    TableName: usersTableName,
     Key: {
       email: { S: id + '.twittertoken' },
     }
@@ -111,7 +111,7 @@ const _getUser = async (id) => {
 const _genKey = async (id) => {
   const mnemonic = bip39.generateMnemonic();
   await ddb.putItem({
-    TableName: twitterUsersTableName,
+    TableName: usersTableName,
     Item: {
       email: { S: id + '.twittertoken' },
       mnemonic: { S: mnemonic }
@@ -158,7 +158,7 @@ const play = async (id, twitterUserId, messageType) => {
   if (currentName) {
     const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
     await ddb.putItem({
-      TableName: twitterUsersTableName,
+      TableName: usersTableName,
       Item: {
         email: { S: twitterUserId + '.twittercode' },
         code: { S: code },
@@ -173,7 +173,7 @@ const play = async (id, twitterUserId, messageType) => {
 
     const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1).toString(10).slice(-6);
     await ddb.putItem({
-      TableName: twitterUsersTableName,
+      TableName: usersTableName,
       Item: {
         email: { S: twitterUserId + '.twittercode' },
         code: { S: code },
