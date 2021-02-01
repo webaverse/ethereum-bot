@@ -936,53 +936,53 @@ const mint = async (id, twitterUserId, url, quantity = 1, event, messageType) =>
 }
 
 const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, messageType, response) => {
-  let { mnemonic } = await _getUser(twitterUserId);
+  let {mnemonic} = await _getUser(twitterUserId);
   if (!mnemonic) {
     const spec = await _genKey(twitterUserId);
     mnemonic = spec.mnemonic;
   }
   const files = [];
-  if(response) files.push(response);
-  console.log("********* URL: ", manualUrl)
-  if(!response){
-  const match = manualUrl.match(/^http(s)?:\/\//);
-  if (match) {
-    const proxyRes = await new Promise((accept, reject) => {
-      const proxyReq = (match[1] ? https : http).request(manualUrl, proxyRes => {
-        proxyRes.name = manualUrl.match(/\/([^\/]+?)(?:\?.*)?$/)[1];
-        if (!/\/..+$/.test(proxyRes.name)) {
-          const contentType = proxyRes.headers['content-type'];
-          if (contentType) {
-            const ext = mime.getExtension(contentType) || 'bin';
-            proxyRes.name += '.' + ext;
-          }
-        }
-        accept(proxyRes);
-      });
-      proxyReq.once('error', reject);
-      proxyReq.end();
-    });
-    files.push(proxyRes);
-    console.log("Proxy res is ", proxyRes);
+  if (response) {
+    files.push(response);
   }
-}
+  console.log("********* URL: ", manualUrl)
+  if (!response) {
+    const match = manualUrl.match(/^http(s)?:\/\//);
+    if (match) {
+      const proxyRes = await new Promise((accept, reject) => {
+        const proxyReq = (match[1] ? https : http).request(manualUrl, proxyRes => {
+          proxyRes.name = manualUrl.match(/\/([^\/]+?)(?:\?.*)?$/)[1];
+          if (!/\/..+$/.test(proxyRes.name)) {
+            const contentType = proxyRes.headers['content-type'];
+            if (contentType) {
+              const ext = mime.getExtension(contentType) || 'bin';
+              proxyRes.name += '.' + ext;
+            }
+          }
+          accept(proxyRes);
+        });
+        proxyReq.once('error', reject);
+        proxyReq.end();
+      });
+      files.push(proxyRes);
+      console.log("Proxy res is ", proxyRes);
+    }
+  }
 
   if (files !== null) {
     await Promise.all(files.map(async file => {
       const req = https.request(storageHost, {
         method: 'POST',
       }, res => {
-
         const bs = [];
         res.on('data', d => {
           bs.push(d);
         });
         res.on('end', async () => {
-
           const b = Buffer.concat(bs);
           const s = b.toString('utf8');
           const j = JSON.parse(s);
-          const { hash } = j;
+          const {hash} = j;
 
           const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
           const address = wallet.getAddressString();
