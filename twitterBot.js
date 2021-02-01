@@ -5,12 +5,9 @@ const path = require('path');
 const url = require('url');
 const mime = require('mime');
 const bip39 = require('bip39');
-const fs = require('fs');
 const { hdkey } = require('ethereumjs-wallet');
-const request = require('request-promise');
 const OAuth = require('oauth-1.0a')
 const crypto = require('crypto');
-var static = require('node-static');
 
 const { twitterUsersTableName, usersTableName, storageHost, previewHost, previewExt } = require('./constants')
 
@@ -228,7 +225,6 @@ const status = async (id, twitterUserId, messageType) => {
 }
 
 const inventory = async (id, twitterUserId, addressToGetFrom, page = 1, messageType) => {
-  console.log("****** INVENTORY");
   addressToGetFrom = addressToGetFrom ?? twitterUserId;
   if (ddb == null) {
     SendMessage(id, twitterUserId, messageType, `Unable to get inventory for ${addressToGetFrom} at page ${page} - database not configured.`)
@@ -883,19 +879,17 @@ function downloadMedia(url, _callback) {
     key: twitterAccessToken,
     secret: twitterAccessTokenSecret,
   }
-
   
-  const req = request(
-    {
-      url: request_data.url,
-      method: request_data.method,
-      form: request_data.data,
-      encoding: 'binary',
-      headers: oauth.toHeader(oauth.authorize(request_data, token)),
-    }
-  )
-  _callback(req);
-
+  const req = https.request(request_data.url, {
+    method: request_data.method,
+    headers: oauth.toHeader(oauth.authorize(request_data, token)),
+  }, res => {
+    _callback(res);
+  });
+  req.on('error', err => {
+    console.warn(err.stack);
+  });
+  req.end()
 
 }
 
@@ -946,16 +940,16 @@ const mint = async (id, twitterUserId, url, quantity = 1, event, messageType) =>
   }
 }
 
-const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, messageType, request) => {
+const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, messageType, response) => {
   let { mnemonic } = await _getUser(twitterUserId);
   if (!mnemonic) {
     const spec = await _genKey(twitterUserId);
     mnemonic = spec.mnemonic;
   }
   const files = [];
-  if(request) files.push(request);
+  if(response) files.push(response);
   console.log("********* URL: ", manualUrl)
-  if(!request){
+  if(!response){
   const match = manualUrl.match(/^http(s)?:\/\//);
   if (match) {
     const proxyRes = await new Promise((accept, reject) => {
@@ -1077,12 +1071,6 @@ const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, 
 }
 
 const update = async (id, twitterUserId, nftId, url, event, messageType) => {
-
-  console.log("event is", event)
-
-  console.log("Url is", url)
-  console.log("messageType is", messageType)
-
   let manualUrl;
   manualUrl = url;
 
@@ -1100,37 +1088,29 @@ const update = async (id, twitterUserId, nftId, url, event, messageType) => {
   } else {
     message = event.tweet_create_events.shift();
     msg_content = message.text
-    console.log("MESSAGE CONTENT IS", msg_content)
     owner_name = twitterUserId
-
-    // Split message text, 
-
-    console.log("URL IS", url)
-    console.log("MESSAGE IS")
-    console.log(message)
     media_tmp = message.entities.media[0]
-    console.log(media_tmp);
   }
 
   if (typeof media_tmp !== 'undefined') {
     const newUrl = media_tmp.media_url ?? media_tmp.media.media_url;
     downloadMedia(newUrl, function (res) {
-      manualUrl = resourcePath;
-      finishUpdating(id, twitterUserId, manualUrl, nftId, event, messageType, res)
+      finishUpdating(id, twitterUserId, newUrl, nftId, event, messageType, res)
     })
   } else {
     finishUpdating(id, twitterUserId, manualUrl, nftId, event, messageType)
   }
 }
 
-const finishUpdating = async (id, twitterUserId, manualUrl, tokenId, event, messageType) => {
+const finishUpdating = async (id, twitterUserId, manualUrl, tokenId, event, messageType, response) => {
   let { mnemonic } = await _getUser(twitterUserId);
   if (!mnemonic) {
     const spec = await _genKey(twitterUserId);
     mnemonic = spec.mnemonic;
   }
   const files = [];
-  if (manualUrl) {
+  if(response) files.push(response);
+  if (!response) {
     const match = manualUrl.match(/^http(s)?:\/\//);
     if (match) {
       const proxyRes = await new Promise((accept, reject) => {
@@ -1150,21 +1130,8 @@ const finishUpdating = async (id, twitterUserId, manualUrl, tokenId, event, mess
       });
       files.push(proxyRes);
     }
-  } else if (message.attachments.size > 0) {
-    for (const [key, attachment] of message.attachments) {
-      const { name, url } = attachment;
-
-      const proxyRes = await new Promise((accept, reject) => {
-        const proxyReq = https.request(url, proxyRes => {
-          proxyRes.name = name;
-          accept(proxyRes);
-        });
-        proxyReq.once('error', reject);
-        proxyReq.end();
-      });
-      files.push(proxyRes);
-    }
   }
+
   if (files.length > 0) {
     const oldHash = await contracts.NFT.methods.getHash(tokenId).call();
 
@@ -1174,6 +1141,7 @@ const finishUpdating = async (id, twitterUserId, manualUrl, tokenId, event, mess
       }, res => {
         const bs = [];
         res.on('data', d => {
+          console.log(d)
           bs.push(d);
         });
         res.on('end', async () => {
@@ -1189,8 +1157,9 @@ const finishUpdating = async (id, twitterUserId, manualUrl, tokenId, event, mess
               transactionHash = '0x0';
             }
             if (status) {
-              const extName = path.extname(file.name).slice(1);
-              const fileName = extName ? file.name.slice(0, -(extName.length + 1)) : file.name;
+              let fileName = file.name ?? manualUrl.split('/').pop();
+              const extName = path.extname(fileName).slice(1);
+              fileName = extName ? fileName.slice(0, -(extName.length + 1)) : fileName;
               await Promise.all([
                 runSidechainTransaction(mnemonic)('NFT', 'setMetadata', hash, 'name', fileName),
                 runSidechainTransaction(mnemonic)('NFT', 'setMetadata', hash, 'ext', extName)
@@ -1210,14 +1179,6 @@ const finishUpdating = async (id, twitterUserId, manualUrl, tokenId, event, mess
             SendMessage(id, twitterUserId, messageType, 'Update transaction failed: ' + transactionHash);
           }
         });
-        res.on('error', err => {
-          console.warn(err.stack);
-          SendMessage(id, twitterUserId, messageType, 'Update failed: ' + transactionHash);
-        });
-      });
-      req.on('error', err => {
-        console.warn(err.stack);
-        SendMessage(id, twitterUserId, messageType, 'Update failed: ' + transactionHash);
       });
       file.pipe(req);
     }));
