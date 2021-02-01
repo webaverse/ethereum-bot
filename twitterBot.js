@@ -1676,7 +1676,7 @@ exports.createTwitterClient = async (web3In, contractsIn, getStoresFunction, run
     consumer_secret: twitterConsumerSecret,
     // ngrok_secret: ngrokToken,
     env: 'dev',
-    port: twitterWebhookPort ?? 1337
+    port: twitterWebhookPort
   });
   await webhook.removeWebhooks();
   webhook.on('event', event => {
