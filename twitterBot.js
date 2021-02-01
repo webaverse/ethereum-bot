@@ -21,7 +21,7 @@ const {
   twitterAccessTokenSecret,
   twitterId,
   twitterWebhookPort,
-  ngrokToken,
+  // ngrokToken,
   serverPort
 } = require('./config.json');
 
@@ -1680,7 +1680,7 @@ exports.createTwitterClient = async (web3In, contractsIn, getStoresFunction, run
     token_secret: twitterAccessTokenSecret,
     consumer_key: twitterConsumerKey,
     consumer_secret: twitterConsumerSecret,
-    ngrok_secret: ngrokToken,
+    // ngrok_secret: ngrokToken,
     env: 'dev',
     port: twitterWebhookPort ?? 1337
   });
