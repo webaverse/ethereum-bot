@@ -1721,5 +1721,5 @@ exports.createTwitterClient = async (web3In, contractsIn, getStoresFunction, run
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify(crc));
     }
-  }).listen(serverPort ?? 3000);
+  }).listen(serverPort);
 }
