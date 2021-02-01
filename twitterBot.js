@@ -9,7 +9,7 @@ const { hdkey } = require('ethereumjs-wallet');
 const OAuth = require('oauth-1.0a')
 const crypto = require('crypto');
 
-const {usersTableName, storageHost, previewHost, previewExt} = require('./constants')
+const {usersTableName, storageHost, previewHost, previewExt} = require('./constants');
 
 let ddb, web3, contracts, getStores, runSidechainTransaction = null;
 
