@@ -225,7 +225,7 @@ const status = async (id, twitterUserId, messageType) => {
 }
 
 const inventory = async (id, twitterUserId, addressToGetFrom, page = 1, messageType) => {
-  addressToGetFrom = addressToGetFrom ?? twitterUserId;
+  addressToGetFrom = addressToGetFrom || twitterUserId;
   if (ddb == null) {
     SendMessage(id, twitterUserId, messageType, `Unable to get inventory for ${addressToGetFrom} at page ${page} - database not configured.`)
     return;
@@ -927,7 +927,7 @@ const mint = async (id, twitterUserId, url, quantity = 1, event, messageType) =>
   }
 
   if (typeof media_tmp !== 'undefined') {
-    const newUrl = media_tmp.media_url ?? media_tmp.media.media_url;
+    const newUrl = media_tmp.media_url || media_tmp.media.media_url;
     const res = await downloadMedia(newUrl);
     await finishMinting(id, twitterUserId, newUrl, quantity, event, messageType, res);
   } else {
@@ -1011,7 +1011,7 @@ const finishMinting = async (id, twitterUserId, manualUrl, quantity = 1, event, 
             if (status) {
               const description = '';
 
-              let fileName = file.name ?? manualUrl.split('/').pop()
+              let fileName = file.name || manualUrl.split('/').pop();
 
               console.log("File name is", fileName)
 
@@ -1088,7 +1088,7 @@ const update = async (id, twitterUserId, nftId, url, event, messageType) => {
   }
 
   if (typeof media_tmp !== 'undefined') {
-    const newUrl = media_tmp.media_url ?? media_tmp.media.media_url;
+    const newUrl = media_tmp.media_url || media_tmp.media.media_url;
     const res = await downloadMedia(newUrl);
     await finishUpdating(id, twitterUserId, newUrl, nftId, event, messageType, res);
   } else {
@@ -1151,7 +1151,7 @@ const finishUpdating = async (id, twitterUserId, manualUrl, tokenId, event, mess
               transactionHash = '0x0';
             }
             if (status) {
-              let fileName = file.name ?? manualUrl.split('/').pop();
+              let fileName = file.name || manualUrl.split('/').pop();
               const extName = path.extname(fileName).slice(1);
               fileName = extName ? fileName.slice(0, -(extName.length + 1)) : fileName;
               await Promise.all([
@@ -1525,7 +1525,7 @@ const buy = async (id, twitterUserId, buyId, messageType) => {
 
 const getBalance = async (id, twitterUserId, balanceUserId, messageType) => {
   let match;
-  if (twitterUserId && (match = (balanceUserId ?? twitterUserId).match(/@([a-zA-Z0-9_])*/))) {
+  if (twitterUserId && (match = (balanceUserId || twitterUserId).match(/@([a-zA-Z0-9_])*/))) {
     const userId = match[0];
     let { mnemonic } = await _getUser(userId);
     if (!mnemonic) {
@@ -1537,28 +1537,28 @@ const getBalance = async (id, twitterUserId, balanceUserId, messageType) => {
     const address = wallet.getAddressString();
     const balance = await contracts.FT.methods.balanceOf(address).call();
     SendMessage(id, twitterUserId, messageType, userId + ' has ' + balance + ' FLUX');
-  } else if ((balanceUserId ?? twitterUserId) === 'treasury') {
+  } else if ((balanceUserId || twitterUserId) === 'treasury') {
     const balance = await contracts.FT.methods.balanceOf(treasuryAddress).call();
     SendMessage(id, twitterUserId, messageType, 'Treasury has ' + balance + ' FLUX');
   } else {
-    let { mnemonic } = await _getUser((balanceUserId ?? twitterUserId));
+    let { mnemonic } = await _getUser(balanceUserId || twitterUserId);
     if (!mnemonic) {
-      const spec = await _genKey((balanceUserId ?? twitterUserId));
+      const spec = await _genKey(balanceUserId || twitterUserId);
       mnemonic = spec.mnemonic;
     }
 
     const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
     const address = wallet.getAddressString();
     const balance = await contracts.FT.methods.balanceOf(address).call();
-    SendMessage(id, twitterUserId, messageType, (balanceUserId ?? twitterUserId) + ' has ' + balance + ' FLUX');
+    SendMessage(id, twitterUserId, messageType, (balanceUserId || twitterUserId) + ' has ' + balance + ' FLUX');
   }
 }
 
 const HandleResponse = (id, name, receivedMessage, messageType, event) => {
   const commandType = receivedMessage.split(" ")[0].replace(".", "");
-  const commandArg1 = receivedMessage.split(" ")[1] ?? null;
-  const commandArg2 = receivedMessage.split(" ")[2] ?? null;
-  const commandArg3 = receivedMessage.split(" ")[3] ?? null;
+  const commandArg1 = receivedMessage.split(" ")[1] || null;
+  const commandArg2 = receivedMessage.split(" ")[2] || null;
+  const commandArg3 = receivedMessage.split(" ")[3] || null;
 
   switch (commandType) {
     case 'help':
