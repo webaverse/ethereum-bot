@@ -9,5 +9,6 @@
     "twitterAccessToken": null,
     "twitterAccessTokenSecret": null,
     "twitterId": null,
-    "twitterWebhookPort": 3000
+    "twitterWebhookPort": 3002,
+    "serverPort": 3001
 }

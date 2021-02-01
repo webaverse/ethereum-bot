@@ -2,6 +2,5 @@ node_modules
 stderr.log
 stdout.log
 yarn.lock
-.dccache
 config.json
 package-lock.json
