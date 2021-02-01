@@ -853,44 +853,40 @@ const set = async (id, twitterUserId, nftId, metaDataKey, metaDataValue, message
   }
 }
 
-function downloadMedia(url, _callback) {
-  const oauth = OAuth({
-    consumer: {
-      key: twitterConsumerKey,
-      secret: twitterConsumerSecret,
-    },
-    signature_method: 'HMAC-SHA1',
-    hash_function(base_string, key) {
-      return crypto
-        .createHmac('sha1', key)
-        .update(base_string)
-        .digest('base64')
-    },
-  })
+function downloadMedia(url) {
+  return new Promise((accept, reject) => {
+    const oauth = OAuth({
+      consumer: {
+        key: twitterConsumerKey,
+        secret: twitterConsumerSecret,
+      },
+      signature_method: 'HMAC-SHA1',
+      hash_function(base_string, key) {
+        return crypto
+          .createHmac('sha1', key)
+          .update(base_string)
+          .digest('base64')
+      },
+    })
 
-  const request_data = {
-    url: url,
-    method: 'GET',
-    data: {},
-  }
+    const request_data = {
+      url: url,
+      method: 'GET',
+      data: {},
+    }
 
-  // Note: The token is optional for some requests
-  const token = {
-    key: twitterAccessToken,
-    secret: twitterAccessTokenSecret,
-  }
-  
-  const req = https.request(request_data.url, {
-    method: request_data.method,
-    headers: oauth.toHeader(oauth.authorize(request_data, token)),
-  }, res => {
-    _callback(res);
+    // Note: The token is optional for some requests
+    const token = {
+      key: twitterAccessToken,
+      secret: twitterAccessTokenSecret,
+    };
+    const req = https.request(request_data.url, {
+      method: request_data.method,
+      headers: oauth.toHeader(oauth.authorize(request_data, token)),
+    }, accept);
+    req.on('error', reject);
+    req.end();
   });
-  req.on('error', err => {
-    console.warn(err.stack);
-  });
-  req.end()
-
 }
 
 const mint = async (id, twitterUserId, url, quantity = 1, event, messageType) => {
@@ -932,11 +928,10 @@ const mint = async (id, twitterUserId, url, quantity = 1, event, messageType) =>
 
   if (typeof media_tmp !== 'undefined') {
     const newUrl = media_tmp.media_url ?? media_tmp.media.media_url;
-    downloadMedia(newUrl, function (res) {
-      finishMinting(id, twitterUserId, newUrl, quantity, event, messageType, res)
-    })
+    const res = await downloadMedia(newUrl);
+    await finishMinting(id, twitterUserId, newUrl, quantity, event, messageType, res);
   } else {
-    finishMinting(id, twitterUserId, manualUrl, quantity, event, messageType)
+    await finishMinting(id, twitterUserId, manualUrl, quantity, event, messageType);
   }
 }
 
@@ -1094,11 +1089,10 @@ const update = async (id, twitterUserId, nftId, url, event, messageType) => {
 
   if (typeof media_tmp !== 'undefined') {
     const newUrl = media_tmp.media_url ?? media_tmp.media.media_url;
-    downloadMedia(newUrl, function (res) {
-      finishUpdating(id, twitterUserId, newUrl, nftId, event, messageType, res)
-    })
+    const res = await downloadMedia(newUrl);
+    await finishUpdating(id, twitterUserId, newUrl, nftId, event, messageType, res);
   } else {
-    finishUpdating(id, twitterUserId, manualUrl, nftId, event, messageType)
+    await finishUpdating(id, twitterUserId, manualUrl, nftId, event, messageType);
   }
 }
 
