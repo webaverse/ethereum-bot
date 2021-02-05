@@ -1292,7 +1292,7 @@ Keys (DM bot)
 
                                 let status, transactionHash;
                                 try {
-                                    const result = await runSidechainTransaction(mnemonic)('LAND', 'addSingleCollaborator', address2, tokenId);
+                                    const result = await runSidechainTransaction(mnemonic)('LAND', 'addSingleCollaborator', tokenId, address2);
                                     status = result.status;
                                     transactionHash = result.transactionHash;
                                 } catch (err) {
