@@ -24,7 +24,7 @@ const trades = [];
 const helps = [];
 let nextTradeId = 0;
 
-exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransaction, ddb, treasuryAddress) => {
+exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransaction, ddb, treasuryAddress, abis, addresses) => {
 
     if (discordApiToken === undefined || discordApiToken === "" || discordApiToken === null)
         return console.warn("*** WARNING: Discord API token is not defined");
@@ -198,6 +198,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             await _loadFromUserId(message.author.id);
                         }
 
+                        const nftBalance = await contracts[contractName].methods.balanceOf(address).call();
                         const nftBalance = await contracts[contractName].methods.balanceOf(address).call();
                         const maxEntriesPerPage = 10;
                         const numPages = Math.max(Math.ceil(nftBalance / maxEntriesPerPage), 1);
@@ -542,6 +543,46 @@ Keys (DM bot)
                             const homeSpaceUrl = await contracts.Account.methods.getMetadata(address, 'homeSpaceUrl').call();
 
                             message.channel.send('<@!' + message.author.id + '>: home space is ' + JSON.stringify(homeSpaceUrl));
+                        }
+                    } else if (split[0] === prefix + 'redeem') {
+                        let { mnemonic } = await _getUser();
+                        if (!mnemonic) {
+                            const spec = await _genKey();
+                            mnemonic = spec.mnemonic;
+                        }
+
+                        let { mnemonic } = await _getUser();
+                        if (!mnemonic) {
+                            const spec = await _genKey();
+                            mnemonic = spec.mnemonic;
+                        }
+
+                        const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                        const address = wallet.getAddressString();
+
+                        const mainnetAddress = await contracts.Account.methods.getMetadata(address, 'mainnetAddress').call();
+                        let roleRedeemed = null;
+
+                        const mainnetNft = new web3.eth.Contract(abis['NFT'], addresses['mainnet']);
+                        const mainnetNftBalance = await mainnetNft.methods.balanceOf(mainnetAddress).call();
+
+                        const mainnetPromises = Array(nftMainnetBalance);
+                        for (let i = 0; i < nftMainnetBalance; i++) {
+                          mainnetPromises[i] = mainentNft.methods.tokenOfOwnerByIndexFull(mainnetAddress, i);
+                          if (token.id === 171) { // xxx todo: check for ids of redeemable / keycard here
+                            const genesisRole = message.guild.roles.cache.find(role => role.name === "Genesis");
+                            if (!message.author.roles.cache.has(genesisRole.id)) {
+                              message.author.roles.add(genesisRole).catch(console.error);
+                              roleRedeemed = "Genesis";
+                            }
+                          }
+                        }
+                        const mainnetTokens = await Promise.all(mainnetPromises);
+
+                        if (roleRedeemed) {
+                          message.channel.send('<@!' + message.author.id + '>: redeemed role: ' + roleRedeemed);
+                        } else {
+                          message.channel.send('<@!' + message.author.id + '>: no role redeemed.');
                         }
                     } else if (split[0] === prefix + 'balance') {
                         let match;
