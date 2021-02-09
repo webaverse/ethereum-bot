@@ -63,9 +63,10 @@ if (!devMode) {
 
   const web3 = new Web3(new Web3.providers.HttpProvider(gethNodeUrl + ':' + (isMainnet ? '8545' : '8546')));
   web3.eth.transactionConfirmationBlocks = 1;
-  const addresses = await fetch('https://contracts.webaverse.com/config/addresses.js')
+  const fullAddresses = await fetch('https://contracts.webaverse.com/config/addresses.js')
     .then(res => res.text())
-    .then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, ''))[isMainnet ? 'mainnetsidechain' : 'rinkebysidechain']);
+    .then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')));
+  const addresses = fullAddresses[isMainnet ? 'mainnetsidechain' : 'rinkebysidechain'];
   const abis = await fetch('https://contracts.webaverse.com/config/abi.js')
     .then(res => res.text())
     .then(s => JSON.parse(s.replace(/^\s*export\s*default\s*/, '')));
@@ -190,7 +191,7 @@ if (!devMode) {
     return fn;
   };
 
-  createDiscordClient(web3, contracts, getStores, runSidechainTransaction, ddb, treasuryAddress, abis, addresses);
+  createDiscordClient(web3, contracts, getStores, runSidechainTransaction, ddb, treasuryAddress, abis, fullAddresses);
   await createTwitterClient(web3, contracts, getStores, runSidechainTransaction, ddb, treasuryAddress);
   console.log("Bot started successfully");
 })();
