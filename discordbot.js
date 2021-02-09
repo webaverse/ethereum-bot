@@ -246,6 +246,7 @@ Account
 .avatar [id] - set avatar
 .loadout [num] [id] - set loadout NFT [1-8] to [id]
 .homespace [id] - set NFT as home space
+.redeem - redeem NFT roles
 
 Minting
 .mint [count]? (upload comment) - mint NFTs from file upload
@@ -556,18 +557,22 @@ Keys (DM bot)
                         const mainnetAddress = await contracts.Account.methods.getMetadata(address, 'mainnetAddress').call();
                         let roleRedeemed = null;
 
-                        const mainnetNft = new web3.eth.Contract(abis['NFT'], addresses['mainnet']);
-                        const mainnetNftBalance = await mainnetNft.methods.balanceOf(mainnetAddress).call();
+			const rinkebyWeb3 = new Web3(new Web3.providers.HttpProvider(`https://rinkeby.infura.io/v3/0bb8f708513d45a1881ec056c7296df9`));
+                        const mainnetNft = new rinkebyWeb3.eth.Contract(abis['NFT'], addresses['rinkeby']['NFT']);
+                        const nftMainnetBalance = await mainnetNft.methods.balanceOf(mainnetAddress).call();
 
                         const mainnetPromises = Array(nftMainnetBalance);
                         for (let i = 0; i < nftMainnetBalance; i++) {
-                          mainnetPromises[i] = mainentNft.methods.tokenOfOwnerByIndexFull(mainnetAddress, i);
-                          if (token.id === 171) { // xxx todo: check for ids of redeemable / keycard here
+                          const token = await mainnetNft.methods.tokenOfOwnerByIndexFull(mainnetAddress, i).call();
+                          mainnetPromises[i] = token;
+                          if (token.id === '171') { // xxx todo: check for ids of redeemable / keycard here
                             const genesisRole = message.guild.roles.cache.find(role => role.name === "Genesis");
-                            if (!message.author.roles.cache.has(genesisRole.id)) {
-                              message.author.roles.add(genesisRole).catch(console.error);
+                            if (!message.member.roles.cache.has(genesisRole.id)) {
+                              message.member.roles.add(genesisRole).catch(console.error);
                               roleRedeemed = "Genesis";
-                            }
+                            } else {
+                              roleRedeemed = "You already had the Genesis role!";
+		            }
                           }
                         }
                         const mainnetTokens = await Promise.all(mainnetPromises);
