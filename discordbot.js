@@ -199,7 +199,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                         }
 
                         const nftBalance = await contracts[contractName].methods.balanceOf(address).call();
-                        const nftBalance = await contracts[contractName].methods.balanceOf(address).call();
                         const maxEntriesPerPage = 10;
                         const numPages = Math.max(Math.ceil(nftBalance / maxEntriesPerPage), 1);
                         page = Math.min(Math.max(page, 1), numPages);
@@ -545,12 +544,6 @@ Keys (DM bot)
                             message.channel.send('<@!' + message.author.id + '>: home space is ' + JSON.stringify(homeSpaceUrl));
                         }
                     } else if (split[0] === prefix + 'redeem') {
-                        let { mnemonic } = await _getUser();
-                        if (!mnemonic) {
-                            const spec = await _genKey();
-                            mnemonic = spec.mnemonic;
-                        }
-
                         let { mnemonic } = await _getUser();
                         if (!mnemonic) {
                             const spec = await _genKey();
