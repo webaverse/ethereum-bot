@@ -16,7 +16,7 @@ const { Transaction } = require('@ethereumjs/tx');
 const { default: Common } = require('@ethereumjs/common');
 const { hdkey } = require('ethereumjs-wallet');
 
-const { discordApiToken, tradeMnemonic, treasuryMnemonic } = require('./config.json');
+const { discordApiToken, tradeMnemonic, treasuryMnemonic, infuraProjectId, genesisNftStartId, genesisNftEndId } = require('./config.json');
 const { jsonParse } = require('./utilities.js');
 const {usersTableName, prefix, storageHost, previewHost, previewExt, treasurerRoleName} = require('./constants.js');
 
@@ -554,7 +554,7 @@ Keys (DM bot)
                         const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                         const address = wallet.getAddressString();
 
-			const rinkebyWeb3 = new Web3(new Web3.providers.HttpProvider(`https://rinkeby.infura.io/v3/0bb8f708513d45a1881ec056c7296df9`));
+			const rinkebyWeb3 = new Web3(new Web3.providers.HttpProvider(`https://rinkeby.infura.io/v3/${infuraProjectId}`));
                         const signature = await contracts.Account.methods.getMetadata(address, 'mainnetAddress').call();
                         const mainnetAddress = await rinkebyWeb3.eth.accounts.recover("Connecting mainnet address.", signature);
                         let roleRedeemed = null;
@@ -566,7 +566,7 @@ Keys (DM bot)
                         for (let i = 0; i < nftMainnetBalance; i++) {
                           const token = await mainnetNft.methods.tokenOfOwnerByIndexFull(mainnetAddress, i).call();
                           mainnetPromises[i] = token;
-                          if (token.id === '171') { // xxx todo: check for ids of redeemable / keycard here
+                          if (token.id >= genesisNftStartId && token.id <= genesisNftEndId) {
                             const genesisRole = message.guild.roles.cache.find(role => role.name === "Genesis");
                             if (!message.member.roles.cache.has(genesisRole.id)) {
                               message.member.roles.add(genesisRole).catch(console.error);
