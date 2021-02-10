@@ -554,10 +554,11 @@ Keys (DM bot)
                         const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                         const address = wallet.getAddressString();
 
-                        const mainnetAddress = await contracts.Account.methods.getMetadata(address, 'mainnetAddress').call();
+			const rinkebyWeb3 = new Web3(new Web3.providers.HttpProvider(`https://rinkeby.infura.io/v3/0bb8f708513d45a1881ec056c7296df9`));
+                        const signature = await contracts.Account.methods.getMetadata(address, 'mainnetAddress').call();
+                        const mainnetAddress = await rinkebyWeb3.eth.personal.ecRecover("Connecting mainnet address.", signature);
                         let roleRedeemed = null;
 
-			const rinkebyWeb3 = new Web3(new Web3.providers.HttpProvider(`https://rinkeby.infura.io/v3/0bb8f708513d45a1881ec056c7296df9`));
                         const mainnetNft = new rinkebyWeb3.eth.Contract(abis['NFT'], addresses['rinkeby']['NFT']);
                         const nftMainnetBalance = await mainnetNft.methods.balanceOf(mainnetAddress).call();
 
