@@ -618,9 +618,9 @@ Keys (DM bot)
                             const balance = await contracts.FT.methods.balanceOf(address).call();
 
                             if (balance === 0) {
-                              message.channel.send('<@!' + userId + '> has ' + balance + ' FLUX. Want to get some FLUX? Ask the Webaverse team: https://discord.gg/R5wqYhvv53');
+                              message.channel.send('<@!' + message.author.id + '> has ' + balance + ' FLUX. Want to get some FLUX? Ask the Webaverse team: https://discord.gg/R5wqYhvv53');
                             } else {
-                              message.channel.send('<@!' + userId + '> has ' + balance + ' FLUX.');
+                              message.channel.send('<@!' + message.author.id + '> has ' + balance + ' FLUX.');
                             }
                         }
                     } else if (split[0] === prefix + 'address') {
