@@ -2361,7 +2361,12 @@ Keys (DM bot)
                                             if (status) {
                                                 message.channel.send('<@!' + message.author.id + '>: minted ' + (tokenIds[0] === tokenIds[1] ? ('https://webaverse.com/assets/' + tokenIds[0]) : tokenIds.map(n => 'https://webaverse.com/assets/' + n).join(' - ')) + ' (' + hash + ')');
                                             } else {
-                                                message.channel.send('<@!' + message.author.id + '>: mint transaction failed: ' + transactionHash);
+                                                const balance = await contracts.FT.methods.balanceOf(address).call();
+                                                if (balance < 10) {
+                                                    message.channel.send('<@!' + message.author.id + '>: mint transaction failed: you do not have enough FLUX.');
+                                                } else {
+                                                    message.channel.send('<@!' + message.author.id + '>: mint transaction failed: this item has already been minted.');
+                                                }
                                             }
 
                                             // console.log('minted 2', status);
