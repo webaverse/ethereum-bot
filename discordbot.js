@@ -597,7 +597,11 @@ Keys (DM bot)
                             const address = wallet.getAddressString();
                             const balance = await contracts.FT.methods.balanceOf(address).call();
 
-                            message.channel.send('<@!' + userId + '> has ' + balance + ' FLUX');
+                            if (balance === 0) {
+                              message.channel.send('<@!' + userId + '> has ' + balance + ' FLUX. Want to get some FLUX? Ask the Webaverse team: https://discord.gg/R5wqYhvv53');
+                            } else {
+                              message.channel.send('<@!' + userId + '> has ' + balance + ' FLUX.');
+                            }
                         } else if (split[1] === 'treasury') {
                             const balance = await contracts.FT.methods.balanceOf(treasuryAddress).call();
 
@@ -2363,7 +2367,7 @@ Keys (DM bot)
                                             } else {
                                                 const balance = await contracts.FT.methods.balanceOf(address).call();
                                                 if (balance < 10) {
-                                                    message.channel.send('<@!' + message.author.id + '>: mint transaction failed: you do not have enough FLUX. Ask the Webaverse team for some!');
+                                                    message.channel.send('<@!' + message.author.id + '>: mint transaction failed: you do not have enough FLUX. Ask the Webaverse team for some! https://discord.gg/R5wqYhvv53');
                                                 } else {
                                                     message.channel.send('<@!' + message.author.id + '>: mint transaction failed: this item has already been minted.');
                                                 }
