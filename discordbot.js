@@ -2363,7 +2363,7 @@ Keys (DM bot)
                                             } else {
                                                 const balance = await contracts.FT.methods.balanceOf(address).call();
                                                 if (balance < 10) {
-                                                    message.channel.send('<@!' + message.author.id + '>: mint transaction failed: you do not have enough FLUX.');
+                                                    message.channel.send('<@!' + message.author.id + '>: mint transaction failed: you do not have enough FLUX. Ask the Webaverse team for some!');
                                                 } else {
                                                     message.channel.send('<@!' + message.author.id + '>: mint transaction failed: this item has already been minted.');
                                                 }
