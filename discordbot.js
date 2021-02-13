@@ -556,7 +556,14 @@ Keys (DM bot)
 
 			const rinkebyWeb3 = new Web3(new Web3.providers.HttpProvider(`https://rinkeby.infura.io/v3/${infuraProjectId}`));
                         const signature = await contracts.Account.methods.getMetadata(address, 'mainnetAddress').call();
-                        const mainnetAddress = await rinkebyWeb3.eth.accounts.recover("Connecting mainnet address.", signature);
+                        let mainnetAddress;
+                        if (signature !== "") {
+                          mainnetAddress = await rinkebyWeb3.eth.accounts.recover("Connecting mainnet address.", signature);
+                        } else {
+                          message.channel.send('<@!' + message.author.id + '>: no role redeemed.');
+                          return;
+                        }
+
                         let roleRedeemed = null;
 
                         const mainnetNft = new rinkebyWeb3.eth.Contract(abis['NFT'], addresses['rinkeby']['NFT']);
