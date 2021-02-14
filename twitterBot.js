@@ -379,7 +379,7 @@ const send = async (id, twitterUserId, addressToSendTo, amount, messageType) => 
         }
       }
     } else {
-      SendMessage(id, twitterUserId, messageType, `Can't send FLUX to yourself!`)
+      SendMessage(id, twitterUserId, messageType, `Can't send SILK to yourself!`)
       return;
     }
 
@@ -398,9 +398,9 @@ const send = async (id, twitterUserId, addressToSendTo, amount, messageType) => 
     }
 
     if (status) {
-      SendMessage(id, twitterUserId, messageType, `Sent ${amount} FLUX to ${userId}`)
+      SendMessage(id, twitterUserId, messageType, `Sent ${amount} SILK to ${userId}`)
     } else {
-      SendMessage(id, twitterUserId, messageType, `Couldn't send ${amount} FLUX to ${userId}: ${transactionHash}`)
+      SendMessage(id, twitterUserId, messageType, `Couldn't send ${amount} SILK to ${userId}: ${transactionHash}`)
     }
   }
   // Send to address
@@ -425,7 +425,7 @@ const send = async (id, twitterUserId, addressToSendTo, amount, messageType) => 
     }
 
     if (status) {
-      SendMessage(id, twitterUserId, messageType, 'sent ' + amount + ' FLUX to ' + address2);
+      SendMessage(id, twitterUserId, messageType, 'sent ' + amount + ' SILK to ' + address2);
     } else {
       SendMessage(id, twitterUserId, messageType, 'could not send: ' + transactionHash);
     }
@@ -453,7 +453,7 @@ const send = async (id, twitterUserId, addressToSendTo, amount, messageType) => 
     }
 
     if (status) {
-      SendMessage(id, twitterUserId, messageType, 'sent ' + amount + ' FLUX to treasury');
+      SendMessage(id, twitterUserId, messageType, 'sent ' + amount + ' SILK to treasury');
     } else {
       SendMessage(id, twitterUserId, messageType, 'could not send: ' + transactionHash);
     }
@@ -1412,7 +1412,7 @@ const sell = async (id, twitterUserId, tokenId, price, messageType) => {
     }
 
     if (status) {
-      SendMessage(id, twitterUserId, messageType, 'Sale #' + buyId + ': NFT #' + tokenId + ' for ' + price + ' FLUX');
+      SendMessage(id, twitterUserId, messageType, 'Sale #' + buyId + ': NFT #' + tokenId + ' for ' + price + ' SILK');
     } else {
       SendMessage(id, twitterUserId, messageType, 'Failed to list NFT #' + tokenId);
     }
@@ -1517,7 +1517,7 @@ const buy = async (id, twitterUserId, buyId, messageType) => {
   }
 
   if (status) {
-    SendMessage(id, twitterUserId, messageType, `Purchased NFT #${tokenId} for ${price.toNumber()} flux`);
+    SendMessage(id, twitterUserId, messageType, `Purchased NFT #${tokenId} for ${price.toNumber()} SILK`);
   } else {
     SendMessage(id, twitterUserId, messageType, `Failed to purchase NFT #${tokenId}`);
   }
@@ -1536,10 +1536,10 @@ const getBalance = async (id, twitterUserId, balanceUserId, messageType) => {
     const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
     const address = wallet.getAddressString();
     const balance = await contracts.FT.methods.balanceOf(address).call();
-    SendMessage(id, twitterUserId, messageType, userId + ' has ' + balance + ' FLUX');
+    SendMessage(id, twitterUserId, messageType, userId + ' has ' + balance + ' SILK');
   } else if ((balanceUserId || twitterUserId) === 'treasury') {
     const balance = await contracts.FT.methods.balanceOf(treasuryAddress).call();
-    SendMessage(id, twitterUserId, messageType, 'Treasury has ' + balance + ' FLUX');
+    SendMessage(id, twitterUserId, messageType, 'Treasury has ' + balance + ' SILK');
   } else {
     let { mnemonic } = await _getUser(balanceUserId || twitterUserId);
     if (!mnemonic) {
@@ -1550,7 +1550,7 @@ const getBalance = async (id, twitterUserId, balanceUserId, messageType) => {
     const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
     const address = wallet.getAddressString();
     const balance = await contracts.FT.methods.balanceOf(address).call();
-    SendMessage(id, twitterUserId, messageType, (balanceUserId || twitterUserId) + ' has ' + balance + ' FLUX');
+    SendMessage(id, twitterUserId, messageType, (balanceUserId || twitterUserId) + ' has ' + balance + ' SILK');
   }
 }
 

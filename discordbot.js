@@ -605,14 +605,14 @@ Keys (DM bot)
                             const balance = await contracts.FT.methods.balanceOf(address).call();
 
                             if (balance === "0") {
-                              message.channel.send('<@!' + userId + '> has ' + balance + ' FLUX. Want to get some FLUX? Ask the Webaverse team: https://discord.gg/R5wqYhvv53');
+                              message.channel.send('<@!' + userId + '> has ' + balance + ' SILK. Want to get some SILK? Ask the Webaverse team: https://discord.gg/R5wqYhvv53');
                             } else {
-                              message.channel.send('<@!' + userId + '> has ' + balance + ' FLUX.');
+                              message.channel.send('<@!' + userId + '> has ' + balance + ' SILK.');
                             }
                         } else if (split[1] === 'treasury') {
                             const balance = await contracts.FT.methods.balanceOf(treasuryAddress).call();
 
-                            message.channel.send('treasury has ' + balance + ' FLUX');
+                            message.channel.send('treasury has ' + balance + ' SILK');
                         } else {
                             let { mnemonic } = await _getUser();
                             if (!mnemonic) {
@@ -625,9 +625,9 @@ Keys (DM bot)
                             const balance = await contracts.FT.methods.balanceOf(address).call();
 
                             if (balance === "0") {
-                              message.channel.send('<@!' + message.author.id + '> has ' + balance + ' FLUX. Want to get some FLUX? Ask the Webaverse team: https://discord.gg/R5wqYhvv53');
+                              message.channel.send('<@!' + message.author.id + '> has ' + balance + ' SILK. Want to get some SILK? Ask the Webaverse team: https://discord.gg/R5wqYhvv53');
                             } else {
-                              message.channel.send('<@!' + message.author.id + '> has ' + balance + ' FLUX.');
+                              message.channel.send('<@!' + message.author.id + '> has ' + balance + ' SILK.');
                             }
                         }
                     } else if (split[0] === prefix + 'address') {
@@ -721,7 +721,7 @@ Keys (DM bot)
                                 }
 
                                 if (status) {
-                                    message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' FLUX to <@!' + userId + '>');
+                                    message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' SILK to <@!' + userId + '>');
                                 } else {
                                     message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
                                 }
@@ -749,7 +749,7 @@ Keys (DM bot)
                             }
 
                             if (status) {
-                                message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' FLUX to ' + address2);
+                                message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' SILK to ' + address2);
                             } else {
                                 message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
                             }
@@ -775,7 +775,7 @@ Keys (DM bot)
                             }
 
                             if (status) {
-                                message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' FLUX to treasury');
+                                message.channel.send('<@!' + message.author.id + '>: sent ' + amount + ' SILK to treasury');
                             } else {
                                 message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
                             }
@@ -2378,7 +2378,7 @@ Keys (DM bot)
                                             } else {
                                                 const balance = await contracts.FT.methods.balanceOf(address).call();
                                                 if (balance < 10) {
-                                                    message.channel.send('<@!' + message.author.id + '>: mint transaction failed: you do not have enough FLUX. Ask the Webaverse team for some! https://discord.gg/R5wqYhvv53');
+                                                    message.channel.send('<@!' + message.author.id + '>: mint transaction failed: you do not have enough SILK. Ask the Webaverse team for some! https://discord.gg/R5wqYhvv53');
                                                 } else {
                                                     message.channel.send('<@!' + message.author.id + '>: mint transaction failed: this item has already been minted.');
                                                 }
