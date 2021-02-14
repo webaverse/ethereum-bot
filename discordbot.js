@@ -1962,6 +1962,7 @@ Keys (DM bot)
                                     totalSupply,
                                 });
                             }));
+                            entries.sort((a, b) => a.id - b.id);
                             return entries;
                         }, (userLabel, page, numPages, entries) => {
                             let s = userLabel + '\'s inventory:\n';
