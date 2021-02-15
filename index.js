@@ -20,7 +20,7 @@ const { createTwitterClient } = require('./twitterBot.js');
 
 Error.stackTraceLimit = 300;
 
-const isMainnet = false;
+const isMainnet = true;
 
 // If dev mode is true, skip trying any AWS or Web3 calls
 
