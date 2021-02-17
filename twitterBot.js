@@ -307,7 +307,7 @@ const address = async (id, twitterUserId, addressToGet, messageType) => {
     if (spec.mnemonic) {
       mnemonic = spec.mnemonic;
     } else {
-      const spec = await _genKey();
+      const spec = await _genKey(user);
       mnemonic = spec.mnemonic;
     }
 
