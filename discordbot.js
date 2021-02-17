@@ -645,7 +645,7 @@ Keys (DM bot)
                             if (spec.mnemonic) {
                                 mnemonic = spec.mnemonic;
                             } else {
-                                const spec = await _genKey();
+                                const spec = await _genKey(user.id);
                                 mnemonic = spec.mnemonic;
                             }
 
