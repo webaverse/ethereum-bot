@@ -927,7 +927,7 @@ const mint = async (id, twitterUserId, url, quantity = 1, event, messageType) =>
   }
 
   if (typeof media_tmp !== 'undefined') {
-    const newUrl = media_tmp.media_url || media_tmp.media.media_url;
+    const newUrl = media_tmp.media_url_https || media_tmp.media.media_url_https;
     const res = await downloadMedia(newUrl);
     await finishMinting(id, twitterUserId, newUrl, quantity, event, messageType, res);
   } else {
@@ -1088,7 +1088,7 @@ const update = async (id, twitterUserId, nftId, url, event, messageType) => {
   }
 
   if (typeof media_tmp !== 'undefined') {
-    const newUrl = media_tmp.media_url || media_tmp.media.media_url;
+    const newUrl = media_tmp.media_url_https || media_tmp.media.media_url_https;
     const res = await downloadMedia(newUrl);
     await finishUpdating(id, twitterUserId, newUrl, nftId, event, messageType, res);
   } else {
