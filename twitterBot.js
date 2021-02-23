@@ -21,7 +21,7 @@ const {
   twitterAccessTokenSecret,
   twitterId,
   twitterWebhookPort,
-  // ngrokToken,
+  ngrokToken,
   serverPort
 } = require('./config.json');
 
@@ -1674,11 +1674,11 @@ exports.createTwitterClient = async (web3In, contractsIn, getStoresFunction, run
     token_secret: twitterAccessTokenSecret,
     consumer_key: twitterConsumerKey,
     consumer_secret: twitterConsumerSecret,
-    // ngrok_secret: ngrokToken,
+    ngrok_secret: ngrokToken,
     env: 'dev',
     port: twitterWebhookPort
   });
-  await webhook.removeWebhooks();
+  // await webhook.removeWebhooks();
   webhook.on('event', event => {
     if (typeof (event.tweet_create_events) !== 'undefined' &&
       event.tweet_create_events[0].user.screen_name !== twitterId) {
