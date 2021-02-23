@@ -1678,7 +1678,7 @@ exports.createTwitterClient = async (web3In, contractsIn, getStoresFunction, run
     env: 'dev',
     port: twitterWebhookPort
   });
-  // await webhook.removeWebhooks();
+  await webhook.removeWebhooks();
   webhook.on('event', event => {
     if (typeof (event.tweet_create_events) !== 'undefined' &&
       event.tweet_create_events[0].user.screen_name !== twitterId) {
@@ -1704,7 +1704,7 @@ exports.createTwitterClient = async (web3In, contractsIn, getStoresFunction, run
     }
   });
   await webhook.start();
-  await webhook.subscribe({ oauth_token: twitterAccessToken, oauth_token_secret: twitterAccessTokenSecret });
+  await webhook.subscribe({ oauth_token: twitterAccessToken, oauth_token_secret: twitterAccessTokenSecret, screen_name: twitterUserId });
 
   // handle this
   http.createServer((req, res) => {
