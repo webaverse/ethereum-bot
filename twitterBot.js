@@ -1704,7 +1704,7 @@ exports.createTwitterClient = async (web3In, contractsIn, getStoresFunction, run
     }
   });
   await webhook.start();
-  await webhook.subscribe({ oauth_token: twitterAccessToken, oauth_token_secret: twitterAccessTokenSecret, screen_name: twitterUserId });
+  await webhook.subscribe({ oauth_token: twitterAccessToken, oauth_token_secret: twitterAccessTokenSecret, screen_name: twitterId });
 
   // handle this
   http.createServer((req, res) => {
