@@ -2318,7 +2318,7 @@ Keys (DM bot)
                         const id = parseInt(split[1], 10);
                         const key = split[2];
                         
-                        console.log('got id key', {id, key});
+                        // console.log('got id key', {id, key});
                         
                         let {mnemonic} = await _getUser();
                         if (!mnemonic) {
@@ -2354,11 +2354,10 @@ Keys (DM bot)
                             value = decodeSecret(mnemonic, {ciphertext, tag});
                           }
 
+                          // console.log('get value ok', {key, value});
                           const m = await message.author.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ': ' + value + '```');
-                          
-                          console.log('get value ok', {key, value});
                         } else {
-                          console.warn('get error 1');
+                          // console.warn('get error 1');
                           const m = await message.author.send('<@!' + message.author.id + '>: ```you do not have access to ' + id + '```');
                         }
                     } else if (split[0] === prefix + 'sets' && split.length >= 4 && !isNaN(parseInt(split[1], 10))) {
@@ -2366,7 +2365,7 @@ Keys (DM bot)
                         const key = split[2];
                         let value = split[3];
                         
-                        console.log('do set', id, key, value);
+                        // console.log('do set', id, key, value);
 
                         let {mnemonic} = await _getUser();
                         if (!mnemonic) {
@@ -2401,13 +2400,13 @@ Keys (DM bot)
 
                           if (status) {
                               const m = await message.author.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ' = ' + value + '```');
-                              console.log('set value ok', {key, value});
+                              // console.log('set value ok', {key, value});
                           } else {
-                              console.warn('set error 1');
+                              // console.warn('set error 1');
                               const m = await message.author.send('<@!' + message.author.id + '>: could not set: ' + transactionHash);
                           }
                         } else {
-                          console.warn('set error 2');
+                          // console.warn('set error 2');
                           const m = await message.author.send('<@!' + message.author.id + '>: ```you do not have access to ' + id + '```');
                         }
                     } else {
