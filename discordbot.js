@@ -2328,12 +2328,13 @@ Keys (DM bot)
                         const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                         const address = wallet.getAddressString();
 
+                        const hash = await contracts.NFT.methods.getHash(id).call();
+
                         const [
                           isC, // collaborator
                           isO, // owner
                         ] = await Promise.all([
                           (async () => {
-                            const hash = await contracts.NFT.methods.getHash(id).call();
                             const isC = await contracts.NFT.methods.isCollaborator(hash, address).call();
                             return isC;
                           })(),
