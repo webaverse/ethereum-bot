@@ -272,9 +272,15 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                     /* if (/grease/.test(message.content)) {
                       message.author.send('i am NOT grease?!!!!');
                     } */
-                    const split = message.content.split(/\s+/);
-                    // console.log('got split', split, [split[0] === prefix + 'sets' && split.length >= 4, !isNaN(parseInt(split[1], 10))]);
+                    
+                    const split = [];
+                    const s = message.content;
+                    const r = /\S+/g;
                     let match;
+                    while (match = r.exec(s)) {
+                      split.push(match);
+                    }
+                    // console.log('got split', split, [split[0] === prefix + 'sets' && split.length >= 4, !isNaN(parseInt(split[1], 10))]);
                     if (split[0] === prefix + 'help') {
                         const m = await message.channel.send(`\`\`\`\css
 Info
@@ -2266,7 +2272,8 @@ Keys (DM bot)
                     } else if (split[0] === prefix + 'set' && split.length >= 4 && !isNaN(parseInt(split[1], 10))) {
                         const id = parseInt(split[1], 10);
                         const key = split[2];
-                        const value = split[3];
+                        const value = s.slice(split[3].index);
+                        console.log('got split', {split, value, s});
 
                         let { mnemonic } = await _getUser();
                         if (!mnemonic) {
