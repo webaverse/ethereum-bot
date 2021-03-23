@@ -2314,101 +2314,6 @@ Keys (DM bot)
                           } else {
                             message.channel.send('<@!' + message.author.id + '>: failed to destroy world: ' + res.statusCode);
                           } */
-                    } else if (split[0] === prefix + 'gets' && split.length >= 3 && !isNaN(parseInt(split[1], 10))) {
-                        const id = parseInt(split[1], 10);
-                        const key = split[2];
-                        
-                        // console.log('got id key', {id, key});
-                        
-                        let {mnemonic} = await _getUser();
-                        if (!mnemonic) {
-                            const spec = await _genKey();
-                            mnemonic = spec.mnemonic;
-                        }
-                        const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                        const address = wallet.getAddressString();
-
-                        const hash = await contracts.NFT.methods.getHash(id).call();
-
-                        const [
-                          isC, // collaborator
-                          isO, // owner
-                        ] = await Promise.all([
-                          (async () => {
-                            const isC = await contracts.NFT.methods.isCollaborator(hash, address).call();
-                            return isC;
-                          })(),
-                          (async () => {
-                            const owner = await contracts.NFT.methods.ownerOf(id).call();
-                            return owner === address;
-                          })(),
-                        ]);
-
-                        if (isC || isO) {
-                          let value = await contracts.NFT.methods.getMetadata(hash, key).call();
-                          value = jsonParse(value);
-                          if (value !== null) {
-                            let {ciphertext, tag} = value;
-                            ciphertext = Buffer.from(ciphertext, 'base64');
-                            tag = Buffer.from(tag, 'base64');
-                            value = decodeSecret(mnemonic, {ciphertext, tag});
-                          }
-
-                          // console.log('get value ok', {key, value});
-                          const m = await message.author.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ': ' + value + '```');
-                        } else {
-                          // console.warn('get error 1');
-                          const m = await message.author.send('<@!' + message.author.id + '>: ```you do not have access to ' + id + '```');
-                        }
-                    } else if (split[0] === prefix + 'sets' && split.length >= 4 && !isNaN(parseInt(split[1], 10))) {
-                        const id = parseInt(split[1], 10);
-                        const key = split[2];
-                        let value = split[3];
-                        
-                        // console.log('do set', id, key, value);
-
-                        let {mnemonic} = await _getUser();
-                        if (!mnemonic) {
-                            const spec = await _genKey();
-                            mnemonic = spec.mnemonic;
-                        }
-                        const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                        const address = wallet.getAddressString();
-
-                        const hash = await contracts.NFT.methods.getHash(id).call();
-                        const isC = await contracts.NFT.methods.isCollaborator(hash, address).call();
-
-                        if (isC) {
-                          let {ciphertext, tag} = encodeSecret(mnemonic, value);
-                          ciphertext = ciphertext.toString('base64');
-                          tag = tag.toString('base64');
-                          value = JSON.stringify({
-                            ciphertext,
-                            tag,
-                          });
-
-                          let status, transactionHash;
-                          try {
-                              const result = await runSidechainTransaction(mnemonic)('NFT', 'setMetadata', hash, key, value);
-                              status = result.status;
-                              transactionHash = result.transactionHash;
-                          } catch (err) {
-                              console.warn(err.stack);
-                              status = false;
-                              transactionHash = '0x0';
-                          }
-
-                          if (status) {
-                              const m = await message.author.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ' = ' + value + '```');
-                              // console.log('set value ok', {key, value});
-                          } else {
-                              // console.warn('set error 1');
-                              const m = await message.author.send('<@!' + message.author.id + '>: could not set: ' + transactionHash);
-                          }
-                        } else {
-                          // console.warn('set error 2');
-                          const m = await message.author.send('<@!' + message.author.id + '>: ```you do not have access to ' + id + '```');
-                        }
                     } else {
                         if (split[0] === prefix + 'mint') {
                             let quantity = parseInt(split[1], 10);
@@ -2674,7 +2579,102 @@ Keys (DM bot)
                     let { mnemonic } = await _getUser();
 
                     const split = message.content.split(/\s+/);
-                    if (split[0] === prefix + 'key') {
+                    if (split[0] === prefix + 'gets' && split.length >= 3 && !isNaN(parseInt(split[1], 10))) {
+                        const id = parseInt(split[1], 10);
+                        const key = split[2];
+                        
+                        // console.log('got id key', {id, key});
+                        
+                        let {mnemonic} = await _getUser();
+                        if (!mnemonic) {
+                            const spec = await _genKey();
+                            mnemonic = spec.mnemonic;
+                        }
+                        const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                        const address = wallet.getAddressString();
+
+                        const hash = await contracts.NFT.methods.getHash(id).call();
+
+                        const [
+                          isC, // collaborator
+                          isO, // owner
+                        ] = await Promise.all([
+                          (async () => {
+                            const isC = await contracts.NFT.methods.isCollaborator(hash, address).call();
+                            return isC;
+                          })(),
+                          (async () => {
+                            const owner = await contracts.NFT.methods.ownerOf(id).call();
+                            return owner === address;
+                          })(),
+                        ]);
+
+                        if (isC || isO) {
+                          let value = await contracts.NFT.methods.getMetadata(hash, key).call();
+                          value = jsonParse(value);
+                          if (value !== null) {
+                            let {ciphertext, tag} = value;
+                            ciphertext = Buffer.from(ciphertext, 'base64');
+                            tag = Buffer.from(tag, 'base64');
+                            value = decodeSecret(mnemonic, {ciphertext, tag});
+                          }
+
+                          // console.log('get value ok', {key, value});
+                          const m = await message.author.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ': ' + value + '```');
+                        } else {
+                          // console.warn('get error 1');
+                          const m = await message.author.send('<@!' + message.author.id + '>: ```you do not have access to ' + id + '```');
+                        }
+                    } else if (split[0] === prefix + 'sets' && split.length >= 4 && !isNaN(parseInt(split[1], 10))) {
+                        const id = parseInt(split[1], 10);
+                        const key = split[2];
+                        let value = split[3];
+                        
+                        // console.log('do set', id, key, value);
+
+                        let {mnemonic} = await _getUser();
+                        if (!mnemonic) {
+                            const spec = await _genKey();
+                            mnemonic = spec.mnemonic;
+                        }
+                        const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                        const address = wallet.getAddressString();
+
+                        const hash = await contracts.NFT.methods.getHash(id).call();
+                        const isC = await contracts.NFT.methods.isCollaborator(hash, address).call();
+
+                        if (isC) {
+                          let {ciphertext, tag} = encodeSecret(mnemonic, value);
+                          ciphertext = ciphertext.toString('base64');
+                          tag = tag.toString('base64');
+                          value = JSON.stringify({
+                            ciphertext,
+                            tag,
+                          });
+
+                          let status, transactionHash;
+                          try {
+                              const result = await runSidechainTransaction(mnemonic)('NFT', 'setMetadata', hash, key, value);
+                              status = result.status;
+                              transactionHash = result.transactionHash;
+                          } catch (err) {
+                              console.warn(err.stack);
+                              status = false;
+                              transactionHash = '0x0';
+                          }
+
+                          if (status) {
+                              const m = await message.author.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ' = ' + value + '```');
+                              // console.log('set value ok', {key, value});
+                          } else {
+                              // console.warn('set error 1');
+                              const m = await message.author.send('<@!' + message.author.id + '>: could not set: ' + transactionHash);
+                          }
+                        } else {
+                          // console.warn('set error 2');
+                          const m = await message.author.send('<@!' + message.author.id + '>: ```you do not have access to ' + id + '```');
+                        }
+                    } else if (split[0] === prefix + 'key') {
                         if (split.length === 1 + 12) {
                             const mnemonic = split.slice(1).join(' ');
                             if (bip39.validateMnemonic(mnemonic)) {
