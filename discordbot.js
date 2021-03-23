@@ -280,7 +280,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                     while (match = r.exec(s)) {
                       split.push(match);
                     }
-                    console.log('got split', { split, s, });
+                    console.log('got split', { split, s, first: split[0] });
                     if (split[0] === prefix + 'help') {
                         const m = await message.channel.send(`\`\`\`\css
 Info
