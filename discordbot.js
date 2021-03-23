@@ -2354,7 +2354,10 @@ Keys (DM bot)
                           }
 
                           const m = await message.author.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ': ' + value + '```');
+                          
+                          console.log('get value ok', {key, value});
                         } else {
+                          console.warn('get error 1');
                           const m = await message.author.send('<@!' + message.author.id + '>: ```you do not have access to ' + id + '```');
                         }
                     } else if (split[0] === prefix + 'sets' && split.length >= 4 && !isNaN(parseInt(split[1], 10))) {
@@ -2397,10 +2400,13 @@ Keys (DM bot)
 
                           if (status) {
                               const m = await message.author.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ' = ' + value + '```');
+                              console.log('set value ok', {key, value});
                           } else {
+                              console.warn('set error 1');
                               const m = await message.author.send('<@!' + message.author.id + '>: could not set: ' + transactionHash);
                           }
                         } else {
+                          console.warn('set error 2');
                           const m = await message.author.send('<@!' + message.author.id + '>: ```you do not have access to ' + id + '```');
                         }
                     } else {
