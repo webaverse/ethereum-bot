@@ -2274,7 +2274,6 @@ Keys (DM bot)
                         const id = parseInt(split[1], 10);
                         const key = split[2];
                         const value = s.slice(words[3].index);
-                        console.log('set value', {key, value, words});
 
                         let { mnemonic } = await _getUser();
                         if (!mnemonic) {
