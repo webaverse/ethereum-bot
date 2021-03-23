@@ -273,6 +273,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                       message.author.send('i am NOT grease?!!!!');
                     } */
                     const split = message.content.split(/\s+/);
+                    console.log('got split', split);
                     let match;
                     if (split[0] === prefix + 'help') {
                         const m = await message.channel.send(`\`\`\`\css
@@ -609,7 +610,7 @@ Keys (DM bot)
                         const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                         const address = wallet.getAddressString();
 
-			const rinkebyWeb3 = new Web3(new Web3.providers.HttpProvider(`https://rinkeby.infura.io/v3/${infuraProjectId}`));
+			                  const rinkebyWeb3 = new Web3(new Web3.providers.HttpProvider(`https://rinkeby.infura.io/v3/${infuraProjectId}`));
                         const signature = await contracts.Account.methods.getMetadata(address, 'mainnetAddress').call();
                         let mainnetAddress;
                         if (signature !== "") {
