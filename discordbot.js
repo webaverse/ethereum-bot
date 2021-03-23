@@ -2635,7 +2635,7 @@ Keys (DM bot)
                     } else if (split[0] === prefix + 'sets' && split.length >= 4 && !isNaN(parseInt(split[1], 10))) {
                         const id = parseInt(split[1], 10);
                         const key = split[2];
-                        let value = split[3];
+                        let value = s.slice(words[3].index);
                         
                         // console.log('do set', id, key, value);
 
