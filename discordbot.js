@@ -273,14 +273,15 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                       message.author.send('i am NOT grease?!!!!');
                     } */
                     
-                    const split = [];
+                    const words = [];
                     const s = message.content;
                     const r = /\S+/g;
                     let match;
                     while (match = r.exec(s)) {
-                      split.push(match);
+                      words.push(match);
                     }
-                    console.log('got split', { split, s, first: split[0] });
+                    const split = words.map(word => word[0]);
+                    console.log('got split', { words, split, s, first: split[0] });
                     if (split[0] === prefix + 'help') {
                         const m = await message.channel.send(`\`\`\`\css
 Info
