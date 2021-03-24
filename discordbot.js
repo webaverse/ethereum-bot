@@ -2355,7 +2355,7 @@ Secure commands (DM the bot)
                     } else if (split[0] === prefix + 'set' && split.length >= 4 && !isNaN(parseInt(split[1], 10))) {
                         const id = parseInt(split[1], 10);
                         const key = split[2];
-                        const value = s.slice(words[3].index);
+                        const value = s.slice(words[2].index);
 
                         let { mnemonic } = await _getUser();
                         if (!mnemonic) {
@@ -2667,7 +2667,8 @@ Secure commands (DM the bot)
                 } else if (message.channel.type === 'dm') {
                     let { mnemonic } = await _getUser();
 
-                    const split = message.content.split(/\s+/);
+                    const s = message.content;
+                    const split = s.split(/\s+/);
                     if (split[0] === prefix + 'gets' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
                         const id = parseInt(split[1], 10);
                         const key = unlockableKey;
