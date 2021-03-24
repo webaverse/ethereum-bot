@@ -305,7 +305,7 @@ Tokens
 .transfer [@user|0xaddr|treasury] [id] [quantity]? - send NFT
 .preview [id] - preview NFT [id]; .gif for gif
 .wget [id] - get NFT [id] in DM
-.get [id] [key] - get metadata for NFT; 
+.get [id] [key] - get metadata for NFT
 .set [id] [key] [value] - set metadata for NFT
 .collab [@user|0xaddr] [tokenId] - add collaborator for [tokenId]
 .uncollab [@user|0xaddr] [tokenId] - remove collaborator for [tokenId]
@@ -319,7 +319,7 @@ Account
 .redeem - redeem NFT roles
 
 Minting
-.mint [count]? - mint NFTs from file upload; you write .mint in the upload comment
+.mint [count]? - mint NFTs from file drag n drop
 .mint [count]? [url] - mint NFTs from [url]
 .update [id] (upload comment) - update nft content
 
@@ -346,10 +346,10 @@ Land
 .landcollab [@user|0xaddr] [parcelId] - add collaborator to [parcelId]
 
 Secure commands (DM the bot)
-.key [new mnemonic key] - set your Discord private key
+.key [new mnemonic] - set Discord private key
 .key reset - generate new Discord private key
 .gets/.sets - same as above, but encrypted
-      \`\`\``);
+\`\`\``);
 
                         m.react('❌');
                         m.requester = message.author;
