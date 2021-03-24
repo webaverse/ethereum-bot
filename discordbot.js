@@ -301,7 +301,6 @@ Tokens
 .wget [id] - get NFT [id] in DM
 .get [id] [key] - get metadata for NFT; 
 .set [id] [key] [value] - set metadata for NFT
-.gets/.sets - same as above, but unlockable
 .tokencollab [@user|0xaddr] [tokenId] - add collaborator to [tokenId]
 
 Account
@@ -339,9 +338,10 @@ Land
 .deploy [parcelId] [nftId] - deploy [nftId] to [parcelId]
 .landcollab [@user|0xaddr] [parcelId] - add collaborator to [parcelId]
 
-Keys (DM bot)
+Secure commands (DM the bot)
 .key [new mnemonic key] - set your Discord private key
 .key reset - generate new Discord private key
+.gets/.sets - same as above, but encrypted
       \`\`\``);
 
                         m.react('❌');
