@@ -2705,7 +2705,7 @@ Secure commands (DM the bot)
                             let {ciphertext, tag} = value;
                             ciphertext = Buffer.from(ciphertext, 'base64');
                             tag = Buffer.from(tag, 'base64');
-                            value = decodeSecret(mnemonic, {ciphertext, tag});
+                            value = decodeSecret(encryptionMnemonic, {ciphertext, tag});
                           }
 
                           // console.log('get value ok', {key, value});
@@ -2733,7 +2733,7 @@ Secure commands (DM the bot)
                         const isC = await contracts.NFT.methods.isCollaborator(hash, address).call();
 
                         if (isC) {
-                          let {ciphertext, tag} = encodeSecret(mnemonic, value);
+                          let {ciphertext, tag} = encodeSecret(encryptionMnemonic, value);
                           ciphertext = ciphertext.toString('base64');
                           tag = tag.toString('base64');
                           value = JSON.stringify({
