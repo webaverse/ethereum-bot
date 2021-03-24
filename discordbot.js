@@ -1457,7 +1457,7 @@ Secure commands (DM the bot)
                         } else {
                             message.channel.send('unknown user');
                         }
-                    } else if (split[0] === prefix + 'tokencollab' && split.length >= 3) {
+                    } else if (split[0] === prefix + 'collab' && split.length >= 3) {
                         const tokenId = parseInt(split[2]);
                         const hash = await contracts.NFT.methods.getHash(tokenId).call();
                         console.log('got hash', tokenId, hash);
@@ -1545,6 +1545,8 @@ Secure commands (DM the bot)
                             message.channel.send('unknown user');
                         }
 
+                    } else if (split[0] === prefix + 'uncollab' && split.length >= 3) {
+                      throw new Error('not implemented');
                     } else if (split[0] === prefix + 'addnft' && split.length >= 3) {
                         const tradeId = parseInt(split[1], 10);
                         const trade = trades.find(trade => trade.tradeId === tradeId);
