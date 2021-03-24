@@ -2386,28 +2386,6 @@ Secure commands (DM the bot)
                         } else {
                             message.channel.send('<@!' + message.author.id + '>: could not set: ' + transactionHash);
                         }
-                        /* } else if (split[0] === prefix + 'createworld') {
-                          const res = await fetch('https://worlds.exokit.org/create', {
-                            method: 'POST',
-                          });
-                          if (res.ok) {
-                            const j = await res.json();
-                            const {id, url} = j;
-                            message.channel.send('<@!' + message.author.id + '>: created world: ```' + JSON.stringify(j, null, 2) + '```');
-                          } else {
-                            message.channel.send('<@!' + message.author.id + '>: failed to create world: ' + res.statusCode);
-                          }
-                        } else if (split[0] === prefix + 'destroyworld' && split.length >= 2 && split[1]) {
-                          const id = split[1];
-                          const res = await fetch('https://worlds.exokit.org/' + id, {
-                            method: 'DELETE',
-                          });
-                          if (res.ok) {
-                            await res.arrayBuffer();
-                            message.channel.send('<@!' + message.author.id + '>: destroyed world: ```' + id + '```');
-                          } else {
-                            message.channel.send('<@!' + message.author.id + '>: failed to destroy world: ' + res.statusCode);
-                          } */
                     } else {
                         if (split[0] === prefix + 'mint') {
                             let quantity = parseInt(split[1], 10);
