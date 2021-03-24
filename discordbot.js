@@ -1496,7 +1496,7 @@ Secure commands (DM the bot)
                                 let status, transactionHash;
                                 try {
                                     console.log('got hash 4.1', address2, hash);
-                                    const result = await runSidechainTransaction(mnemonic)('NFT', 'addCollaborator', address2, hash);
+                                    const result = await runSidechainTransaction(mnemonic)('NFT', 'addCollaborator', hash, address2);
                                     console.log('got hash 4.2', address2, result);
                                     status = result.status;
                                     transactionHash = result.transactionHash;
@@ -1548,7 +1548,7 @@ Secure commands (DM the bot)
                         }
 
                     } else if (split[0] === prefix + 'uncollab' && split.length >= 3) {
-                      throw new Error('not implemented');
+                      throw new Error('not implemented'); // XXX
                     } else if (split[0] === prefix + 'addnft' && split.length >= 3) {
                         const tradeId = parseInt(split[1], 10);
                         const trade = trades.find(trade => trade.tradeId === tradeId);
