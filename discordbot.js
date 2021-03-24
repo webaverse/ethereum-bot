@@ -1460,7 +1460,7 @@ Secure commands (DM the bot)
                     } else if (split[0] === prefix + 'collab' && split.length >= 3) {
                         const tokenId = parseInt(split[2]);
                         const hash = await contracts.NFT.methods.getHash(tokenId).call();
-                        console.log('got hash', tokenId, hash);
+                        console.log('got hash 0', tokenId, hash);
                         if (match = split[1].match(/<@!?([0-9]+)>/)) {
                             console.log('got hash 1', match);
                           
@@ -1495,7 +1495,9 @@ Secure commands (DM the bot)
 
                                 let status, transactionHash;
                                 try {
+                                    console.log('got hash 4.1', address2);
                                     const result = await runSidechainTransaction(mnemonic)('NFT', 'addCollaborator', address2, hash);
+                                    console.log('got hash 4.2', address2, result);
                                     status = result.status;
                                     transactionHash = result.transactionHash;
                                 } catch (err) {
