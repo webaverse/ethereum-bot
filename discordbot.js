@@ -1495,7 +1495,7 @@ Secure commands (DM the bot)
 
                                 let status, transactionHash;
                                 try {
-                                    console.log('got hash 4.1', address2);
+                                    console.log('got hash 4.1', address2, hash);
                                     const result = await runSidechainTransaction(mnemonic)('NFT', 'addCollaborator', address2, hash);
                                     console.log('got hash 4.2', address2, result);
                                     status = result.status;
