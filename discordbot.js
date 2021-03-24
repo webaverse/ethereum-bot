@@ -299,8 +299,9 @@ Tokens
 .transfer [@user|0xaddr|treasury] [id] [quantity]? - send NFT
 .preview [id] - preview NFT [id]; .gif for gif
 .wget [id] - get NFT [id] in DM
-.get [id] [key] - get metadata for NFT
+.get [id] [key] - get metadata for NFT; 
 .set [id] [key] [value] - set metadata for NFT
+.gets/.sets - same as above, but unlockable
 .tokencollab [@user|0xaddr] [tokenId] - add collaborator to [tokenId]
 
 Account
