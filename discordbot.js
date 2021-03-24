@@ -312,7 +312,7 @@ Account
 .redeem - redeem NFT roles
 
 Minting
-.mint [count]? (upload comment) - mint NFTs from file upload
+.mint [count]? - mint NFTs from file upload; you write .mint in the upload comment
 .mint [count]? [url] - mint NFTs from [url]
 .update [id] (upload comment) - update nft content
 
