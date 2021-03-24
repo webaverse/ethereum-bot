@@ -1599,7 +1599,7 @@ Secure commands (DM the bot)
                                 console.log('got hash 5', status);
 
                                 if (status) {
-                                    message.channel.send('<@!' + message.author.id + '>: added collaborator to token #' + tokenId + ': ' + address2);
+                                    message.channel.send('<@!' + message.author.id + '>: removed collaborator from token #' + tokenId + ': ' + address2);
                                 } else {
                                     message.channel.send('<@!' + message.author.id + '>: could not send: ' + transactionHash);
                                 }
