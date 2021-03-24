@@ -1460,15 +1460,11 @@ Secure commands (DM the bot)
                     } else if (split[0] === prefix + 'collab' && split.length >= 3) {
                         const tokenId = parseInt(split[2]);
                         const hash = await contracts.NFT.methods.getHash(tokenId).call();
-                        console.log('got hash 0', tokenId, hash);
                         if (match = split[1].match(/<@!?([0-9]+)>/)) {
-                            console.log('got hash 1', match);
-                          
                             const userId = match[1];
                             const member = await message.channel.guild.members.fetch(userId);
                             const user = member ? member.user : null;
                             if (user) {
-                                console.log('got hash 3');
                                 let mnemonic, mnemonic2;
                                 if (userId !== message.author.id) {
                                     {
@@ -1490,14 +1486,10 @@ Secure commands (DM the bot)
                                 }
                                 const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                                 const address2 = wallet2.getAddressString();
-                                
-                                console.log('got hash 4', address2);
 
                                 let status, transactionHash;
                                 try {
-                                    console.log('got hash 4.1', address2, hash);
                                     const result = await runSidechainTransaction(mnemonic)('NFT', 'addCollaborator', hash, address2);
-                                    console.log('got hash 4.2', address2, result);
                                     status = result.status;
                                     transactionHash = result.transactionHash;
                                 } catch (err) {
@@ -1505,8 +1497,6 @@ Secure commands (DM the bot)
                                     status = false;
                                     transactionHash = '0x0';
                                 }
-                                
-                                console.log('got hash 5', status);
 
                                 if (status) {
                                     message.channel.send('<@!' + message.author.id + '>: added collaborator to token #' + tokenId + ': ' + address2);
@@ -1517,8 +1507,6 @@ Secure commands (DM the bot)
                                 message.channel.send('unknown user');
                             }
                         } else if (match = split[1].match(/(0x[0-9a-f]+)/i)) {
-                            console.log('got hash 2', match);
-                          
                             let { mnemonic } = await _getUser();
                             if (!mnemonic) {
                                 const spec = await _genKey();
@@ -1550,15 +1538,11 @@ Secure commands (DM the bot)
                     } else if (split[0] === prefix + 'uncollab' && split.length >= 3) {
                       const tokenId = parseInt(split[2]);
                         const hash = await contracts.NFT.methods.getHash(tokenId).call();
-                        console.log('got hash 0', tokenId, hash);
                         if (match = split[1].match(/<@!?([0-9]+)>/)) {
-                            console.log('got hash 1', match);
-                          
                             const userId = match[1];
                             const member = await message.channel.guild.members.fetch(userId);
                             const user = member ? member.user : null;
                             if (user) {
-                                console.log('got hash 3');
                                 let mnemonic, mnemonic2;
                                 if (userId !== message.author.id) {
                                     {
@@ -1580,8 +1564,6 @@ Secure commands (DM the bot)
                                 }
                                 const wallet2 = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic2)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                                 const address2 = wallet2.getAddressString();
-                                
-                                console.log('got hash 4', address2);
 
                                 let status, transactionHash;
                                 try {
@@ -1595,8 +1577,6 @@ Secure commands (DM the bot)
                                     status = false;
                                     transactionHash = '0x0';
                                 }
-                                
-                                console.log('got hash 5', status);
 
                                 if (status) {
                                     message.channel.send('<@!' + message.author.id + '>: removed collaborator from token #' + tokenId + ': ' + address2);
@@ -1607,8 +1587,6 @@ Secure commands (DM the bot)
                                 message.channel.send('unknown user');
                             }
                         } else if (match = split[1].match(/(0x[0-9a-f]+)/i)) {
-                            console.log('got hash 2', match);
-                          
                             let { mnemonic } = await _getUser();
                             if (!mnemonic) {
                                 const spec = await _genKey();
