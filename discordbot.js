@@ -30,6 +30,7 @@ const {usersTableName, prefix, storageHost, previewHost, previewExt, treasurerRo
 const {pipeline, PassThrough} = require('stream');
 const {randomBytes, createCipheriv, createDecipheriv} = require('crypto');
 
+const unlockableKey = 'unlockable';
 const nonce = Buffer.alloc(12);
 const encodeSecret = (mnemonic, secret) => {
   const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
@@ -2667,9 +2668,9 @@ Secure commands (DM the bot)
                     let { mnemonic } = await _getUser();
 
                     const split = message.content.split(/\s+/);
-                    if (split[0] === prefix + 'gets' && split.length >= 3 && !isNaN(parseInt(split[1], 10))) {
+                    if (split[0] === prefix + 'gets' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
                         const id = parseInt(split[1], 10);
-                        const key = split[2];
+                        const key = unlockableKey;
                         
                         // console.log('got id key', {id, key});
                         
@@ -2713,10 +2714,10 @@ Secure commands (DM the bot)
                           // console.warn('get error 1');
                           const m = await message.author.send('<@!' + message.author.id + '>: ```you do not have access to ' + id + '```');
                         }
-                    } else if (split[0] === prefix + 'sets' && split.length >= 4 && !isNaN(parseInt(split[1], 10))) {
+                    } else if (split[0] === prefix + 'sets' && split.length >= 3 && !isNaN(parseInt(split[1], 10))) {
                         const id = parseInt(split[1], 10);
-                        const key = split[2];
-                        let value = s.slice(words[3].index);
+                        const key = unlockableKey;
+                        let value = s.slice(words[2].index);
                         
                         // console.log('do set', id, key, value);
 
