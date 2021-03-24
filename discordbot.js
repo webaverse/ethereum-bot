@@ -27,6 +27,16 @@ const {usersTableName, prefix, storageHost, previewHost, previewExt, treasurerRo
 
 // encryption/decryption of unlocks
 
+const _parseWords = s => {
+  const words = [];
+  const r = /\S+/g;
+  let match;
+  while (match = r.exec(s)) {
+    words.push(match);
+  }
+  return words;
+};
+
 const {pipeline, PassThrough} = require('stream');
 const {randomBytes, createCipheriv, createDecipheriv} = require('crypto');
 
@@ -274,13 +284,8 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                       message.author.send('i am NOT grease?!!!!');
                     } */
                     
-                    const words = [];
                     const s = message.content;
-                    const r = /\S+/g;
-                    let match;
-                    while (match = r.exec(s)) {
-                      words.push(match);
-                    }
+                    const words = _parseWords(s);
                     const split = words.map(word => word[0]);
                     // console.log('got split', { words, split, s, first: split[0] });
                     if (split[0] === prefix + 'help') {
@@ -2668,7 +2673,8 @@ Secure commands (DM the bot)
                     let { mnemonic } = await _getUser();
 
                     const s = message.content;
-                    const split = s.split(/\s+/);
+                    const words = _parseWords(s);
+                    const split = words.map(word => word[0]);
                     if (split[0] === prefix + 'gets' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
                         const id = parseInt(split[1], 10);
                         const key = unlockableKey;
