@@ -2386,6 +2386,52 @@ Secure commands (DM the bot)
                         } else {
                             message.channel.send('<@!' + message.author.id + '>: could not set: ' + transactionHash);
                         }
+                    } else if (split[0] === prefix + 'gets' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
+                        const id = parseInt(split[1], 10);
+                        const key = unlockableKey;
+                        
+                        // console.log('got id key', {id, key});
+                        
+                        let {mnemonic} = await _getUser();
+                        if (!mnemonic) {
+                            const spec = await _genKey();
+                            mnemonic = spec.mnemonic;
+                        }
+                        const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                        const address = wallet.getAddressString();
+
+                        const hash = await contracts.NFT.methods.getHash(id).call();
+
+                        const [
+                          isC, // collaborator
+                          isO, // owner
+                        ] = await Promise.all([
+                          (async () => {
+                            const isC = await contracts.NFT.methods.isCollaborator(hash, address).call();
+                            return isC;
+                          })(),
+                          (async () => {
+                            const owner = await contracts.NFT.methods.ownerOf(id).call();
+                            return owner === address;
+                          })(),
+                        ]);
+
+                        if (isC || isO) {
+                          let value = await contracts.NFT.methods.getMetadata(hash, key).call();
+                          value = jsonParse(value);
+                          if (value !== null) {
+                            let {ciphertext, tag} = value;
+                            ciphertext = Buffer.from(ciphertext, 'base64');
+                            tag = Buffer.from(tag, 'base64');
+                            value = decodeSecret(encryptionMnemonic, {ciphertext, tag});
+                          }
+
+                          // console.log('get value ok', {key, value});
+                          const m = await message.author.send('<@!' + message.author.id + '>: ```' + id + '/' + key + ': ' + value + '```');
+                        } else {
+                          // console.warn('get error 1');
+                          const m = await message.author.send('<@!' + message.author.id + '>: ```you do not have access to ' + id + '```');
+                        }
                     } else {
                         if (split[0] === prefix + 'mint') {
                             let quantity = parseInt(split[1], 10);
