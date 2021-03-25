@@ -2360,7 +2360,7 @@ Secure commands (DM the bot)
                     } else if (split[0] === prefix + 'set' && split.length >= 4 && !isNaN(parseInt(split[1], 10))) {
                         const id = parseInt(split[1], 10);
                         const key = split[2];
-                        const value = s.slice(words[2].index);
+                        const value = split[3];
 
                         let { mnemonic } = await _getUser();
                         if (!mnemonic) {
