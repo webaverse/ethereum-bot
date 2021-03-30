@@ -27,10 +27,10 @@ const { jsonParse } = require('./utilities.js');
 const {usersTableName, prefix, storageHost, previewHost, previewExt, treasurerRoleName} = require('./constants.js');
 const embedColor = '#000000';
 const _commandToValue = ([name, args, description]) =>
-  [name, args.join(' '), '-', description].join(' ');
+  ['.' + name, args.join(' '), '-', description].join(' ');
 const _commandToDescription = ([name, args, description]) =>
   '```css\n' +
-    [name, args.join(' '), '-', description].join(' ') +
+    ['.' + name, args.join(' '), '-', description].join(' ') +
   '```';
 const _commandsToValue = commands =>
   '```css\n' +
