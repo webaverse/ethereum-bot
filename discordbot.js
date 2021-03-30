@@ -30,7 +30,7 @@ const _commandToValue = ([name, args, description]) =>
   [name, args.join(' '), '-', description].join(' ');
 const _commandToDescription = ([name, args, description]) =>
   '```css\n' +
-    [args.join(' '), '-', description].join(' ') +
+    [name, args.join(' '), '-', description].join(' ') +
   '```';
 const _commandsToValue = commands =>
   '```css\n' +
