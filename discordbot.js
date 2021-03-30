@@ -402,7 +402,10 @@ Secure commands (DM the bot)
                           .setImage(avatarPreview)
                           .setTimestamp()
                           .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
-                        message.channel.send(exampleEmbed);
+                        const m = await message.channel.send(exampleEmbed);
+                        m.react('❌');
+                        m.requester = message.author;
+                        helps.push(m);
 
                         // message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nAvatar: ${avatarId}\nHome Space: ${homeSpaceId}\nMonetization Pointer: ${monetizationPointer}\n\`\`\``);
                     } else if (split[0] === prefix + 'name') {
