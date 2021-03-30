@@ -124,6 +124,13 @@ const helpFields = [
 .gets/.sets - encrypted get/set
 \`\`\``,
   },
+  {
+    name: 'Help',
+    shortname: 'help',
+    value: `\`\`\`\css
+.help [topic] - show help on a topic (info, tokens, account, minting, packing, trade, store, land, secure)
+\`\`\``,
+  },
 ];
 
 // encryption/decryption of unlocks
@@ -390,6 +397,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                     const split = words.map(word => word[0]);
                     // console.log('got split', { words, split, s, first: split[0] });
                     if (split[0] === prefix + 'help') {
+                      const shortname = split[1];
                       const exampleEmbed = new Discord.MessageEmbed()
                         .setColor(embedColor)
                         .setTitle('Webaverse Help')
@@ -397,11 +405,19 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                         // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
                         // .setDescription(description || 'This person is a noob without a description.')
                         // .setThumbnail(avatarPreview)
-                        .addFields(helpFields)
                         // .addField('Inline field title', 'Some value here', true)
                         // .setImage(avatarPreview)
                         // .setTimestamp()
                         // .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
+                      if (!shortname) {
+                        exampleEmbed.addFields(helpFields);
+                      } else {
+                        const helpField = helpFields.find(hf => hf.shortname === shortname) ||
+                          helpFields.find(hf => hf.shortname === 'help');
+                        exampleEmbed.addFields([
+                          helpField,
+                        ]);
+                      }
                       const m = await message.channel.send(exampleEmbed);
                       m.react('❌');
                       m.requester = message.author;
