@@ -372,17 +372,39 @@ Secure commands (DM the bot)
                         const address = wallet.getAddressString();
                         const [
                             name,
+                            description,
                             avatarId,
                             homeSpaceId,
                             monetizationPointer,
+                            avatarPreview,
                         ] = await Promise.all([
                             contracts.Account.methods.getMetadata(address, 'name').call(),
+                            contracts.Account.methods.getMetadata(address, 'description').call(),
                             contracts.Account.methods.getMetadata(address, 'avatarId').call(),
                             contracts.Account.methods.getMetadata(address, 'homeSpaceId').call(),
                             contracts.Account.methods.getMetadata(address, 'monetizationPointer').call(),
+                            contracts.Account.methods.getMetadata(address, 'avatarPreview').call(),
                         ]);
 
-                        message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nAvatar: ${avatarId}\nHome Space: ${homeSpaceId}\nMonetization Pointer: ${monetizationPointer}\n\`\`\``);
+                        const exampleEmbed = new Discord.MessageEmbed()
+                          .setColor('#ff0000')
+                          .setTitle(name)
+                          .setURL('https://webaverse.com/')
+                          // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
+                          .setDescription(description || 'This person is a noob without a description.')
+                          .setThumbnail(avatarPreview)
+                          .addFields(
+                            { name: 'avatar id', value: avatarId || '<none>' },
+                            { name: 'homespace id', value: homeSpaceId || '<none>' },
+                            { name: 'monetization pointer', value: monetizationPointer || '<none>' },
+                          )
+                          // .addField('Inline field title', 'Some value here', true)
+                          .setImage(avatarPreview)
+                          .setTimestamp()
+                          .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
+                        message.channel.send(exampleEmbed);
+
+                        // message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nAvatar: ${avatarId}\nHome Space: ${homeSpaceId}\nMonetization Pointer: ${monetizationPointer}\n\`\`\``);
                     } else if (split[0] === prefix + 'name') {
                         let { mnemonic } = await _getUser();
                         if (!mnemonic) {
