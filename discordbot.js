@@ -296,10 +296,10 @@ Info
 .balance [@user|0xaddr]? - show FT balance
 .inventory [@user|0xaddr]? [page]? - show NFTs
 .address [@user]? - print address
-.key - private key in DM
-.login - login link in DM
-.play - play link in DM
-.realm [num] - play link in DM to realm [1-5]
+.key - private key (DM)
+.login - login link (DM)
+.play - play link (DM)
+.realm [num] - play link to realm [1-5] (DM)
 
 Tokens
 .inspect [id] - inspect token details
@@ -333,7 +333,7 @@ Packs
 Trade
 .trade [@user|0xaddr] - start a trade with
 .addnft [tradeid] [nftid] - add NFT to trade [tradeid]
-.removenft [tradeid] [index] - remove NFT at [index] from trade [tradeid]
+.removenft [tradeid] [index] - remove NFT [index] from trade [tradeid]
 .addft [tradeid] [amount] - add FT to trade [tradeid]
 
 Store
@@ -348,9 +348,9 @@ Land
 .landcollab [@user|0xaddr] [parcelId] - add collaborator to [parcelId]
 
 Secure commands (DM the bot)
-.key [new mnemonic] - set Discord private key
-.key reset - generate new Discord private key
-.gets/.sets - same as above, but encrypted
+.key [new mnemonic] - set private key
+.key reset - generate new private key
+.gets/.sets - encrypted get/set
 \`\`\``);
 
                         m.react('❌');
