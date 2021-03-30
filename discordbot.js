@@ -414,14 +414,19 @@ Secure commands (DM the bot)
                       
                       const token = await contracts.NFT.methods.tokenByIdFull(tokenId).call();
                       // console.log('got token', token);
+                      const minterAddress = token.minter.toLowerCase();
                       const [
                         unlockable,
+                        minterName,
+                        minterAvatarPreview,
                       ] = await Promise.all([
                         (async () => {
                           const key = unlockableKey;
                           const value = await contracts.NFT.methods.getMetadata(token.hash, key).call();
                           return !!value;
                         })(),
+                        contracts.Account.methods.getMetadata(minterAddress, 'name').call(),
+                        contracts.Account.methods.getMetadata(minterAddress, 'avatarPreview').call(),
                       ]);
                       const editionNumber = 1; // XXX hack
                       const collaborators = [token.owner]; // XXX hack
@@ -433,8 +438,8 @@ Secure commands (DM the bot)
                       const exampleEmbed = new Discord.MessageEmbed()
                         .setColor('#ff0000')
                         .setTitle(token.name)
-                        .setURL('https://webaverse.com/')
-                        // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
+                        .setURL(`https://webaverse.com/assets/${token.id}`)
+                        .setAuthor(minterName || 'Anonymous', minterAvatarPreview, `https://webaverse.com/accounts/${minterAddress}`)
                         .setDescription(token.description || 'What a mysterious item.')
                         .setThumbnail(itemPreview)
                         .addFields(
