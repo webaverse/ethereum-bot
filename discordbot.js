@@ -25,6 +25,106 @@ const { discordApiToken, tradeMnemonic, treasuryMnemonic, infuraProjectId, genes
 
 const { jsonParse } = require('./utilities.js');
 const {usersTableName, prefix, storageHost, previewHost, previewExt, treasurerRoleName} = require('./constants.js');
+const embedColor = '#000000';
+const helpFields = [
+  {
+    name: 'Info',
+    shortname: 'info',
+    value: `\`\`\`\css
+.status - show account details
+.balance [@user|0xaddr]? - show FT balance
+.inventory [@user|0xaddr]? [page]? - show NFTs
+.address [@user]? - print address
+.key - private key (DM)
+.login - login link (DM)
+.play - play link (DM)
+.realm [num] - play link to realm [1-5] (DM)
+\`\`\``,
+  },
+  {
+    name: 'Tokens',
+    shortname: 'tokens',
+    value: `\`\`\`\css
+.inspect [id] - inspect token details
+.send [@user|0xaddr|treasury] [amount] - send FT
+.transfer [@user|0xaddr|treasury] [id] [quantity]? - send NFT
+.preview [id] - preview NFT [id]; .gif for gif
+.wget [id] - get NFT [id] in DM
+.get [id] [key] - get metadata for NFT
+.set [id] [key] [value] - set metadata for NFT
+.collab [@user|0xaddr] [tokenId] - add collaborator for [tokenId]
+.uncollab [@user|0xaddr] [tokenId] - remove collaborator for [tokenId]
+\`\`\``,
+  },
+  {
+    name: 'Account',
+    shortname: 'account',
+    value: `\`\`\`\css
+.name [newname] - set name to [name]
+.monetizationpointer [mp] - set monetization pointer
+.avatar [id] - set avatar
+.loadout [num] [id] - set loadout NFT [1-8] to [id]
+.homespace [id] - set NFT as home space
+.redeem - redeem NFT roles
+\`\`\``,
+  },
+  {
+    name: 'Minting',
+    shortname: 'minting',
+    value: `\`\`\`\css
+.mint [count]? - mint NFTs from file drag n drop
+.mint [count]? [url] - mint NFTs from [url]
+.update [id] (upload comment) - update nft content
+\`\`\``,
+  },
+  {
+    name: 'Packing',
+    shortname: 'packing',
+    value: `\`\`\`\css
+.packs [@user|nftid] - check packed NFT balances
+.pack [nftid] [amount] - pack [amount] FT into [nftid]
+.unpack [nftid] [amount] - unpack [amount] FT from [nftid]
+\`\`\``,
+  },
+  {
+    name: 'Trade',
+    shortname: 'trade',
+    value: `\`\`\`\css
+.trade [@user|0xaddr] - start a trade with
+.addnft [tradeid] [nftid] - add NFT to trade [tradeid]
+.removenft [tradeid] [index] - remove NFT [index] from trade [tradeid]
+.addft [tradeid] [amount] - add FT to trade [tradeid]
+\`\`\``,
+  },
+  {
+    name: 'Store',
+    shortname: 'store',
+    value: `\`\`\`\css
+.store [@user]? - show store
+.sell [nftid] [price] - sell [nftid] for [price]
+.unsell [saleid] - unlist [saleid]
+.buy [saleid] - buy [saleid]
+\`\`\``,
+  },
+  {
+    name: 'Land',
+    shortname: 'land',
+    value: `\`\`\`\css
+.parcels - list owned parcels
+.deploy [parcelId] [nftId] - deploy [nftId] to [parcelId]
+.landcollab [@user|0xaddr] [parcelId] - add collaborator to [parcelId]
+\`\`\``,
+  },
+  {
+    name: 'Secure commands (DM the bot)',
+    shortname: 'secure',
+    value: `\`\`\`\css
+.key [new mnemonic] - set private key
+.key reset - generate new private key
+.gets/.sets - encrypted get/set
+\`\`\``,
+  },
+];
 
 // encryption/decryption of unlocks
 
@@ -291,102 +391,13 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                     // console.log('got split', { words, split, s, first: split[0] });
                     if (split[0] === prefix + 'help') {
                       const exampleEmbed = new Discord.MessageEmbed()
-                        .setColor('#ff0000')
+                        .setColor(embedColor)
                         .setTitle('Webaverse Help')
                         .setURL(`https://docs.webaverse.com/`)
                         // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
                         // .setDescription(description || 'This person is a noob without a description.')
                         // .setThumbnail(avatarPreview)
-                        .addFields([
-                          {
-                            name: 'Info',
-                            value: `\`\`\`\css
-.status - show account details
-.balance [@user|0xaddr]? - show FT balance
-.inventory [@user|0xaddr]? [page]? - show NFTs
-.address [@user]? - print address
-.key - private key (DM)
-.login - login link (DM)
-.play - play link (DM)
-.realm [num] - play link to realm [1-5] (DM)
-\`\`\``,
-                          },
-                          {
-                            name: 'Tokens',
-                            value: `\`\`\`\css
-.inspect [id] - inspect token details
-.send [@user|0xaddr|treasury] [amount] - send FT
-.transfer [@user|0xaddr|treasury] [id] [quantity]? - send NFT
-.preview [id] - preview NFT [id]; .gif for gif
-.wget [id] - get NFT [id] in DM
-.get [id] [key] - get metadata for NFT
-.set [id] [key] [value] - set metadata for NFT
-.collab [@user|0xaddr] [tokenId] - add collaborator for [tokenId]
-.uncollab [@user|0xaddr] [tokenId] - remove collaborator for [tokenId]
-\`\`\``,
-                          },
-                          {
-                            name: 'Account',
-                            value: `\`\`\`\css
-.name [newname] - set name to [name]
-.monetizationpointer [mp] - set monetization pointer
-.avatar [id] - set avatar
-.loadout [num] [id] - set loadout NFT [1-8] to [id]
-.homespace [id] - set NFT as home space
-.redeem - redeem NFT roles
-\`\`\``,
-                          },
-                          {
-                            name: 'Minting',
-                            value: `\`\`\`\css
-.mint [count]? - mint NFTs from file drag n drop
-.mint [count]? [url] - mint NFTs from [url]
-.update [id] (upload comment) - update nft content
-\`\`\``,
-                          },
-                          {
-                            name: 'Packing',
-                            value: `\`\`\`\css
-.packs [@user|nftid] - check packed NFT balances
-.pack [nftid] [amount] - pack [amount] FT into [nftid]
-.unpack [nftid] [amount] - unpack [amount] FT from [nftid]
-\`\`\``,
-                          },
-                          {
-                            name: 'Trade',
-                            value: `\`\`\`\css
-.trade [@user|0xaddr] - start a trade with
-.addnft [tradeid] [nftid] - add NFT to trade [tradeid]
-.removenft [tradeid] [index] - remove NFT [index] from trade [tradeid]
-.addft [tradeid] [amount] - add FT to trade [tradeid]
-\`\`\``,
-                          },
-                          {
-                            name: 'Store',
-                            value: `\`\`\`\css
-.store [@user]? - show store
-.sell [nftid] [price] - sell [nftid] for [price]
-.unsell [saleid] - unlist [saleid]
-.buy [saleid] - buy [saleid]
-\`\`\``,
-                          },
-                          {
-                            name: 'Land',
-                            value: `\`\`\`\css
-.parcels - list owned parcels
-.deploy [parcelId] [nftId] - deploy [nftId] to [parcelId]
-.landcollab [@user|0xaddr] [parcelId] - add collaborator to [parcelId]
-\`\`\``,
-                          },
-                          {
-                            name: 'Secure commands (DM the bot)',
-                            value: `\`\`\`\css
-.key [new mnemonic] - set private key
-.key reset - generate new private key
-.gets/.sets - encrypted get/set
-\`\`\``,
-                          },
-                        ])
+                        .addFields(helpFields)
                         // .addField('Inline field title', 'Some value here', true)
                         // .setImage(avatarPreview)
                         // .setTimestamp()
@@ -428,7 +439,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                         ]);
 
                         const exampleEmbed = new Discord.MessageEmbed()
-                          .setColor('#ff0000')
+                          .setColor(embedColor)
                           .setTitle(name)
                           .setURL(`https://webaverse.com/accounts/${address}`)
                           // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
@@ -476,7 +487,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                       const itemPreview = `https://preview.exokit.org/${token.hash}.${token.ext}/preview.png`;
                       
                       const exampleEmbed = new Discord.MessageEmbed()
-                        .setColor('#ff0000')
+                        .setColor(embedColor)
                         .setTitle(token.name)
                         .setURL(`https://webaverse.com/assets/${token.id}`)
                         .setAuthor(minterName || 'Anonymous', minterAvatarPreview, `https://webaverse.com/accounts/${minterAddress}`)
@@ -754,7 +765,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
                         let roleRedeemed = null;
 
-                        const mainnetNft = new rinkebyWeb3.eth.Contract(abis['NFT'], addresses['rinkeby']['NFT']);
+                        const mainnetNft = new rinkebyWeb3.eth.Contract(abis['NFT'], addresses['mainnet']['NFT']);
                         const nftMainnetBalance = await mainnetNft.methods.balanceOf(mainnetAddress).call();
 
                         const mainnetPromises = Array(nftMainnetBalance);
