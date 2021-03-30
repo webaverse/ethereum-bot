@@ -411,12 +411,6 @@ Secure commands (DM the bot)
                         // message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nAvatar: ${avatarId}\nHome Space: ${homeSpaceId}\nMonetization Pointer: ${monetizationPointer}\n\`\`\``);
                     } else if (split[0] === prefix + 'inspect' && !isNaN(split[1])) {
                       const tokenId = parseInt(split[1], 10);
-                      /* edition number
-                      file type (jpg, png, vrm, etc)
-                      file size (305kb, 24MB, etc)
-                      resolution (eg: 1000x1000 px)
-                      who are the collaborators of the NFT?
-                      does it have unlockable content? */
                       
                       const token = await contracts.NFT.methods.tokenByIdFull(tokenId).call();
                       // console.log('got token', token);
@@ -429,6 +423,7 @@ Secure commands (DM the bot)
                           return !!value;
                         })(),
                       ]);
+                      const editionNumber = 1; // XXX hack
                       const collaborators = [token.owner]; // XXX hack
                       const sizeString = prettyBytes(100 * 1024); // XXX hack
                       const resolutionString = `${1024}x${768}`; // XXX hack
@@ -444,6 +439,7 @@ Secure commands (DM the bot)
                         .setThumbnail(itemPreview)
                         .addFields(
                           { name: 'content hash', value: token.hash },
+                          { name: 'edition number', value: editionNumber + ' (est.)' },
                           { name: 'edition size', value: token.totalSupply + '' },
                           { name: 'file type', value: token.ext },
                           { name: 'file size', value: sizeString + ' (est.)' },
