@@ -15,6 +15,7 @@ const bip39 = require('bip39');
 const { Transaction } = require('@ethereumjs/tx');
 const { default: Common } = require('@ethereumjs/common');
 const { hdkey } = require('ethereumjs-wallet');
+const prettyBytes = require('pretty-bytes');
 
 const { discordApiToken, tradeMnemonic, treasuryMnemonic, infuraProjectId, genesisNftStartId, genesisNftEndId, encryptionMnemonic } = require('./config.json');
 
@@ -408,6 +409,53 @@ Secure commands (DM the bot)
                         helps.push(m);
 
                         // message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nAvatar: ${avatarId}\nHome Space: ${homeSpaceId}\nMonetization Pointer: ${monetizationPointer}\n\`\`\``);
+                    } else if (split[0] === prefix + 'inspect' && !isNaN(split[1])) {
+                      const tokenId = parseInt(split[1], 10);
+                      /* edition number
+                      file type (jpg, png, vrm, etc)
+                      file size (305kb, 24MB, etc)
+                      resolution (eg: 1000x1000 px)
+                      who are the collaborators of the NFT?
+                      does it have unlockable content? */
+                      
+                      const token = await contracts.NFT.methods.tokenByIdFull(tokenId).call();
+                      // console.log('got token', token);
+                      const [
+                        unlockable,
+                      ] = await Promise.all([
+                        (async () => {
+                          const key = unlockableKey;
+                          const value = await contracts.NFT.methods.getMetadata(token.hash, key).call();
+                          return !!value;
+                        })(),
+                      ]);
+                      const collaborators = [token.owner]; // XXX hack
+                      const sizeString = prettyBytes(100 * 1024); // XXX hack
+                      const resolutionString = `${1024}x${768}`; // XXX hack
+                      
+                      const itemPreview = `https://preview.exokit.org/${token.hash}.${token.ext}/preview.png`;
+                      
+                      const exampleEmbed = new Discord.MessageEmbed()
+                        .setColor('#ff0000')
+                        .setTitle(token.name)
+                        .setURL('https://webaverse.com/')
+                        // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
+                        .setDescription(token.description || 'What a mysterious item.')
+                        .setThumbnail(itemPreview)
+                        .addFields(
+                          { name: 'content hash', value: token.hash },
+                          { name: 'edition size', value: token.totalSupply + '' },
+                          { name: 'file type', value: token.ext },
+                          { name: 'file size', value: sizeString + ' (est.)' },
+                          { name: 'file resolution', value: resolutionString + ' (est.)' },
+                          { name: 'collaborators', value: collaborators.join(', ') + ' (est.)' },
+                          { name: 'has unlockable?', value: unlockable ? 'yes' : 'no' },
+                        )
+                        // .addField('Inline field title', 'Some value here', true)
+                        .setImage(itemPreview)
+                        .setTimestamp()
+                        .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
+                      message.channel.send(exampleEmbed);
                     } else if (split[0] === prefix + 'name') {
                         let { mnemonic } = await _getUser();
                         if (!mnemonic) {
