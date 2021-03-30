@@ -451,7 +451,10 @@ Secure commands (DM the bot)
                         .setImage(itemPreview)
                         .setTimestamp()
                         .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
-                      message.channel.send(exampleEmbed);
+                      const m = await message.channel.send(exampleEmbed);
+                      m.react('❌');
+                      m.requester = message.author;
+                      helps.push(m);
                     } else if (split[0] === prefix + 'name') {
                         let { mnemonic } = await _getUser();
                         if (!mnemonic) {
