@@ -302,6 +302,7 @@ Info
 .realm [num] - play link in DM to realm [1-5]
 
 Tokens
+.inspect [id] - inspect token details
 .send [@user|0xaddr|treasury] [amount] - send FT
 .transfer [@user|0xaddr|treasury] [id] [quantity]? - send NFT
 .preview [id] - preview NFT [id]; .gif for gif
