@@ -1,4 +1,4 @@
-# Brypto Bot
+# Webaverse Bot
 
 ### Add to your server
 
