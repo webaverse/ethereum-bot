@@ -705,7 +705,7 @@ Secure commands (DM the bot)
 			                  const rinkebyWeb3 = new Web3(new Web3.providers.HttpProvider(`https://rinkeby.infura.io/v3/${infuraProjectId}`));
                         const signature = await contracts.Account.methods.getMetadata(address, 'mainnetAddress').call();
                         let mainnetAddress;
-                        if (signature !== "") {
+                        if (signature !== '') {
                           mainnetAddress = await rinkebyWeb3.eth.accounts.recover("Connecting mainnet address.", signature);
                         } else {
                           message.channel.send('<@!' + message.author.id + '>: no role redeemed.');
