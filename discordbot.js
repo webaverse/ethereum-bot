@@ -28,6 +28,10 @@ const {usersTableName, prefix, storageHost, previewHost, previewExt, treasurerRo
 const embedColor = '#000000';
 const _commandToValue = ([name, args, description]) =>
   [name, args.join(' '), '-', description].join(' ');
+const _commandToDescription = ([name, args, description]) =>
+  '```css\n' +
+    [args.join(' '), '-', description].join(' ') +
+  '```';
 const _commandsToValue = commands =>
   '```css\n' +
     commands.map(command => _commandToValue(command)).join('\n') +
@@ -141,6 +145,22 @@ const helpFields = [
   o.value = _commandsToValue(o.commands);
   return o;
 });
+const _findCommand = commandName => {
+  let command = null;
+  for (const helpField of helpFields) {
+    for (const c of helpField.commands) {
+      const [name, args, description] = c;
+      if (name === commandName) {
+        command = c;
+        break;
+      }
+    }
+    if (command !== null) {
+      break;
+    }
+  }
+  return command;
+};
 
 // encryption/decryption of unlocks
 
@@ -408,20 +428,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                     const isHelp = split.length > 1 && split[split.length - 1] === '-h';
                     if (isHelp) {
                       const commandName = split[0].slice(1);
-                      let command = null;
-                      for (const helpField of helpFields) {
-                        for (const c of helpField.commands) {
-                          const [name, args, description] = c;
-                          if (name === commandName) {
-                            command = c;
-                            break;
-                          }
-                        }
-                        if (command !== null) {
-                          break;
-                        }
-                      }
-                      
+                      const command = _findCommand(commandName);
                       if (command) {
                         const [name, args, description] = command;
                         const exampleEmbed = new Discord.MessageEmbed()
@@ -438,11 +445,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           .addFields([
                             {
                               name,
-                              value: [
-                                args.join(' '),
-                                '-',
-                                description
-                              ].join(' '),
+                              value: _commandToDescription(command),
                             },
                           ]);
                         const m = await message.channel.send(exampleEmbed);
@@ -454,7 +457,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                       }
                     } else {
                       if (split[0] === prefix + 'help') {
-                        const shortname = split[1];
+                        const name = split[1];
                         const exampleEmbed = new Discord.MessageEmbed()
                           .setColor(embedColor)
                           .setTitle('Webaverse Help')
@@ -466,14 +469,23 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           // .setImage(avatarPreview)
                           // .setTimestamp()
                           // .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
-                        if (!shortname) {
+                        if (!name) {
                           exampleEmbed.addFields(helpFields);
                         } else {
-                          const helpField = helpFields.find(hf => hf.shortname === shortname) ||
-                            helpFields.find(hf => hf.shortname === 'help');
-                          exampleEmbed.addFields([
-                            helpField,
-                          ]);
+                          const command = _findCommand(name);
+                          if (command) {
+                            exampleEmbed.addFields([
+                              {
+                                name,
+                                value: _commandToDescription(command),
+                              },
+                            ]);
+                          } else {
+                            const helpField = helpFields.find(hf => hf.shortname === name) || helpFields.find(hf => hf.shortname === 'help');
+                            exampleEmbed.addFields([
+                              helpField,
+                            ]);
+                          }
                         }
                         const m = await message.channel.send(exampleEmbed);
                         m.react('❌');
