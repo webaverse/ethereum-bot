@@ -56,7 +56,7 @@ const helpFields = [
     shortname: 'tokens',
     commands: [
       ['inspect', ['[id]'], 'inspect token details'],
-      ['send', ['[@user|0xaddr|treasury]', '[amount]'], 'inspect token details'],
+      ['send', ['[@user|0xaddr|treasury]', '[amount]'], 'send [amount] of SILK to user/address'],
       ['transfer', ['[@user|0xaddr|treasury]', '[id]', '[quantity]?'], 'send NFT'],
       ['preview', ['[id]'], 'preview NFT [id]; .gif for gif'],
       ['wget', ['[id]'], 'get NFT [id] in DM'],
