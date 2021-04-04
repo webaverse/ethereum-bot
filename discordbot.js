@@ -226,6 +226,7 @@ console.log('decode it result:', {ciphertext, tag, result}); */
 
 const trades = [];
 const helps = [];
+const inventories = [];
 let nextTradeId = 0;
 
 exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransaction, ddb, treasuryAddress, abis, addresses) => {
@@ -248,22 +249,16 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                 if (message.channel.type === 'dm') {
                     message.delete();
                 } else {
-                    const helpIndex = helps.findIndex(help => help.id === message.id);
-                    if (helpIndex !== -1) {
+                    let helpIndex, trade, index, inventoryIndex;
+                    if ((helpIndex = helps.findIndex(help => help.id === message.id)) !== -1) {
                         const help = helps[helpIndex];
                         if (help.requester.id === user.id) {
                             help.delete();
                             helps.splice(helpIndex, 1);
                         }
-                    } else {
-                        const trade = trades.find(trade => trade.id === message.id);
-                        if (trade) {
-                            const index = trade.userIds.indexOf(user.id);
-                            if (index >= 0) {
-                                trade.cancel();
-                                trades.splice(trades.indexOf(trade), 1);
-                            }
-                        }
+                    } else if ((trade = trades.find(trade => trade.id === message.id)) && (index = trade.userIds.indexOf(user.id)) !== -1) {
+                        trade.cancel();
+                        trades.splice(trades.indexOf(trade), 1);
                     }
                 }
             } else if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
@@ -297,6 +292,24 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             trades.splice(trades.indexOf(trade), 1);
                         }
                     }
+                }
+            } else if (user.id !== client.user.id && emoji.identifier === '%E2%97%80%EF%B8%8F') { // left arrow ◀️
+                if ((inventoryIndex = inventories.findIndex(i => i.id === message.id)) !== -1) {
+                  const inventory = inventories[inventoryIndex];
+                  if (inventory.requester.id === user.id) {
+                      // inventory.delete();
+                      // inventories.splice(inventoryIndex, 1);
+                      inventory.left();
+                  }
+                }
+            } else if (user.id !== client.user.id && emoji.identifier === '%E2%96%B6%EF%B8%8F') { // right arrow ▶️
+                if ((inventoryIndex = inventories.findIndex(i => i.id === message.id)) !== -1) {
+                  const inventory = inventories[inventoryIndex];
+                  if (inventory.requester.id === user.id) {
+                      // inventory.delete();
+                      // inventories.splice(inventoryIndex, 1);
+                      inventory.right();
+                  }
                 }
             }
         });
@@ -2363,6 +2376,70 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                         m.react('❌');
                         m.requester = message.author;
                         helps.push(m);
+                      } else if (split[0] === prefix + 'inv') {
+                        let mnemonic;
+                        const spec = await _getUser(message.author.id);
+                        mnemonic = spec.mnemonic;
+                        if (!mnemonic) {
+                            const spec = await _genKey(message.author.id);
+                            mnemonic = spec.mnemonic;
+                        }
+
+                        const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                        const address = wallet.getAddressString();
+                        const name = await contracts.Account.methods.getMetadata(address, 'name').call();
+
+                        let pageIndex = 1;
+                        const exampleEmbed = new Discord.MessageEmbed()
+                          .setColor(embedColor)
+                          .setTitle(`${name}'s inventory`)
+                          .setURL(`https://webaverse.com/accounts/${address}`)
+                          // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
+                          // .setDescription(description || 'This person is a noob without a description.')
+                          // .setThumbnail(avatarPreview)
+                          // .addField('Inline field title', 'Some value here', true)
+                          // .setImage(avatarPreview)
+                          // .setTimestamp()
+                          // .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
+                          .addFields([
+                            {
+                              name: 'page',
+                              value: pageIndex,
+                            },
+                          ]);
+                        const m = await message.channel.send(exampleEmbed);
+                        m.react('◀️');
+                        m.react('▶️');
+                        m.requester = message.author;
+                        const _render = async () => {
+                          const exampleEmbed2 = new Discord.MessageEmbed()
+                            .setColor(embedColor)
+                            .setTitle('Webaverse Inventory')
+                            .setURL(`https://webaverse.com/`)
+                            // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
+                            // .setDescription(description || 'This person is a noob without a description.')
+                            // .setThumbnail(avatarPreview)
+                            // .addField('Inline field title', 'Some value here', true)
+                            // .setImage(avatarPreview)
+                            // .setTimestamp()
+                            // .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
+                            .addFields([
+                              {
+                                name: 'page',
+                                value: pageIndex,
+                              },
+                            ]);
+                          const m2 = await m.edit(exampleEmbed2);
+                        };
+                        m.left = () => {
+                          pageIndex--;
+                          _render();
+                        };
+                        m.right = () => {
+                          pageIndex++;
+                          _render();
+                        };
+                        inventories.push(m);
                       } else if (split[0] === prefix + 'wget' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
                           const id = parseInt(split[1], 10);
 
