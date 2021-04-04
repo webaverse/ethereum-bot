@@ -226,6 +226,7 @@ console.log('decode it result:', {ciphertext, tag, result}); */
 
 const trades = [];
 const helps = [];
+const inventories = [];
 let nextTradeId = 0;
 
 exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransaction, ddb, treasuryAddress, abis, addresses) => {
@@ -248,22 +249,16 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                 if (message.channel.type === 'dm') {
                     message.delete();
                 } else {
-                    const helpIndex = helps.findIndex(help => help.id === message.id);
-                    if (helpIndex !== -1) {
+                    let helpIndex, trade, index, inventoryIndex;
+                    if ((helpIndex = helps.findIndex(help => help.id === message.id)) !== -1) {
                         const help = helps[helpIndex];
                         if (help.requester.id === user.id) {
                             help.delete();
                             helps.splice(helpIndex, 1);
                         }
-                    } else {
-                        const trade = trades.find(trade => trade.id === message.id);
-                        if (trade) {
-                            const index = trade.userIds.indexOf(user.id);
-                            if (index >= 0) {
-                                trade.cancel();
-                                trades.splice(trades.indexOf(trade), 1);
-                            }
-                        }
+                    } else if ((trade = trades.find(trade => trade.id === message.id)) && (index = trade.userIds.indexOf(user.id)) !== -1) {
+                        trade.cancel();
+                        trades.splice(trades.indexOf(trade), 1);
                     }
                 }
             } else if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
@@ -298,34 +293,59 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                         }
                     }
                 }
+            } else if (user.id !== client.user.id && emoji.identifier === '%E2%97%80%EF%B8%8F') { // left arrow ◀️
+                if ((inventoryIndex = inventories.findIndex(i => i.id === message.id)) !== -1) {
+                  const inventory = inventories[inventoryIndex];
+                  if (inventory.requester.id === user.id) {
+                      inventory.left();
+                  }
+                }
+            } else if (user.id !== client.user.id && emoji.identifier === '%E2%96%B6%EF%B8%8F') { // right arrow ▶️
+                if ((inventoryIndex = inventories.findIndex(i => i.id === message.id)) !== -1) {
+                  const inventory = inventories[inventoryIndex];
+                  if (inventory.requester.id === user.id) {
+                      inventory.right();
+                  }
+                }
             }
         });
         client.on('messageReactionRemove', async (reaction, user) => {
             const { data, message, emoji } = reaction;
             if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
-                const trade = trades.find(trade => trade.id === message.id);
-                if (trade) {
-                    const index = trade.userIds.indexOf(user.id);
-                    if (index >= 0) {
-                        trade.confirmations[index] = false;
-                        trade.render();
+                let trade, index;
+                if ((trade = trades.find(trade => trade.id === message.id)) && (index = trade.userIds.indexOf(user.id)) !== -1) {
+                    trade.confirmations[index] = false;
+                    trade.render();
 
-                        const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%F0%9F%92%9E');
-                        // console.log('got done reactions', Array.from(doneReactions.values()).length);
-                        try {
-                            for (const reaction of doneReactions.values()) {
-                                const users = Array.from(reaction.users.cache.values());
-                                console.log('got reaction users', users.map(u => u.id));
-                                for (const user of users) {
-                                    await reaction.users.remove(user.id);
-                                }
+                    const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%F0%9F%92%9E');
+                    // console.log('got done reactions', Array.from(doneReactions.values()).length);
+                    try {
+                        for (const reaction of doneReactions.values()) {
+                            const users = Array.from(reaction.users.cache.values());
+                            console.log('got reaction users', users.map(u => u.id));
+                            for (const user of users) {
+                                await reaction.users.remove(user.id);
                             }
-                        } catch (error) {
-                            console.error('Failed to remove reactions.', error.stack);
                         }
+                    } catch (error) {
+                        console.error('Failed to remove reactions.', error.stack);
                     }
                 }
-            }
+            } else if (user.id !== client.user.id && emoji.identifier === '%E2%97%80%EF%B8%8F') { // left arrow ◀️
+                  if ((inventoryIndex = inventories.findIndex(i => i.id === message.id)) !== -1) {
+                    const inventory = inventories[inventoryIndex];
+                    if (inventory.requester.id === user.id) {
+                        inventory.left();
+                    }
+                  }
+              } else if (user.id !== client.user.id && emoji.identifier === '%E2%96%B6%EF%B8%8F') { // right arrow ▶️
+                  if ((inventoryIndex = inventories.findIndex(i => i.id === message.id)) !== -1) {
+                    const inventory = inventories[inventoryIndex];
+                    if (inventory.requester.id === user.id) {
+                        inventory.right();
+                    }
+                  }
+              }
         });
         client.on('message', async message => {
             if (!message.author.bot) {
@@ -356,7 +376,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                 if (message.channel.type === 'text') {
                     // console.log('got message', message);
 
-                    const _items = contractName => async getEntries => {
+                    const _getPage = () => {
                         let page = parseInt(split[1], 10);
                         if (!isNaN(page)) {
                             split[2] = split[1];
@@ -367,8 +387,10 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 page = 1;
                             }
                         }
-
-                        let address, userLabel;
+                        return page;
+                    };
+                    const _items = (contractName, page) => async getEntries => {
+                        let address, userLabel, userName;
                         const _loadFromUserId = async userId => {
                             const spec = await _getUser(userId);
                             let mnemonic = spec.mnemonic;
@@ -381,22 +403,32 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             address = wallet.getAddressString();
 
                             userLabel = '<@!' + userId + '>';
+                            const o = await Promise.all([
+                              contracts.Account.methods.getMetadata(address, 'name').call(),
+                              contracts.Account.methods.getMetadata(address, 'avatarPreview').call(),
+                            ]);
+                            userName = o[0];                           
+                            avatarPreview = o[1];                           
                         };
-                        const _loadFromAddress = a => {
+                        const _loadFromAddress = async a => {
                             address = a;
                             userLabel = a;
+                            userName = a;
+                            avatarPreview = await contracts.Account.methods.getMetadata(address, 'avatarPreview').call();
                         };
-                        const _loadFromTreasury = () => {
+                        const _loadFromTreasury = async () => {
                             const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                             address = wallet.getAddressString();
                             userLabel = 'treasury';
+                            userName = userLabel;
+                            avatarPreview = await contracts.Account.methods.getMetadata(address, 'avatarPreview').call();
                         };
                         if (split.length >= 2 && (match = split[1].match(/<@!?([0-9]+)>/))) {
                             await _loadFromUserId(match[1]);
                         } else if (split.length >= 2 && (match = split[1].match(/^(0x[0-9a-f]+)$/i))) {
-                            _loadFromAddress(match[1]);
+                            await _loadFromAddress(match[1]);
                         } else if (split.length >= 2 && split[1] === 'treasury') {
-                            _loadFromTreasury();
+                            await _loadFromTreasury();
                         } else {
                             await _loadFromUserId(message.author.id);
                         }
@@ -412,7 +444,8 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
                         return {
                           userLabel,
-                          page,
+                          userName,
+                          avatarPreview,
                           numPages,
                           entries,
                         };
@@ -1543,7 +1576,8 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             message.channel.send('invalid buy id');
                           } */
                       } else if (split[0] === prefix + 'parcels') {
-                          const o = await _items('LAND')(async (address, startIndex, endIndex) => {
+                          const page = _getPage();
+                          const o = await _items('LAND', page)(async (address, startIndex, endIndex) => {
                               const promises = [];
                               for (let i = startIndex; i < endIndex; i++) {
                                   promises.push((async i => {
@@ -1565,7 +1599,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           
                           const {
                             userLabel,
-                            page,
                             numPages,
                             entries,
                           } = o;
@@ -2300,7 +2333,52 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               message.channel.send('<@!' + message.author.id + '>: invalid token id: ' + split[2]);
                           }
                       } else if (split[0] === prefix + 'inventory') {
-                          const o = await _items('NFT')(async (address, startIndex, endIndex) => {
+                          let mnemonic;
+                          const spec = await _getUser(message.author.id);
+                          mnemonic = spec.mnemonic;
+                          if (!mnemonic) {
+                              const spec = await _genKey(message.author.id);
+                              mnemonic = spec.mnemonic;
+                          }
+
+                          const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                          const address = wallet.getAddressString();
+
+                          let pageIndex = 1;
+                          let m = null;
+                          const _renderMessage = ({
+                            userName,
+                            avatarPreview,
+                            page,
+                            numPages,
+                            entries,
+                          }) => {
+                            return new Discord.MessageEmbed()
+                              .setColor(embedColor)
+                              .setTitle(`${userName}'s inventory`)
+                              // .setURL(`https://webaverse.com/accounts/${address}`)
+                              .setAuthor(userName, avatarPreview, `https://webaverse.com/accounts/${address}`)
+                              // .setDescription(description || 'This person is a noob without a description.')
+                              // .setThumbnail(avatarPreview)
+                              // .addField('Inline field title', 'Some value here', true)
+                              // .setImage(avatarPreview)
+                              // .setTimestamp()
+                              // .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
+                              .addFields(entries.map(entry => {
+                                return {
+                                  name: `${entry.id}) ${entry.name}.${entry.ext}`,
+                                  value: ` ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`,
+                                  // inline: true,
+                                };
+                              }).concat([
+                                {
+                                  name: 'page',
+                                  value: `${page}/${numPages}`,
+                                },
+                              ]));
+                          };
+                          const _render = async () => {
+                            const o = await _items('NFT', pageIndex)(async (address, startIndex, endIndex) => {
                               const hashToIds = {};
                               const promises = [];
                               for (let i = startIndex; i < endIndex; i++) {
@@ -2342,27 +2420,46 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               entries.sort((a, b) => a.id - b.id);
                               return entries;
                           }).catch(console.warn);
-                        const {
-                          userLabel,
-                          page,
-                          numPages,
-                          entries,
-                        } = o;
-                        const _print = (userLabel, page, numPages, entries) => {
-                            let s = userLabel + '\'s inventory:\n';
-                            if (entries.length > 0) {
-                                s += `Page ${page}/${numPages}` + '\n';
-                                s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`).join('\n') + '```';
-                            } else {
-                                s += '```inventory is empty!```';
-                            }
-                            return s;
+                          const {
+                            userLabel,
+                            userName,
+                            avatarPreview,
+                            numPages,
+                            entries,
+                          } = o;
+                          const exampleEmbed = _renderMessage({
+                            userName,
+                            avatarPreview,
+                            page: pageIndex,
+                            numPages,
+                            entries,
+                          });
+                          
+                          if (!m) {
+                            m = await message.channel.send(exampleEmbed);
+                            m.react('◀️');
+                            m.react('▶️');
+                            m.requester = message.author;
+                            m.left = () => {
+                              pageIndex--;
+                              pageIndex = Math.min(Math.max(pageIndex, 1), numPages);
+                              _render();
+                            };
+                            m.right = () => {
+                              pageIndex++;
+                              pageIndex = Math.min(Math.max(pageIndex, 1), numPages);
+                              _render();
+                            };
+                            inventories.push(m);
+                            
+                            m.react('❌');
+                            m.requester = message.author;
+                            helps.push(m);
+                          } else {
+                            await m.edit(exampleEmbed);
+                          }
                         };
-                        const s = _print(userLabel, page, numPages, entries);
-                        const m = await message.channel.send(s);
-                        m.react('❌');
-                        m.requester = message.author;
-                        helps.push(m);
+                        _render();
                       } else if (split[0] === prefix + 'wget' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
                           const id = parseInt(split[1], 10);
 
