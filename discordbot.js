@@ -389,7 +389,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                         }
                         return page;
                     };
-                    const _items = contractName => async (getEntries, page) => {
+                    const _items = (contractName, page) => async getEntries => {
                         let address, userLabel;
                         const _loadFromUserId = async userId => {
                             const spec = await _getUser(userId);
@@ -2399,10 +2399,15 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
                           let pageIndex = 1;
                           let m = null;
-                          const _renderMessage = ({page}) => {
+                          const _renderMessage = ({
+                            userLabel,
+                            page,
+                            numPages,
+                            entries,
+                          }) => {
                             return new Discord.MessageEmbed()
                               .setColor(embedColor)
-                              .setTitle('Webaverse Inventory')
+                              .setTitle(`${name}'s inventory`)
                               .setURL(`https://webaverse.com/`)
                               // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
                               // .setDescription(description || 'This person is a noob without a description.')
@@ -2411,15 +2416,23 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               // .setImage(avatarPreview)
                               // .setTimestamp()
                               // .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
-                              .addFields([
+                              .addFields(entries.map(entry => {
+                                return {
+                                  name: `${entry.id}) ${entry.name}.${entry.ext}`,
+                                  value: ` ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`,
+                                  // inline: true,
+                                };
+                              }).concat([
                                 {
                                   name: 'page',
-                                  value: page,
+                                  value: `${page}/${numPages}`,
                                 },
-                              ]);
+                              ]));
                           };
                           const _render = async () => {
                             const o = await _items('NFT', pageIndex)(async (address, startIndex, endIndex) => {
+                              console.log('got index', {startIndex, endIndex});
+                              
                               const hashToIds = {};
                               const promises = [];
                               for (let i = startIndex; i < endIndex; i++) {
@@ -2461,8 +2474,16 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               entries.sort((a, b) => a.id - b.id);
                               return entries;
                           }).catch(console.warn);
+                          const {
+                            userLabel,
+                            numPages,
+                            entries,
+                          } = o;
                           const exampleEmbed = _renderMessage({
+                            userLabel,
                             page: pageIndex,
+                            numPages,
+                            entries,
                           });
                           
                           if (!m) {
@@ -2472,10 +2493,12 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             m.requester = message.author;
                             m.left = () => {
                               pageIndex--;
+                              pageIndex = Math.min(Math.max(pageIndex, 1), numPages);
                               _render();
                             };
                             m.right = () => {
                               pageIndex++;
+                              pageIndex = Math.min(Math.max(pageIndex, 1), numPages);
                               _render();
                             };
                             inventories.push(m);
