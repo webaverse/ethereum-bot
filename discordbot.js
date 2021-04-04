@@ -376,7 +376,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                 if (message.channel.type === 'text') {
                     // console.log('got message', message);
 
-                    const _items = contractName => async getEntries => {
+                    const _getPage = () => {
                         let page = parseInt(split[1], 10);
                         if (!isNaN(page)) {
                             split[2] = split[1];
@@ -387,7 +387,9 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 page = 1;
                             }
                         }
-
+                        return page;
+                    };
+                    const _items = contractName => async (getEntries, page) => {
                         let address, userLabel;
                         const _loadFromUserId = async userId => {
                             const spec = await _getUser(userId);
@@ -432,7 +434,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
                         return {
                           userLabel,
-                          page,
                           numPages,
                           entries,
                         };
@@ -1563,7 +1564,8 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             message.channel.send('invalid buy id');
                           } */
                       } else if (split[0] === prefix + 'parcels') {
-                          const o = await _items('LAND')(async (address, startIndex, endIndex) => {
+                          const page = _getPage();
+                          const o = await _items('LAND', page)(async (address, startIndex, endIndex) => {
                               const promises = [];
                               for (let i = startIndex; i < endIndex; i++) {
                                   promises.push((async i => {
@@ -1585,7 +1587,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           
                           const {
                             userLabel,
-                            page,
                             numPages,
                             entries,
                           } = o;
@@ -2320,7 +2321,8 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               message.channel.send('<@!' + message.author.id + '>: invalid token id: ' + split[2]);
                           }
                       } else if (split[0] === prefix + 'inventory') {
-                          const o = await _items('NFT')(async (address, startIndex, endIndex) => {
+                          const page = _getPage();
+                          const o = await _items('NFT', page)(async (address, startIndex, endIndex) => {
                               const hashToIds = {};
                               const promises = [];
                               for (let i = startIndex; i < endIndex; i++) {
@@ -2364,7 +2366,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           }).catch(console.warn);
                         const {
                           userLabel,
-                          page,
                           numPages,
                           entries,
                         } = o;
@@ -2414,6 +2415,51 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               value: pageIndex,
                             },
                           ]);
+                          
+                          
+                          const o = await _items('NFT')(async (address, startIndex, endIndex) => {
+                            const hashToIds = {};
+                            const promises = [];
+                            for (let i = startIndex; i < endIndex; i++) {
+                                promises.push((async i => {
+                                    const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
+                                    const hash = await contracts.NFT.methods.getHash(id).call();
+                                    if (!hashToIds[hash]) {
+                                        hashToIds[hash] = [];
+                                    }
+                                    hashToIds[hash].push(id);
+                                })(i));
+                            }
+                            await Promise.all(promises);
+
+                            const entries = [];
+                            await Promise.all(Object.keys(hashToIds).map(async hash => {
+                                const ids = hashToIds[hash].sort();
+                                const id = ids[0];
+                                const [
+                                    name,
+                                    ext,
+                                    totalSupply,
+                                ] = await Promise.all([
+                                    contracts.NFT.methods.getMetadata(hash, 'name').call(),
+                                    contracts.NFT.methods.getMetadata(hash, 'ext').call(),
+                                    contracts.NFT.methods.totalSupplyOfHash(hash).call(),
+                                ]);
+                                const balance = ids.length;
+                                entries.push({
+                                    id,
+                                    ids,
+                                    hash,
+                                    name,
+                                    ext,
+                                    balance,
+                                    totalSupply,
+                                });
+                            }));
+                            entries.sort((a, b) => a.id - b.id);
+                            return entries;
+                        }).catch(console.warn);
+                          
                         const m = await message.channel.send(exampleEmbed);
                         m.react('◀️');
                         m.react('▶️');
