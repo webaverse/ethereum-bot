@@ -2385,114 +2385,105 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                         m.requester = message.author;
                         helps.push(m);
                       } else if (split[0] === prefix + 'inv') {
-                        let mnemonic;
-                        const spec = await _getUser(message.author.id);
-                        mnemonic = spec.mnemonic;
-                        if (!mnemonic) {
-                            const spec = await _genKey(message.author.id);
-                            mnemonic = spec.mnemonic;
-                        }
+                          let mnemonic;
+                          const spec = await _getUser(message.author.id);
+                          mnemonic = spec.mnemonic;
+                          if (!mnemonic) {
+                              const spec = await _genKey(message.author.id);
+                              mnemonic = spec.mnemonic;
+                          }
 
-                        const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                        const address = wallet.getAddressString();
-                        const name = await contracts.Account.methods.getMetadata(address, 'name').call();
+                          const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                          const address = wallet.getAddressString();
+                          const name = await contracts.Account.methods.getMetadata(address, 'name').call();
 
-                        let pageIndex = 1;
-                        const exampleEmbed = new Discord.MessageEmbed()
-                          .setColor(embedColor)
-                          .setTitle(`${name}'s inventory`)
-                          .setURL(`https://webaverse.com/accounts/${address}`)
-                          // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
-                          // .setDescription(description || 'This person is a noob without a description.')
-                          // .setThumbnail(avatarPreview)
-                          // .addField('Inline field title', 'Some value here', true)
-                          // .setImage(avatarPreview)
-                          // .setTimestamp()
-                          // .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
-                          .addFields([
-                            {
-                              name: 'page',
-                              value: pageIndex,
-                            },
-                          ]);
-                          
-                          
-                          const o = await _items('NFT')(async (address, startIndex, endIndex) => {
-                            const hashToIds = {};
-                            const promises = [];
-                            for (let i = startIndex; i < endIndex; i++) {
-                                promises.push((async i => {
-                                    const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
-                                    const hash = await contracts.NFT.methods.getHash(id).call();
-                                    if (!hashToIds[hash]) {
-                                        hashToIds[hash] = [];
-                                    }
-                                    hashToIds[hash].push(id);
-                                })(i));
-                            }
-                            await Promise.all(promises);
+                          let pageIndex = 1;
+                          let m = null;
+                          const _renderMessage = ({page}) => {
+                            return new Discord.MessageEmbed()
+                              .setColor(embedColor)
+                              .setTitle('Webaverse Inventory')
+                              .setURL(`https://webaverse.com/`)
+                              // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
+                              // .setDescription(description || 'This person is a noob without a description.')
+                              // .setThumbnail(avatarPreview)
+                              // .addField('Inline field title', 'Some value here', true)
+                              // .setImage(avatarPreview)
+                              // .setTimestamp()
+                              // .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
+                              .addFields([
+                                {
+                                  name: 'page',
+                                  value: page,
+                                },
+                              ]);
+                          };
+                          const _render = async () => {
+                            const o = await _items('NFT', pageIndex)(async (address, startIndex, endIndex) => {
+                              const hashToIds = {};
+                              const promises = [];
+                              for (let i = startIndex; i < endIndex; i++) {
+                                  promises.push((async i => {
+                                      const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
+                                      const hash = await contracts.NFT.methods.getHash(id).call();
+                                      if (!hashToIds[hash]) {
+                                          hashToIds[hash] = [];
+                                      }
+                                      hashToIds[hash].push(id);
+                                  })(i));
+                              }
+                              await Promise.all(promises);
 
-                            const entries = [];
-                            await Promise.all(Object.keys(hashToIds).map(async hash => {
-                                const ids = hashToIds[hash].sort();
-                                const id = ids[0];
-                                const [
-                                    name,
-                                    ext,
-                                    totalSupply,
-                                ] = await Promise.all([
-                                    contracts.NFT.methods.getMetadata(hash, 'name').call(),
-                                    contracts.NFT.methods.getMetadata(hash, 'ext').call(),
-                                    contracts.NFT.methods.totalSupplyOfHash(hash).call(),
-                                ]);
-                                const balance = ids.length;
-                                entries.push({
-                                    id,
-                                    ids,
-                                    hash,
-                                    name,
-                                    ext,
-                                    balance,
-                                    totalSupply,
-                                });
-                            }));
-                            entries.sort((a, b) => a.id - b.id);
-                            return entries;
-                        }).catch(console.warn);
+                              const entries = [];
+                              await Promise.all(Object.keys(hashToIds).map(async hash => {
+                                  const ids = hashToIds[hash].sort();
+                                  const id = ids[0];
+                                  const [
+                                      name,
+                                      ext,
+                                      totalSupply,
+                                  ] = await Promise.all([
+                                      contracts.NFT.methods.getMetadata(hash, 'name').call(),
+                                      contracts.NFT.methods.getMetadata(hash, 'ext').call(),
+                                      contracts.NFT.methods.totalSupplyOfHash(hash).call(),
+                                  ]);
+                                  const balance = ids.length;
+                                  entries.push({
+                                      id,
+                                      ids,
+                                      hash,
+                                      name,
+                                      ext,
+                                      balance,
+                                      totalSupply,
+                                  });
+                              }));
+                              entries.sort((a, b) => a.id - b.id);
+                              return entries;
+                          }).catch(console.warn);
+                          const exampleEmbed = _renderMessage({
+                            page: pageIndex,
+                          });
                           
-                        const m = await message.channel.send(exampleEmbed);
-                        m.react('◀️');
-                        m.react('▶️');
-                        m.requester = message.author;
-                        const _render = async () => {
-                          const exampleEmbed2 = new Discord.MessageEmbed()
-                            .setColor(embedColor)
-                            .setTitle('Webaverse Inventory')
-                            .setURL(`https://webaverse.com/`)
-                            // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
-                            // .setDescription(description || 'This person is a noob without a description.')
-                            // .setThumbnail(avatarPreview)
-                            // .addField('Inline field title', 'Some value here', true)
-                            // .setImage(avatarPreview)
-                            // .setTimestamp()
-                            // .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
-                            .addFields([
-                              {
-                                name: 'page',
-                                value: pageIndex,
-                              },
-                            ]);
-                          const m2 = await m.edit(exampleEmbed2);
+                          if (!m) {
+                            m = await message.channel.send(exampleEmbed);
+                            m.react('◀️');
+                            m.react('▶️');
+                            m.requester = message.author;
+                            m.left = () => {
+                              pageIndex--;
+                              _render();
+                            };
+                            m.right = () => {
+                              pageIndex++;
+                              _render();
+                            };
+                            inventories.push(m);
+                          } else {
+                            await m.edit(exampleEmbed);
+                          }
                         };
-                        m.left = () => {
-                          pageIndex--;
-                          _render();
-                        };
-                        m.right = () => {
-                          pageIndex++;
-                          _render();
-                        };
-                        inventories.push(m);
+                        _render();
                       } else if (split[0] === prefix + 'wget' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
                           const id = parseInt(split[1], 10);
 
