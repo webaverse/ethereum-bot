@@ -297,8 +297,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                 if ((inventoryIndex = inventories.findIndex(i => i.id === message.id)) !== -1) {
                   const inventory = inventories[inventoryIndex];
                   if (inventory.requester.id === user.id) {
-                      // inventory.delete();
-                      // inventories.splice(inventoryIndex, 1);
                       inventory.left();
                   }
                 }
@@ -306,8 +304,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                 if ((inventoryIndex = inventories.findIndex(i => i.id === message.id)) !== -1) {
                   const inventory = inventories[inventoryIndex];
                   if (inventory.requester.id === user.id) {
-                      // inventory.delete();
-                      // inventories.splice(inventoryIndex, 1);
                       inventory.right();
                   }
                 }
@@ -316,29 +312,40 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
         client.on('messageReactionRemove', async (reaction, user) => {
             const { data, message, emoji } = reaction;
             if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
-                const trade = trades.find(trade => trade.id === message.id);
-                if (trade) {
-                    const index = trade.userIds.indexOf(user.id);
-                    if (index >= 0) {
-                        trade.confirmations[index] = false;
-                        trade.render();
+                let trade, index;
+                if ((trade = trades.find(trade => trade.id === message.id)) && (index = trade.userIds.indexOf(user.id)) !== -1) {
+                    trade.confirmations[index] = false;
+                    trade.render();
 
-                        const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%F0%9F%92%9E');
-                        // console.log('got done reactions', Array.from(doneReactions.values()).length);
-                        try {
-                            for (const reaction of doneReactions.values()) {
-                                const users = Array.from(reaction.users.cache.values());
-                                console.log('got reaction users', users.map(u => u.id));
-                                for (const user of users) {
-                                    await reaction.users.remove(user.id);
-                                }
+                    const doneReactions = trade.reactions.cache.filter(reaction => reaction.emoji.identifier === '%F0%9F%92%9E');
+                    // console.log('got done reactions', Array.from(doneReactions.values()).length);
+                    try {
+                        for (const reaction of doneReactions.values()) {
+                            const users = Array.from(reaction.users.cache.values());
+                            console.log('got reaction users', users.map(u => u.id));
+                            for (const user of users) {
+                                await reaction.users.remove(user.id);
                             }
-                        } catch (error) {
-                            console.error('Failed to remove reactions.', error.stack);
                         }
+                    } catch (error) {
+                        console.error('Failed to remove reactions.', error.stack);
                     }
                 }
-            }
+            } else if (user.id !== client.user.id && emoji.identifier === '%E2%97%80%EF%B8%8F') { // left arrow ◀️
+                  if ((inventoryIndex = inventories.findIndex(i => i.id === message.id)) !== -1) {
+                    const inventory = inventories[inventoryIndex];
+                    if (inventory.requester.id === user.id) {
+                        inventory.left();
+                    }
+                  }
+              } else if (user.id !== client.user.id && emoji.identifier === '%E2%96%B6%EF%B8%8F') { // right arrow ▶️
+                  if ((inventoryIndex = inventories.findIndex(i => i.id === message.id)) !== -1) {
+                    const inventory = inventories[inventoryIndex];
+                    if (inventory.requester.id === user.id) {
+                        inventory.right();
+                    }
+                  }
+              }
         });
         client.on('message', async message => {
             if (!message.author.bot) {
