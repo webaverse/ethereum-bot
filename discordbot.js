@@ -2451,6 +2451,10 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               _render();
                             };
                             inventories.push(m);
+                            
+                            m.react('❌');
+                            m.requester = message.author;
+                            helps.push(m);
                           } else {
                             await m.edit(exampleEmbed);
                           }
