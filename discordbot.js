@@ -356,7 +356,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                 if (message.channel.type === 'text') {
                     // console.log('got message', message);
 
-                    const _items = contractName => async (getEntries, print) => {
+                    const _items = contractName => async getEntries => {
                         let page = parseInt(split[1], 10);
                         if (!isNaN(page)) {
                             split[2] = split[1];
@@ -410,11 +410,12 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
                         const entries = await getEntries(address, startIndex, endIndex);
 
-                        const s = print(userLabel, page, numPages, entries);
-                        const m = await message.channel.send(s);
-                        m.react('❌');
-                        m.requester = message.author;
-                        helps.push(m);
+                        return {
+                          userLabel,
+                          page,
+                          numPages,
+                          entries,
+                        };
                     };
 
                     /* if (/grease/.test(message.content)) {
@@ -1542,7 +1543,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             message.channel.send('invalid buy id');
                           } */
                       } else if (split[0] === prefix + 'parcels') {
-                          await _items('LAND')(async (address, startIndex, endIndex) => {
+                          const o = await _items('LAND')(async (address, startIndex, endIndex) => {
                               const promises = [];
                               for (let i = startIndex; i < endIndex; i++) {
                                   promises.push((async i => {
@@ -1560,7 +1561,15 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               }
                               const entries = await Promise.all(promises);
                               return entries;
-                          }, (userLabel, page, numPages, entries) => {
+                          }).catch(console.warn);
+                          
+                          const {
+                            userLabel,
+                            page,
+                            numPages,
+                            entries,
+                          } = o;
+                          const _print = (userLabel, page, numPages, entries) => {
                               let s = userLabel + '\'s parcels:\n';
                               if (entries.length > 0) {
                                   s += `Page ${page}/${numPages}` + '\n';
@@ -1569,7 +1578,12 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                   s += '```no parcels owned```';
                               }
                               return s;
-                          }).catch(console.warn);
+                          };
+                          const s = _print(userLabel, page, numPages, entries);
+                          const m = await message.channel.send(s);
+                          m.react('❌');
+                          m.requester = message.author;
+                          helps.push(m);
                       } else if (split[0] === prefix + 'deploy' && split.length >= 3) {
                           const tokenId = parseInt(split[1], 10);
                           const contentId = split[2];
@@ -2286,7 +2300,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               message.channel.send('<@!' + message.author.id + '>: invalid token id: ' + split[2]);
                           }
                       } else if (split[0] === prefix + 'inventory') {
-                          await _items('NFT')(async (address, startIndex, endIndex) => {
+                          const o = await _items('NFT')(async (address, startIndex, endIndex) => {
                               const hashToIds = {};
                               const promises = [];
                               for (let i = startIndex; i < endIndex; i++) {
@@ -2327,16 +2341,28 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               }));
                               entries.sort((a, b) => a.id - b.id);
                               return entries;
-                          }, (userLabel, page, numPages, entries) => {
-                              let s = userLabel + '\'s inventory:\n';
-                              if (entries.length > 0) {
-                                  s += `Page ${page}/${numPages}` + '\n';
-                                  s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`).join('\n') + '```';
-                              } else {
-                                  s += '```inventory is empty!```';
-                              }
-                              return s;
                           }).catch(console.warn);
+                        const {
+                          userLabel,
+                          page,
+                          numPages,
+                          entries,
+                        } = o;
+                        const _print = (userLabel, page, numPages, entries) => {
+                            let s = userLabel + '\'s inventory:\n';
+                            if (entries.length > 0) {
+                                s += `Page ${page}/${numPages}` + '\n';
+                                s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`).join('\n') + '```';
+                            } else {
+                                s += '```inventory is empty!```';
+                            }
+                            return s;
+                        };
+                        const s = _print(userLabel, page, numPages, entries);
+                        const m = await message.channel.send(s);
+                        m.react('❌');
+                        m.requester = message.author;
+                        helps.push(m);
                       } else if (split[0] === prefix + 'wget' && split.length >= 2 && !isNaN(parseInt(split[1], 10))) {
                           const id = parseInt(split[1], 10);
 
