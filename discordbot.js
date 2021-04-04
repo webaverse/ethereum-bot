@@ -390,7 +390,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                         return page;
                     };
                     const _items = (contractName, page) => async getEntries => {
-                        let address, userLabel;
+                        let address, userLabel, userName;
                         const _loadFromUserId = async userId => {
                             const spec = await _getUser(userId);
                             let mnemonic = spec.mnemonic;
@@ -403,15 +403,18 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             address = wallet.getAddressString();
 
                             userLabel = '<@!' + userId + '>';
+                            userName = await contracts.Account.methods.getMetadata(address, 'name').call();
                         };
                         const _loadFromAddress = a => {
                             address = a;
                             userLabel = a;
+                            userName = userLabel;
                         };
                         const _loadFromTreasury = () => {
                             const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                             address = wallet.getAddressString();
                             userLabel = 'treasury';
+                            userName = userLabel;
                         };
                         if (split.length >= 2 && (match = split[1].match(/<@!?([0-9]+)>/))) {
                             await _loadFromUserId(match[1]);
@@ -434,6 +437,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
                         return {
                           userLabel,
+                          userName,
                           numPages,
                           entries,
                         };
@@ -2366,11 +2370,12 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           }).catch(console.warn);
                         const {
                           userLabel,
+                          userName,
                           numPages,
                           entries,
                         } = o;
-                        const _print = (userLabel, page, numPages, entries) => {
-                            let s = userLabel + '\'s inventory:\n';
+                        const _print = (userName, page, numPages, entries) => {
+                            let s = userName + '\'s inventory:\n';
                             if (entries.length > 0) {
                                 s += `Page ${page}/${numPages}` + '\n';
                                 s += '```' + entries.map((entry, i) => `${entry.id}. ${entry.name} ${entry.ext} ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`).join('\n') + '```';
@@ -2379,7 +2384,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             }
                             return s;
                         };
-                        const s = _print(userLabel, page, numPages, entries);
+                        const s = _print(userName, page, numPages, entries);
                         const m = await message.channel.send(s);
                         m.react('❌');
                         m.requester = message.author;
@@ -2395,19 +2400,18 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
                           const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                           const address = wallet.getAddressString();
-                          const name = await contracts.Account.methods.getMetadata(address, 'name').call();
 
                           let pageIndex = 1;
                           let m = null;
                           const _renderMessage = ({
-                            userLabel,
+                            userName,
                             page,
                             numPages,
                             entries,
                           }) => {
                             return new Discord.MessageEmbed()
                               .setColor(embedColor)
-                              .setTitle(`${name}'s inventory`)
+                              .setTitle(`${userName}'s inventory`)
                               .setURL(`https://webaverse.com/`)
                               // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
                               // .setDescription(description || 'This person is a noob without a description.')
@@ -2431,7 +2435,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           };
                           const _render = async () => {
                             const o = await _items('NFT', pageIndex)(async (address, startIndex, endIndex) => {
-                              console.log('got index', {startIndex, endIndex});
+                              // console.log('got index', {startIndex, endIndex});
                               
                               const hashToIds = {};
                               const promises = [];
@@ -2476,11 +2480,12 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           }).catch(console.warn);
                           const {
                             userLabel,
+                            userName,
                             numPages,
                             entries,
                           } = o;
                           const exampleEmbed = _renderMessage({
-                            userLabel,
+                            userName,
                             page: pageIndex,
                             numPages,
                             entries,
