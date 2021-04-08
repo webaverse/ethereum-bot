@@ -2442,7 +2442,9 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             m.requester = message.author;
                             m.left = () => {
                               pageIndex--;
-                              pageIndex = Math.min(Math.max(pageIndex, 1), numPages);
+                              if (pageIndex < 1) {
+                                pageIndex = numPages;
+                              }
                               _render();
                             };
                             m.right = () => {
