@@ -2449,7 +2449,9 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             };
                             m.right = () => {
                               pageIndex++;
-                              pageIndex = Math.min(Math.max(pageIndex, 1), numPages);
+                              if (pageIndex > numPages) {
+                                pageIndex = 1;
+                              }
                               _render();
                             };
                             inventories.push(m);
