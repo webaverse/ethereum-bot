@@ -23,7 +23,17 @@ const {
   twitterWebhookPort,
   ngrokToken,
   serverPort
-} = require('./config.json');
+} = require('fs').existsSync('./config.json') ? require('./config.json') : {
+  treasuryMnemonic: process.env.treasuryMnemonic,
+  twitterConsumerSecret: process.env.twitterConsumerSecret,
+  twitterConsumerSecret: process.env.twitterConsumerSecret,
+  twitterAccessToken: process.env.twitterAccessToken,
+  twitterAccessTokenSecret: process.env.twitterAccessTokenSecret,
+  twitterId: process.env.twitterId,
+  twitterWebhookPort: process.env.twitterWebhookPort,
+  ngrokToken: process.env.ngrokToken,
+  serverPort: process.env.serverPort
+  }
 
 const twitterConfigInvalid =
   twitterConsumerKey === undefined ||

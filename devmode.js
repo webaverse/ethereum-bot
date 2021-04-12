@@ -1,10 +1,11 @@
-const {
-    accessKeyId,
-    secretAccessKey,
-    tradeMnemonic,
-    treasuryMnemonic,
-    discordApiToken
-} = require('./config.json');
+const { accessKeyId, secretAccessKey, tradeMnemonic, treasuryMnemonic, discordApiToken } = 
+require('fs').existsSync('./config.json') ? require('./config.json') : {
+    accessKeyId: process.env.accessKeyId,
+    secretAccessKey: process.env.secretAccessKey,
+    tradeMnemonic: process.env.tradeMnemonic,
+    treasuryMnemonic: process.env.treasuryMnemonic,
+    discordApiToken: process.env.discordApiToken
+  }
 
 exports.devMode = accessKeyId === undefined ||
     secretAccessKey === undefined ||

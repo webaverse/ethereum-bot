@@ -17,7 +17,17 @@ const { default: Common } = require('@ethereumjs/common');
 const { hdkey } = require('ethereumjs-wallet');
 const prettyBytes = require('pretty-bytes');
 
-const { discordApiToken, tradeMnemonic, treasuryMnemonic, infuraProjectId, genesisNftStartId, genesisNftEndId, encryptionMnemonic } = require('./config.json');
+const { discordApiToken, tradeMnemonic, treasuryMnemonic, infuraProjectId, genesisNftStartId, genesisNftEndId, encryptionMnemonic } =
+require('fs').existsSync('./config.json') ? require('./config.json') : {
+    tradeMnemonic: process.env.tradeMnemonic,
+    treasuryMnemonic: process.env.treasuryMnemonic,
+    discordApiToken: process.env.discordApiToken,
+    infuraProjectId: process.env.infuraProjectId,
+    genesisNftStartId: process.env.genesisNftStartId,
+    genesisNftEndId: process.env.genesisNftEndId,
+    encryptionMnemonic: process.env.encryptionMnemonic
+  }
+
 
 // isCollaborator
 // only collaborator can set

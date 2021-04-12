@@ -7,7 +7,12 @@ const { Transaction } = require('@ethereumjs/tx');
 const { default: Common } = require('@ethereumjs/common');
 const { hdkey } = require('ethereumjs-wallet');
 
-const { accessKeyId, secretAccessKey, treasuryMnemonic } = require('./config.json');
+const { accessKeyId, secretAccessKey, treasuryMnemonic } =
+require('fs').existsSync('./config.json') ? require('./config.json') : {
+    accessKeyId: process.env.accessKeyId,
+    secretAccessKey: process.env.secretAccessKey,
+    treasuryMnemonic: process.env.treasuryMnemonic
+  }
 
 const { ethereumHost } = require('./constants.js');
 
