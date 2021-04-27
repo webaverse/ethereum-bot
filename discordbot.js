@@ -17,6 +17,7 @@ const { default: Common } = require('@ethereumjs/common');
 const { hdkey } = require('ethereumjs-wallet');
 const prettyBytes = require('pretty-bytes');
 
+const {encodeSecret, decodeSecret} = require('./encryption.js');
 const { discordApiToken, tradeMnemonic, treasuryMnemonic, infuraProjectId, genesisNftStartId, genesisNftEndId, encryptionMnemonic } =
 require('fs').existsSync('./config.json') ? require('./config.json') : {
     tradeMnemonic: process.env.tradeMnemonic,
@@ -188,50 +189,6 @@ const {pipeline, PassThrough} = require('stream');
 const {randomBytes, createCipheriv, createDecipheriv} = require('crypto');
 
 const unlockableKey = 'unlockable';
-const encodeSecret = (mnemonic, id, secret, encoding) => {
-  const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-  const privateKey = wallet.privateKey;
-
-  const key = privateKey.slice(0, 24);
-  // const aad = Buffer.from('0123456789', 'hex');
-
-  const nonce = Buffer.alloc(12);
-  const dataView = new DataView(nonce.buffer);
-  dataView.setUint32(0, id);
-  const cipher = createCipheriv('aes-192-ccm', key, nonce, {
-    authTagLength: 16
-  });
-  /* cipher.setAAD(aad, {
-    plaintextLength: Buffer.byteLength(secret)
-  }); */
-  const ciphertext = cipher.update(secret, encoding);
-  cipher.final();
-  const tag = cipher.getAuthTag();
-  return {
-    ciphertext,
-    tag,
-  };
-};
-const decodeSecret = (mnemonic, id, {ciphertext, tag}, encoding) => {
-  const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-  const privateKey = wallet.privateKey;
-
-  const key = privateKey.slice(0, 24);
-  // const aad = Buffer.from('0123456789', 'hex');
-
-  const nonce = Buffer.alloc(12);
-  const dataView = new DataView(nonce.buffer);
-  dataView.setUint32(0, id);
-  const decipher = createDecipheriv('aes-192-ccm', key, nonce, {
-    authTagLength: 16
-  });
-  decipher.setAuthTag(tag);
-  /* decipher.setAAD(aad, {
-    plaintextLength: ciphertext.length
-  }); */
-  const receivedPlaintext = decipher.update(ciphertext, null, encoding);
-  return receivedPlaintext;
-};
 
 // locals
 
