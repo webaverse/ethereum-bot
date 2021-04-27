@@ -37,7 +37,7 @@ const decodeSecret = (mnemonic, id, {ciphertext, tag}, encoding) => {
   const dataView = new DataView(nonce.buffer);
   dataView.setUint32(0, id);
   const decipher = createDecipheriv('aes-192-ccm', key, nonce, {
-    authTagLength: 16
+    authTagLength: 16,
   });
   decipher.setAuthTag(tag);
   /* decipher.setAAD(aad, {
