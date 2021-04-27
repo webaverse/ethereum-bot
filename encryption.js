@@ -1,5 +1,6 @@
 const bip39 = require('bip39');
 const {hdkey} = require('ethereumjs-wallet');
+const {createCipheriv, createDecipheriv} = require('crypto');
 
 const encodeSecret = (mnemonic, id, secret, encoding) => {
   const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
