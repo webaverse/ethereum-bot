@@ -3,6 +3,7 @@ const url = require('url');
 const http = require('http');
 const https = require('https');
 const crypto = require('crypto');
+const {randomBytes} = crypto;
 
 const mime = require('mime');
 const Discord = require('discord.js');
@@ -184,9 +185,6 @@ const _parseWords = s => {
   }
   return words;
 };
-
-const {pipeline, PassThrough} = require('stream');
-const {randomBytes, createCipheriv, createDecipheriv} = require('crypto');
 
 const unlockableKey = 'unlockable';
 
