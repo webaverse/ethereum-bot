@@ -13,7 +13,7 @@ const encodeSecret = (mnemonic, id, secret, encoding) => {
   const dataView = new DataView(nonce.buffer);
   dataView.setUint32(0, id);
   const cipher = createCipheriv('aes-192-ccm', key, nonce, {
-    authTagLength: 16
+    authTagLength: 16,
   });
   /* cipher.setAAD(aad, {
     plaintextLength: Buffer.byteLength(secret)
