@@ -227,10 +227,6 @@ const decodeSecret = (mnemonic, {ciphertext, tag}) => {
   const receivedPlaintext = decipher.update(ciphertext, null, 'utf8');
   return receivedPlaintext;
 };
-/* const mnemonic = 'pupil advance filter upgrade payment sheriff polar animal inflict tide grace south';
-const {ciphertext, tag} = encodeSecret(mnemonic, 'lol');
-const result = decodeSecret(mnemonic, {ciphertext, tag});
-console.log('decode it result:', {ciphertext, tag, result}); */
 
 // locals
 
