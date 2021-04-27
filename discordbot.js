@@ -3,6 +3,7 @@ const url = require('url');
 const http = require('http');
 const https = require('https');
 const crypto = require('crypto');
+const {randomBytes} = crypto;
 
 const mime = require('mime');
 const Discord = require('discord.js');
@@ -17,6 +18,7 @@ const { default: Common } = require('@ethereumjs/common');
 const { hdkey } = require('ethereumjs-wallet');
 const prettyBytes = require('pretty-bytes');
 
+const {encodeSecret, decodeSecret} = require('./encryption.js');
 const { discordApiToken, tradeMnemonic, treasuryMnemonic, infuraProjectId, genesisNftStartId, genesisNftEndId, encryptionMnemonic } =
 require('fs').existsSync('./config.json') ? require('./config.json') : {
     tradeMnemonic: process.env.tradeMnemonic,
@@ -184,53 +186,7 @@ const _parseWords = s => {
   return words;
 };
 
-const {pipeline, PassThrough} = require('stream');
-const {randomBytes, createCipheriv, createDecipheriv} = require('crypto');
-
 const unlockableKey = 'unlockable';
-const nonce = Buffer.alloc(12);
-const encodeSecret = (mnemonic, secret) => {
-  const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-  const privateKey = wallet.privateKey;
-
-  const key = privateKey.slice(0, 24);
-  // const aad = Buffer.from('0123456789', 'hex');
-
-  const cipher = createCipheriv('aes-192-ccm', key, nonce, {
-    authTagLength: 16
-  });
-  /* cipher.setAAD(aad, {
-    plaintextLength: Buffer.byteLength(secret)
-  }); */
-  const ciphertext = cipher.update(secret, 'utf8');
-  cipher.final();
-  const tag = cipher.getAuthTag();
-  return {
-    ciphertext,
-    tag,
-  };
-};
-const decodeSecret = (mnemonic, {ciphertext, tag}) => {
-  const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-  const privateKey = wallet.privateKey;
-
-  const key = privateKey.slice(0, 24);
-  // const aad = Buffer.from('0123456789', 'hex');
-
-  const decipher = createDecipheriv('aes-192-ccm', key, nonce, {
-    authTagLength: 16
-  });
-  decipher.setAuthTag(tag);
-  /* decipher.setAAD(aad, {
-    plaintextLength: ciphertext.length
-  }); */
-  const receivedPlaintext = decipher.update(ciphertext, null, 'utf8');
-  return receivedPlaintext;
-};
-/* const mnemonic = 'pupil advance filter upgrade payment sheriff polar animal inflict tide grace south';
-const {ciphertext, tag} = encodeSecret(mnemonic, 'lol');
-const result = decodeSecret(mnemonic, {ciphertext, tag});
-console.log('decode it result:', {ciphertext, tag, result}); */
 
 // locals
 
@@ -2773,7 +2729,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               let {ciphertext, tag} = value;
                               ciphertext = Buffer.from(ciphertext, 'base64');
                               tag = Buffer.from(tag, 'base64');
-                              value = decodeSecret(encryptionMnemonic, {ciphertext, tag});
+                              value = decodeSecret(encryptionMnemonic, id, {ciphertext, tag}, 'utf8');
                             }
 
                             // console.log('get value ok', {key, value});
@@ -3087,7 +3043,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             let {ciphertext, tag} = value;
                             ciphertext = Buffer.from(ciphertext, 'base64');
                             tag = Buffer.from(tag, 'base64');
-                            value = decodeSecret(encryptionMnemonic, {ciphertext, tag});
+                            value = decodeSecret(encryptionMnemonic, id, {ciphertext, tag}, 'utf8');
                           }
 
                           // console.log('get value ok', {key, value});
@@ -3115,7 +3071,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                         const isC = await contracts.NFT.methods.isCollaborator(hash, address).call();
 
                         if (isC) {
-                          let {ciphertext, tag} = encodeSecret(encryptionMnemonic, value);
+                          let {ciphertext, tag} = encodeSecret(encryptionMnemonic, id, value, 'utf8');
                           ciphertext = ciphertext.toString('base64');
                           tag = tag.toString('base64');
                           value = JSON.stringify({
