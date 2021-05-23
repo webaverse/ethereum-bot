@@ -67,15 +67,15 @@ const helpFields = [
     name: 'Tokens',
     shortname: 'tokens',
     commands: [
-      ['inspect', ['[id]'], 'inspect token details'],
+      ['inspect', ['[nftid]'], 'inspect token details'],
       ['send', ['[@user|0xaddr|treasury]', '[amount]'], 'send [amount] of SILK to user/address'],
-      ['transfer', ['[@user|0xaddr|treasury]', '[id]', '[quantity]?'], 'send NFT'],
-      ['preview', ['[id]'], 'preview NFT [id]; .gif for gif'],
-      ['wget', ['[id]'], 'get NFT [id] in DM'],
-      ['get', ['[id]', '[key]'], 'get metadata for NFT'],
-      ['set', ['[id]', '[key]', '[value]'], 'set metadata for NFT'],
-      ['collab', ['[@user|0xaddr]', '[tokenId]'], 'add collaborator for [tokenId]'],
-      ['uncollab', ['[@user|0xaddr]', '[tokenId]'], 'remove collaborator for [tokenId]'],
+      ['transfer', ['[@user|0xaddr|treasury]', '[nftid]', '[quantity]?'], 'send NFT'],
+      ['preview', ['[nftid]'], 'preview the NFT; .gif for gif'],
+      ['wget', ['[nftid]'], 'get NFT file in DM'],
+      ['get', ['[nftid]', '[key]'], 'get metadata for NFT'],
+      ['set', ['[nftid]', '[key]', '[value]'], 'set metadata for NFT'],
+      ['collab', ['[@user|0xaddr]', '[nftid]'], 'add collaborator for [nftid]'],
+      ['uncollab', ['[@user|0xaddr]', '[nftid]'], 'remove collaborator for [nftid]'],
     ],
   },
   {
@@ -84,9 +84,9 @@ const helpFields = [
     commands: [
       ['name', ['[newname]'], 'set name to [name]'],
       ['monetizationpointer', ['[mp]'], 'set monetization pointer'],
-      ['avatar', ['[id]'], 'set avatar'],
-      ['loadout', ['[num]', '[id]'], 'set loadout NFT [1-8] to [id]'],
-      ['homespace', ['[id]'], 'set NFT as home space'],
+      ['avatar', ['[nftid]'], 'set avatar'],
+      ['loadout', ['[num]', '[nftid]'], 'set loadout NFT [1-8] to [nftid]'],
+      ['homespace', ['[nftid]'], 'set NFT as home space'],
       ['redeem', [], 'redeem NFT roles'],
     ],
   },
@@ -96,7 +96,7 @@ const helpFields = [
     commands: [
       ['mint', ['[count]?'], 'mint NFTs from file drag n drop'],
       ['mint', ['[count]?', '[url]'], 'mint NFTs from [url]'],
-      ['update', ['[id] (upload comment)'], 'update nft content'],
+      ['update', ['[nftid] (upload comment)'], 'update nft content'],
     ],
   },
   {
@@ -143,7 +143,7 @@ const helpFields = [
     commands: [
       ['key', ['[new mnemonic]'], 'set private key'],
       ['key', ['reset'], 'generate new private key'],
-      ['gets/.sets', [''], 'encrypted get/set'],
+      ['gets/.sets', [''], 'Unlockables: get/set encrypted messages'],
     ],
   },
   {
