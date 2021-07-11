@@ -19,24 +19,31 @@ const { hdkey } = require('ethereumjs-wallet');
 const prettyBytes = require('pretty-bytes');
 
 const {encodeSecret, decodeSecret} = require('./encryption.js');
-const { discordApiToken, tradeMnemonic, treasuryMnemonic, infuraProjectId, genesisNftStartId, genesisNftEndId, encryptionMnemonic } =
-require('fs').existsSync('./config.json') ? require('./config.json') : {
-    tradeMnemonic: process.env.tradeMnemonic,
-    treasuryMnemonic: process.env.treasuryMnemonic,
-    discordApiToken: process.env.discordApiToken,
-    infuraProjectId: process.env.infuraProjectId,
-    genesisNftStartId: process.env.genesisNftStartId,
-    genesisNftEndId: process.env.genesisNftEndId,
-    encryptionMnemonic: process.env.encryptionMnemonic
-  }
+const {
+    discordAdminRole,
+    discordEmbedContent,
+    discordRoleChannel,
+    discordRoles,
+    discordApiToken,
+    tradeMnemonic,
+    treasuryMnemonic,
+    infuraProjectId,
+    genesisNftStartId,
+    genesisNftEndId,
+    encryptionMnemonic } = require('./config.json');
 
+  // Bot will listen to this for role reactions
+  // Bot will embed this message for reaction roles (in config)
+  const roleEmbed = new Discord.MessageEmbed(discordEmbedContent)
+
+  var discordRoleMessageId;
 
 // isCollaborator
 // only collaborator can set
 // only collaborator or owner can get
 
 const { jsonParse } = require('./utilities.js');
-const {usersTableName, prefix, storageHost, previewHost, previewExt, treasurerRoleName} = require('./constants.js');
+const {usersTableName, serverRolesTableName, redeemablesTableName, prefix, storageHost, previewHost, previewExt, treasurerRoleName} = require('./constants.js');
 const embedColor = '#000000';
 const _commandToValue = ([name, args, description]) =>
   ['.' + name, args.join(' '), '-', description].join(' ');
@@ -199,19 +206,66 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
     if (discordApiToken === undefined || discordApiToken === "" || discordApiToken === null)
         return console.warn("*** WARNING: Discord API token is not defined");
 
-    const client = new Discord.Client();
-
+    const client = new Discord.Client({ partials: ['MESSAGE'] });
     client.on('ready', async function () {
         console.log(`the client becomes ready to start`);
         console.log(`I am ready! Logged in as ${client.user.tag}!`);
-        console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} guilds.`);
+        console.log(`Bot has started, with ${client.users.cache.size} users, in ${client.channels.cache.size} channels of ${client.guilds.cache.size} guilds.`);
+
+        const channel = client.channels.cache.find((channel) => channel.name === discordRoleChannel);
+
+        // channel will not contain messages after it is found
+        try {
+          await channel.messages.fetch();
+        } catch (err) {
+          console.error('Error fetching channel messages', err);
+          return;
+        }
+      
+        console.log(`Watching message '${discordRoleMessageId}' for reactions...`)
+      
 
         // console.log('got', client.guilds.cache.get(guildId).members.cache);
 
         client.on('messageReactionAdd', async (reaction, user) => {
             const { data, message, emoji } = reaction;
+
+            // Listen for "welcome" message and add role reaction
+            if (!user.bot && message.id == discordRoleMessageId) {
+
+                // partials do not guarantee all data is available, but it can be fetched
+                // fetch the information to ensure everything is available
+                // https://github.com/discordjs/discord.js/blob/master/docs/topics/partials.md
+                if (message.partial) {
+                  try {
+                    await message.fetch();
+                  } catch (err) {
+                    console.error('Error fetching message', err);
+                    return;
+                  }
+                }
+              
+                const { guild } = message;
+                console.log("emoji.name")
+                console.log(emoji.name);
+                const member = guild.members.cache.get(user.id);
+                const role = guild.roles.cache.find((role) => role.name === discordRoles[emoji.name]);
+              
+                if (!role) {
+                  console.error(`Role not found for '${emoji.name}'`);
+                  return;
+                }
+                
+                try {
+                  member.roles.add(role.id);
+                } catch (err) {
+                  console.error('Error adding role', err);
+                  return;
+                }
+              }
+
             // console.log('emoji identifier', message, data, emoji);
-            if (user.id !== client.user.id && emoji.identifier === '%E2%9D%8C') { // x
+            else if (user.id !== client.user.id && emoji.identifier === '%E2%9D%8C') { // x
                 if (message.channel.type === 'dm') {
                     message.delete();
                 } else {
@@ -277,7 +331,39 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
         });
         client.on('messageReactionRemove', async (reaction, user) => {
             const { data, message, emoji } = reaction;
-            if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
+
+            // Handle reaction to user removing a role
+            if (!user.bot && message.id == discordRoleMessageId) {
+              // partials do not guarantee all data is available, but it can be fetched
+              // fetch the information to ensure everything is available
+              // https://github.com/discordjs/discord.js/blob/master/docs/topics/partials.md
+              if (message.partial) {
+                try {
+                  await message.fetch();
+                } catch (err) {
+                  console.error('Error fetching message', err);
+                  return;
+                }
+              }
+            
+              const { guild } = message;
+            
+              const member = guild.members.cache.get(user.id);
+              const role = guild.roles.cache.find((role) => role.name === discordRoles[emoji.name]);
+            
+              if (!role) {
+                console.error(`Role not found for '${emoji.name}'`);
+                return;
+              }
+            
+              try{
+                member.roles.remove(role.id);
+              } catch (err) {
+                console.error('Error removing role', err);
+                return;
+              }
+            }
+            else if (user.id !== client.user.id && emoji.identifier === '%E2%9C%85') { // white check mark
                 let trade, index;
                 if ((trade = trades.find(trade => trade.id === message.id)) && (index = trade.userIds.indexOf(user.id)) !== -1) {
                     trade.confirmations[index] = false;
@@ -449,14 +535,116 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             },
                           ]);
                         const m = await message.channel.send(exampleEmbed);
-                        // m.react('❌');
-                        // m.requester = message.author;
-                        // helps.push(m);
+
                       } else {
                         console.warn('invalid command name', commandName);
                       }
                     } else {
-                      if (split[0] === prefix + 'help') {
+                        if(split[0] === prefix + 'addrole'){
+                            if(!message.member.hasPermission("ADMINISTRATOR")){
+                                return message.channel.send("You do not have permission to add roles");
+                            }
+                            // TODO
+                            // 1 Get all dynamodb items for this server
+                            // 2 check if this item exists
+                            // if it does, tell user it already does
+                            // 3 otherwise
+                            // put item in server roles for this channel
+
+                            message.channel.send("");
+
+                        } else if(split[0] === prefix + 'removerole'){
+                            if(!message.member.hasPermission("ADMINISTRATOR")){
+                                return message.channel.send("You do not have permission to remove roles");
+                            }
+                            // TODO:
+                            // 1 Get all dynamodb items for this server
+                            // 2 check if this item exists
+                            // if it doesn't, tell user they can't remove it
+                            // 3 otherwise
+                            // put item in server roles for this channel
+
+                            message.channel.send("");
+
+                        } else if(split[0] === prefix + 'listroles'){
+                            if(!message.member.hasPermission("ADMINISTRATOR")){
+                                return message.channel.send("You do not have permission to list roles");
+                            }
+                            // 1 Get all dynamodb items for this server
+                            // 2 Add them to message with their emoji
+
+                            message.channel.send("");
+
+                        } else if(split[0] === prefix + 'setuproles'){
+                            if(!message.member.hasPermission("ADMINISTRATOR")){
+                                return message.channel.send("You do not have permission to set the role message");
+                            }
+                            if(split[1] && !isNaN(split[1])){
+                                discordRoleMessageId = split[1];
+                                message.channel.send("Listening for role responses on message ID" + discordRoleMessageId);
+                              } else {
+                                  const m = await message.channel.send(roleEmbed);
+                                  discordRoleMessageId = m.id;
+                                  Object.keys(discordRoles).forEach((emo) => {
+                                    m.react(emo);
+                                  });
+
+                              }
+                    } else if (split[0] === prefix + 'redeem') {
+                        let { mnemonic } = await _getUser();
+                        if (!mnemonic) {
+                            const spec = await _genKey();
+                            mnemonic = spec.mnemonic;
+                        }
+
+                        const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                        const address = wallet.getAddressString();
+
+                        const rinkebyWeb3 = new Web3(new Web3.providers.HttpProvider(`https://rinkeby.infura.io/v3/${infuraProjectId}`));
+                        const signature = await contracts.Account.methods.getMetadata(address, 'mainnetAddress').call();
+                        let mainnetAddress;
+                        if (signature !== '') {
+                          mainnetAddress = await rinkebyWeb3.eth.accounts.recover("Connecting mainnet address.", signature);
+                        } else {
+                          message.channel.send('<@!' + message.author.id + '>: no role redeemed.');
+                          return;
+                        }
+
+                        let roleRedeemed = null;
+
+                        const mainnetNft = new rinkebyWeb3.eth.Contract(abis['NFT'], addresses['mainnet']['NFT']);
+                        const nftMainnetBalance = await mainnetNft.methods.balanceOf(mainnetAddress).call();
+
+                        const mainnetPromises = Array(nftMainnetBalance);
+                        for (let i = 0; i < nftMainnetBalance; i++) {
+                          const token = await mainnetNft.methods.tokenOfOwnerByIndexFull(mainnetAddress, i).call();
+                          mainnetPromises[i] = token;
+
+                            // TODO:
+                            // 1. Get all redemption tokens for this server
+                            // 2. Check if any are this token id
+                            // 3. if they are, get their role
+                            let tokenRedeemableRole = "Genesis";
+
+
+                          if (token.id >= genesisNftStartId && token.id <= genesisNftEndId) {
+                            const redeemableRole = message.guild.roles.cache.cache.find(role => role.name === tokenRedeemableRole);
+                            if (!message.member.roles.cache.has(redeemableRole.id)) {
+                              message.member.roles.add(redeemableRole).catch(console.error);
+                              roleRedeemed = tokenRedeemableRole;
+                            } else {
+                              roleRedeemed = "You already had this role!";
+                            }
+                          }
+                        }
+                        const mainnetTokens = await Promise.all(mainnetPromises);
+
+                        if (roleRedeemed) {
+                          message.channel.send('<@!' + message.author.id + '>: redeemed role: ' + roleRedeemed);
+                        } else {
+                          message.channel.send('<@!' + message.author.id + '>: no role redeemed.');
+                        }
+                    } else if (split[0] === prefix + 'help') {
                         const name = split[1];
                         const exampleEmbed = new Discord.MessageEmbed()
                           .setColor(embedColor)
@@ -828,52 +1016,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
                               message.channel.send('<@!' + message.author.id + '>: home space is ' + JSON.stringify(homeSpaceUrl));
                           }
-                      } else if (split[0] === prefix + 'redeem') {
-                          let { mnemonic } = await _getUser();
-                          if (!mnemonic) {
-                              const spec = await _genKey();
-                              mnemonic = spec.mnemonic;
-                          }
-
-                          const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                          const address = wallet.getAddressString();
-
-                          const rinkebyWeb3 = new Web3(new Web3.providers.HttpProvider(`https://rinkeby.infura.io/v3/${infuraProjectId}`));
-                          const signature = await contracts.Account.methods.getMetadata(address, 'mainnetAddress').call();
-                          let mainnetAddress;
-                          if (signature !== '') {
-                            mainnetAddress = await rinkebyWeb3.eth.accounts.recover("Connecting mainnet address.", signature);
-                          } else {
-                            message.channel.send('<@!' + message.author.id + '>: no role redeemed.');
-                            return;
-                          }
-
-                          let roleRedeemed = null;
-
-                          const mainnetNft = new rinkebyWeb3.eth.Contract(abis['NFT'], addresses['mainnet']['NFT']);
-                          const nftMainnetBalance = await mainnetNft.methods.balanceOf(mainnetAddress).call();
-
-                          const mainnetPromises = Array(nftMainnetBalance);
-                          for (let i = 0; i < nftMainnetBalance; i++) {
-                            const token = await mainnetNft.methods.tokenOfOwnerByIndexFull(mainnetAddress, i).call();
-                            mainnetPromises[i] = token;
-                            if (token.id >= genesisNftStartId && token.id <= genesisNftEndId) {
-                              const genesisRole = message.guild.roles.cache.find(role => role.name === "Genesis");
-                              if (!message.member.roles.cache.has(genesisRole.id)) {
-                                message.member.roles.add(genesisRole).catch(console.error);
-                                roleRedeemed = "Genesis";
-                              } else {
-                                roleRedeemed = "You already had the Genesis role!";
-                  }
-                            }
-                          }
-                          const mainnetTokens = await Promise.all(mainnetPromises);
-
-                          if (roleRedeemed) {
-                            message.channel.send('<@!' + message.author.id + '>: redeemed role: ' + roleRedeemed);
-                          } else {
-                            message.channel.send('<@!' + message.author.id + '>: no role redeemed.');
-                          }
                       } else if (split[0] === prefix + 'balance') {
                           let match;
                           if (split.length >= 2 && (match = split[1].match(/<@!?([0-9]+)>/))) {
@@ -919,7 +1061,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           if (split[1] !== 'treasury') {
                               if (split[1] && (match = split[1].match(/<@!?([0-9]+)>/))) {
                                   const userId = match[1];
-                                  const member = await message.channel.guild.members.fetch(userId);
+                                  const member = await message.channel.guild.members.cache.fetch(userId);
                                   user = member ? member.user : null;
                               } else {
                                   user = message.author;
@@ -951,7 +1093,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           const amount = parseFloat(split[2]);
                           if (match = split[1].match(/<@!?([0-9]+)>/)) {
                               const userId = match[1];
-                              const member = await message.channel.guild.members.fetch(userId);
+                              const member = await message.channel.guild.members.cache.fetch(userId);
                               const user = member ? member.user : null;
                               if (user) {
                                   let mnemonic, mnemonic2;
@@ -1069,7 +1211,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                       } else if (split[0] === prefix + 'trade' && split.length >= 2) {
                           if (match = split[1].match(/<@!?([0-9]+)>/)) {
                               const userId = match[1];
-                              const member = await message.channel.guild.members.fetch(userId);
+                              const member = await message.channel.guild.members.cache.fetch(userId);
                               const user = member ? member.user : null;
                               if (user) {
                                   const tradeId = ++nextTradeId;
@@ -1276,7 +1418,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           }
                           message.channel.send(s);
                           /* } else if (split[0] === prefix + 'treasury') {
-                            const member = await message.channel.guild.members.fetch(message.author.id);
+                            const member = await message.channel.guild.members.cache.fetch(message.author.id);
                             const treasurer = member.roles.cache.some(role => role.name === treasurerRoleName);
                             message.channel.send('treasurer flag: ' + treasurer); */
                       } else if (split[0] === prefix + 'sell' && split.length >= 3) {
@@ -1299,7 +1441,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               }
 
                               const treasuryTokenIds = [];
-                              const member = await message.channel.guild.members.fetch(message.author.id);
+                              const member = await message.channel.guild.members.cache.fetch(message.author.id);
                               const treasurer = member.roles.cache.some(role => role.name === treasurerRoleName);
                               if (treasurer) {
                                   const nftBalance = await contracts.NFT.methods.balanceOf(treasuryAddress).call();
@@ -1617,7 +1759,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           const tokenId = parseInt(split[2]);
                           if (match = split[1].match(/<@!?([0-9]+)>/)) {
                               const userId = match[1];
-                              const member = await message.channel.guild.members.fetch(userId);
+                              const member = await message.channel.guild.members.cache.fetch(userId);
                               const user = member ? member.user : null;
                               if (user) {
                                   let mnemonic, mnemonic2;
@@ -1694,7 +1836,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           const hash = await contracts.NFT.methods.getHash(tokenId).call();
                           if (match = split[1].match(/<@!?([0-9]+)>/)) {
                               const userId = match[1];
-                              const member = await message.channel.guild.members.fetch(userId);
+                              const member = await message.channel.guild.members.cache.fetch(userId);
                               const user = member ? member.user : null;
                               if (user) {
                                   let mnemonic, mnemonic2;
@@ -1772,7 +1914,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           const hash = await contracts.NFT.methods.getHash(tokenId).call();
                           if (match = split[1].match(/<@!?([0-9]+)>/)) {
                               const userId = match[1];
-                              const member = await message.channel.guild.members.fetch(userId);
+                              const member = await message.channel.guild.members.cache.fetch(userId);
                               const user = member ? member.user : null;
                               if (user) {
                                   let mnemonic, mnemonic2;
@@ -2130,7 +2272,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               if (!isNaN(quantity)) {
                                   if (match = split[1].match(/<@!?([0-9]+)>/)) {
                                       const userId = match[1];
-                                      const member = await message.channel.guild.members.fetch(userId);
+                                      const member = await message.channel.guild.members.cache.fetch(userId);
                                       const user = member ? member.user : null;
                                       if (user) {
                                           let mnemonic, mnemonic2;

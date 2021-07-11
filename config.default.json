@@ -4,11 +4,53 @@
     "tradeMnemonic": null,
     "treasuryMnemonic": null,
     "discordApiToken": null,
+    "discordClientId": null,
+    "discordClientSecret": null,
     "twitterConsumerKey": null,
     "twitterConsumerSecret": null,
     "twitterAccessToken": null,
     "twitterAccessTokenSecret": null,
     "twitterId": null,
     "twitterWebhookPort": 3002,
-    "serverPort": 3001
+    "serverPort": 3001,
+    "discordRoleChannel": "welcome",
+
+    "discordRoles": {
+        "artist": ":art: Artist",
+        "builder": ":tools: Builder",
+        "designer": ":triangular_ruler: Designer",
+        "writer": ":writing_hand: Writer",
+        "bridgebuilder": ":bridge_at_night: Bridge Builder",
+        "shiller": ":mega: Shiller"
+    },
+    "discordAdminRole": "Webaverse Team",
+    "discordEmbedContent": {
+        "title": "Webaverse: Roles",
+        "description": "Welcome to the Webaverse Discord server. Please select as many roles which describe you.\n\n:art: Artist\nPainters, modelers, musicians, memers, videomakers, etc\n\n:tools: Builder\nCan speak with computers to make them do things\n\n:triangular_ruler: Designer\nImagineers of how we interface with machines (UI/UX)\n\n:writing_hand: Writer\nFrom scribing notes to writing stories, specs, and guides\n\n:bridge_at_night:  Bridge Builder\nPeople who bridge communities and help create more powerful networks\n\n:mega: Shiller\nThose that communicate the memes of Webaverse to a wider audience",
+        "color": 4321431,
+        "timestamp": "2021-07-11T00:10:52.710Z",
+        "url": "https://discord.com",
+        "author": {
+            "name": "",
+            "url": "https://discord.com",
+            "icon_url": ""
+        },
+        "thumbnail": {
+            "url": "https://i.imgur.com/IR8Mrm1.png"
+        },
+        "image": {
+            "url": ""
+        },
+        "footer": {
+            "text": "",
+            "icon_url": ""
+        },
+        "fields": []
+},
+    "ngrokToken": "",
+    "bearer_token": "",
+  
+    "encryptionMnemonic": "",
+    "infuraKey": "",
+    "polygonVigilKey": ""
 }
