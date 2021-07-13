@@ -576,15 +576,17 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 return message.channel.send("You do not have permission to add roles");
                             }
 
-                            if (!split[1] || !split[2]) {
-                                return message.channel.send("Invalid role. Usage is `addrole <rolename> <emoji>");
+                            if (!split[1] || !split[2] || !split[3]) {
+                                return message.channel.send("Invalid role. Usage is addrole <rolename> <emoji> <'public'|'private'>");
                             }
 
                             const emoji = split[2];
                             const roleName = split[1];
+                            const permission = split[3];
 
-                            console.log("message.channel.guild.id");
-                            console.log(message.channel.guild.id);
+                            if(!permission.includes("public") && !permission.includes("private")){
+                                return message.channel.send("Invalid permission. Argument must be 'private' or 'public', with no quotes");
+                            }
 
                             var params = {
                                 TableName: serverRolesTableName,
@@ -594,7 +596,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 }
                             };
 
-                            docClient.query(params, async function (err, data) {
+                            docClient.query(params, async (err, data) => {
                                 if (err) {
                                     console.error("Unable to read item. Error JSON:", JSON.stringify(err,
                                         null, 2));
@@ -602,25 +604,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                     console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
                                 }
 
-                                console.log("*********** data");
-                                console.log(data);
                                 const rolesForThisServer = data.Items;
-                                // 2 check if this item exists
-                                let roleExists2 = false;
-                                rolesForThisServer.forEach(r => {
-                                    console.log("Looping through roles...");
-                                    console.log(r.role);
-                                    if(r.role.S === roleName){
-                                        roleExists2 === true;
-                                    }
-                                    console.log(r.emoji);
-                                });
-                                console.log("roleName", roleName);
-                                console.log("roleExists2", roleExists2);
-
-                                console.log(rolesForThisServer);
-
-                                console.log(rolesForThisServer.find(r => r.role.S === roleName))
 
                                 const roleExists = rolesForThisServer && rolesForThisServer.find(r => r.role.S === roleName);
 
@@ -634,7 +618,8 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                     Item: {
                                         server: { S: message.channel.guild.id },
                                         role: { S: roleName },
-                                        emoji: { S: emoji }
+                                        emoji: { S: emoji },
+                                        permission: { S: permission }
                                     }
                                 }).promise();
 
@@ -650,69 +635,115 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 return message.channel.send("Invalid role. Usage is `removerole <rolename>");
                             }
 
-                            // 1 Get all dynamodb items for this server
-                            const rolesForThisServer = await ddb.getItem({
+                            const roleName = split[1];
+
+                            var params = {
                                 TableName: serverRolesTableName,
-                                Key: {
-                                    server: { S: message.channel.guild.id }
+                                KeyConditionExpression: 'server = :hkey',
+                                ExpressionAttributeValues: {
+                                    ':hkey': {S: message.channel.guild.id}
                                 }
-                            }).promise();
+                            };
 
-                            const roleExists = rolesForThisServer.find(r => r.role === roleName);
-
-                            if (!roleExists) {
-                                return message.channel.send("This role does not exist in the database.");
-                            }
-
-                            // remove item in server roles for this channel
-
-                            await ddb.deleteItem({
-                                TableName: serverRolesTableName,
-                                Item: {
-                                    server: { S: message.channel.guild.id },
-                                    role: { S: roleName }
+                            docClient.query(params, async (err, data) => {
+                                if (err) {
+                                    console.error("Unable to read item. Error JSON:", JSON.stringify(err,
+                                        null, 2));
+                                } else {
+                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
                                 }
-                            }).promise();
 
+                                const rolesForThisServer = data.Items;
 
-                            message.channel.send("Removed role from the database");
+                                const roleExists = rolesForThisServer && rolesForThisServer.find(r => r.role.S === roleName);
 
+                                if (!roleExists) {
+                                    return message.channel.send("This role does not exist in the database.");
+                                }
+
+                                // delete item from server roles for this channel
+                                await ddb.deleteItem({
+                                    TableName: serverRolesTableName,
+                                    Key: {
+                                        server: { S: message.channel.guild.id },
+                                        role: { S: roleName }
+                                    }
+                                }).promise();
+
+                                message.channel.send("Removed role " + roleName + " from the database");
+                            });
                         } else if (split[0] === prefix + 'listroles') {
                             if (!message.member.hasPermission("ADMINISTRATOR")) {
                                 return message.channel.send("You do not have permission to list roles");
                             }
 
-                            const rolesForThisServer = await ddb.Query({
+                            var params = {
                                 TableName: serverRolesTableName,
-                                KeyConditionExpression: "server = :a",
+                                KeyConditionExpression: 'server = :hkey',
                                 ExpressionAttributeValues: {
-                                    a: { S: message.channel.guild.id }
+                                    ':hkey': {S: message.channel.guild.id}
                                 }
-                            }).promise();
+                            };
 
-                            let str = "Roles are:";
-                            rolesForThisServer.forEach((r) => {
-                                str += '\n';
-                                str += r.role
-                            })
+                            docClient.query(params, async (err, data) => {
+                                if (err) {
+                                    console.error("Unable to read item. Error JSON:", JSON.stringify(err,
+                                        null, 2));
+                                } else {
+                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
+                                }
 
-                            message.channel.send(str);
+                                const rolesForThisServer = data.Items;
+
+                                let str = "Roles are:";
+                                rolesForThisServer.forEach((r) => {
+                                    str += '\n';
+                                    str += r.role.S
+                                })
+    
+                                message.channel.send(str);
+                            });
 
                         } else if (split[0] === prefix + 'setuproles') {
                             if (!message.member.hasPermission("ADMINISTRATOR")) {
                                 return message.channel.send("You do not have permission to set the role message");
                             }
+
+                            var params = {
+                                TableName: serverRolesTableName,
+                                KeyConditionExpression: 'server = :hkey',
+                                ExpressionAttributeValues: {
+                                    ':hkey': {S: message.channel.guild.id}
+                                }
+                            };
+
+                            docClient.query(params, async (err, data) => {
+                                if (err) {
+                                    console.error("Unable to read item. Error JSON:", JSON.stringify(err,
+                                        null, 2));
+                                } else {
+                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
+                                }
+
+                                const rolesForThisServer = data.Items;
+
                             if (split[1] && !isNaN(split[1])) {
                                 discordRoleMessageId = split[1];
                                 message.channel.send("Listening for role responses on message ID" + discordRoleMessageId);
+                                rolesForThisServer.forEach((emo) => {
+                                    if(emo.permission.S === "public")
+                                        m.react(emo.emoji.S);
+                                });
                             } else {
                                 const m = await message.channel.send(roleEmbed);
                                 discordRoleMessageId = m.id;
-                                Object.keys(discordRoles).forEach((emo) => {
-                                    m.react(emo);
-                                });
 
+                                rolesForThisServer.forEach((emo) => {
+                                    if(emo.permission.S === "public")
+                                        m.react(emo.emoji.S);
+                                });
                             }
+                        });
                         } else if (split[0] === prefix + 'redeem') {
                             let { mnemonic } = await _getUser();
                             if (!mnemonic) {
