@@ -45,6 +45,7 @@ if (!devMode) {
   });
 
   ddb = new AWS.DynamoDB(awsConfig);
+  docClient = new AWS.DynamoDB(awsConfig);
 
   treasuryWallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
   treasuryAddress = treasuryWallet.getAddressString();
@@ -196,7 +197,7 @@ if (!devMode) {
     return fn;
   };
 
-  createDiscordClient(web3, contracts, getStores, runSidechainTransaction, ddb, treasuryAddress, abis, fullAddresses);
+  createDiscordClient(web3, contracts, getStores, runSidechainTransaction, ddb, docClient, treasuryAddress, abis, fullAddresses);
   await createTwitterClient(web3, contracts, getStores, runSidechainTransaction, ddb, treasuryAddress);
   console.log("Bot started successfully");
 })();
