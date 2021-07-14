@@ -228,7 +228,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
     // Call DynamoDB to create the table
 
-    const client = new Discord.Client({ partials: ['MESSAGE'] });
+    const client = new Discord.Client();
     client.on('ready', async function () {
         console.log(`the client becomes ready to start`);
         console.log(`I am ready! Logged in as ${client.user.tag}!`);
@@ -768,7 +768,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 message.channel.send(str);
                             });
                         } else if (split[0] === prefix + 'addredeemable') {
-                            if(!split[1] || !split[2]){
+                            if (!split[1] || !split[2]) {
                                 return message.channel.send("Invalid syntax. Usage is `addredeemable <rolename> <tokenId>`");
                             }
                             if (!message.member.hasPermission("ADMINISTRATOR")) {
@@ -795,7 +795,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
                                 const redeemablesForThisServer = data.Items;
                                 const redeemable = redeemablesForThisServer && redeemablesForThisServer[0];
-                                
+
                                 if (redeemable) {
                                     return message.channel.send("Token ID already exists in the database as a redeemable");
                                 }
@@ -814,7 +814,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                         } else if (split[0] === prefix + 'removeredeemable') {
                             const tokenId = split[1];
 
-                            if(!split[1]){
+                            if (!split[1]) {
                                 return message.channel.send("Invalid syntax. Usage is `removeredeemable <tokenId>`");
                             }
                             if (!message.member.hasPermission("ADMINISTRATOR")) {
@@ -837,23 +837,23 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 }
 
                                 const redeemablesForThisServer = data.Items;
-                                
+
                                 const redeemableExists = redeemablesForThisServer && redeemablesForThisServer.find(r => r.tokenId.S === tokenId);
 
                                 if (!redeemableExists) {
                                     return message.channel.send("This redeemable does not exist in the database.");
                                 }
 
-                            // delete item from server roles for this channel
-                            await ddb.deleteItem({
-                                TableName: redeemablesTableName,
-                                Key: {
-                                    server: { S: message.channel.guild.id },
-                                    tokenId: { S: tokenId }
-                                }
-                            }).promise();
+                                // delete item from server roles for this channel
+                                await ddb.deleteItem({
+                                    TableName: redeemablesTableName,
+                                    Key: {
+                                        server: { S: message.channel.guild.id },
+                                        tokenId: { S: tokenId }
+                                    }
+                                }).promise();
 
-                            message.channel.send("Removed redeemable on token " + tokenId);
+                                message.channel.send("Removed redeemable on token " + tokenId);
                             });
                         } else if (split[0] === prefix + 'redeem') {
                             let { mnemonic } = await _getUser();
