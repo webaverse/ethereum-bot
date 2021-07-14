@@ -3,18 +3,10 @@ const url = require('url');
 const http = require('http');
 const https = require('https');
 const crypto = require('crypto');
-const { randomBytes } = crypto;
-
 const mime = require('mime');
 const Discord = require('discord.js');
-
-const dns = require('dns');
-const AWS = require('aws-sdk');
-const fetch = require('node-fetch');
 const Web3 = require('web3');
 const bip39 = require('bip39');
-const { Transaction } = require('@ethereumjs/tx');
-const { default: Common } = require('@ethereumjs/common');
 const { hdkey } = require('ethereumjs-wallet');
 const prettyBytes = require('pretty-bytes');
 
@@ -233,7 +225,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
             });
         }
     });
-
 
     // Call DynamoDB to create the table
 
@@ -584,7 +575,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             const roleName = split[1];
                             const permission = split[3];
 
-                            if(!permission.includes("public") && !permission.includes("private")){
+                            if (!permission.includes("public") && !permission.includes("private")) {
                                 return message.channel.send("Invalid permission. Argument must be 'private' or 'public', with no quotes");
                             }
 
@@ -592,7 +583,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 TableName: serverRolesTableName,
                                 KeyConditionExpression: 'server = :hkey',
                                 ExpressionAttributeValues: {
-                                    ':hkey': {S: message.channel.guild.id}
+                                    ':hkey': { S: message.channel.guild.id }
                                 }
                             };
 
@@ -641,7 +632,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 TableName: serverRolesTableName,
                                 KeyConditionExpression: 'server = :hkey',
                                 ExpressionAttributeValues: {
-                                    ':hkey': {S: message.channel.guild.id}
+                                    ':hkey': { S: message.channel.guild.id }
                                 }
                             };
 
@@ -681,7 +672,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 TableName: serverRolesTableName,
                                 KeyConditionExpression: 'server = :hkey',
                                 ExpressionAttributeValues: {
-                                    ':hkey': {S: message.channel.guild.id}
+                                    ':hkey': { S: message.channel.guild.id }
                                 }
                             };
 
@@ -700,7 +691,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                     str += '\n';
                                     str += r.role.S
                                 })
-    
+
                                 message.channel.send(str);
                             });
 
@@ -713,7 +704,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 TableName: serverRolesTableName,
                                 KeyConditionExpression: 'server = :hkey',
                                 ExpressionAttributeValues: {
-                                    ':hkey': {S: message.channel.guild.id}
+                                    ':hkey': { S: message.channel.guild.id }
                                 }
                             };
 
@@ -727,23 +718,143 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
                                 const rolesForThisServer = data.Items;
 
-                            if (split[1] && !isNaN(split[1])) {
-                                discordRoleMessageId = split[1];
-                                message.channel.send("Listening for role responses on message ID" + discordRoleMessageId);
-                                rolesForThisServer.forEach((emo) => {
-                                    if(emo.permission.S === "public")
-                                        m.react(emo.emoji.S);
-                                });
-                            } else {
-                                const m = await message.channel.send(roleEmbed);
-                                discordRoleMessageId = m.id;
+                                if (split[1] && !isNaN(split[1])) {
+                                    discordRoleMessageId = split[1];
+                                    message.channel.send("Listening for role responses on message ID" + discordRoleMessageId);
+                                    rolesForThisServer.forEach((emo) => {
+                                        if (emo.permission.S === "public")
+                                            m.react(emo.emoji.S);
+                                    });
+                                } else {
+                                    const m = await message.channel.send(roleEmbed);
+                                    discordRoleMessageId = m.id;
 
-                                rolesForThisServer.forEach((emo) => {
-                                    if(emo.permission.S === "public")
-                                        m.react(emo.emoji.S);
-                                });
+                                    rolesForThisServer.forEach((emo) => {
+                                        if (emo.permission.S === "public")
+                                            m.react(emo.emoji.S);
+                                    });
+                                }
+                            });
+                        } else if (split[0] === prefix + 'listredeemables') {
+                            if (!message.member.hasPermission("ADMINISTRATOR")) {
+                                return message.channel.send("You do not have permission to set the role message");
                             }
-                        });
+                            const role = split[1];
+                            var params = {
+                                TableName: redeemablesTableName,
+                                KeyConditionExpression: 'server = :hkey',
+                                ExpressionAttributeValues: {
+                                    ':hkey': { S: message.channel.guild.id }
+                                }
+                            };
+
+                            docClient.query(params, async (err, data) => {
+                                if (err) {
+                                    console.error("Unable to read item. Error JSON:", JSON.stringify(err,
+                                        null, 2));
+                                } else {
+                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
+                                }
+
+                                const redeemablesForThisServer = data.Items;
+
+                                let str = "Redeemables are:";
+                                redeemablesForThisServer.forEach((r) => {
+                                    str += '\n';
+                                    str += r.role.S;
+                                    str += ' | ' + r.tokenId.S;
+                                })
+
+                                message.channel.send(str);
+                            });
+                        } else if (split[0] === prefix + 'addredeemable') {
+                            if(!split[1] || !split[2]){
+                                return message.channel.send("Invalid syntax. Usage is `addredeemable <rolename> <tokenId>`");
+                            }
+                            if (!message.member.hasPermission("ADMINISTRATOR")) {
+                                return message.channel.send("You do not have permission to set the role message");
+                            }
+
+                            const tokenId = split[2];
+                            const role = split[1];
+                            var params = {
+                                TableName: redeemablesTableName,
+                                KeyConditionExpression: 'server = :hkey',
+                                ExpressionAttributeValues: {
+                                    ':hkey': { S: message.channel.guild.id }
+                                }
+                            };
+
+                            docClient.query(params, async (err, data) => {
+                                if (err) {
+                                    console.error("Unable to read item. Error JSON:", JSON.stringify(err,
+                                        null, 2));
+                                } else {
+                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
+                                }
+
+                                const redeemablesForThisServer = data.Items;
+                                const redeemable = redeemablesForThisServer && redeemablesForThisServer[0];
+                                
+                                if (redeemable) {
+                                    return message.channel.send("Token ID already exists in the database as a redeemable");
+                                }
+                                // put item in server roles for this channel
+                                await ddb.putItem({
+                                    TableName: redeemablesTableName,
+                                    Item: {
+                                        server: { S: message.channel.guild.id },
+                                        tokenId: { S: tokenId },
+                                        role: { S: role }
+                                    }
+                                }).promise();
+
+                                message.channel.send("Added redeemable for " + role + " to the database.");
+                            });
+                        } else if (split[0] === prefix + 'removeredeemable') {
+                            const tokenId = split[1];
+
+                            if(!split[1]){
+                                return message.channel.send("Invalid syntax. Usage is `removeredeemable <tokenId>`");
+                            }
+                            if (!message.member.hasPermission("ADMINISTRATOR")) {
+                                return message.channel.send("You do not have permission to set the role message");
+                            }
+                            var params = {
+                                TableName: redeemablesTableName,
+                                KeyConditionExpression: 'server = :hkey',
+                                ExpressionAttributeValues: {
+                                    ':hkey': { S: message.channel.guild.id }
+                                }
+                            };
+
+                            docClient.query(params, async (err, data) => {
+                                if (err) {
+                                    console.error("Unable to read item. Error JSON:", JSON.stringify(err,
+                                        null, 2));
+                                } else {
+                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
+                                }
+
+                                const redeemablesForThisServer = data.Items;
+                                
+                                const redeemableExists = redeemablesForThisServer && redeemablesForThisServer.find(r => r.tokenId.S === tokenId);
+
+                                if (!redeemableExists) {
+                                    return message.channel.send("This redeemable does not exist in the database.");
+                                }
+
+                            // delete item from server roles for this channel
+                            await ddb.deleteItem({
+                                TableName: redeemablesTableName,
+                                Key: {
+                                    server: { S: message.channel.guild.id },
+                                    tokenId: { S: tokenId }
+                                }
+                            }).promise();
+
+                            message.channel.send("Removed redeemable on token " + tokenId);
+                            });
                         } else if (split[0] === prefix + 'redeem') {
                             let { mnemonic } = await _getUser();
                             if (!mnemonic) {
@@ -764,8 +875,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 return;
                             }
 
-                            let roleRedeemed = null;
-
                             const mainnetNft = new rinkebyWeb3.eth.Contract(abis['NFT'], addresses['mainnet']['NFT']);
                             const nftMainnetBalance = await mainnetNft.methods.balanceOf(mainnetAddress).call();
 
@@ -774,42 +883,44 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 const token = await mainnetNft.methods.tokenOfOwnerByIndexFull(mainnetAddress, i).call();
                                 mainnetPromises[i] = token;
 
-                                // 1. Get all redemption tokens for this server
-                                const redeemablesForThisServer = await ddb.getItem({
-                                    TableName: redeemablesTableName,
-                                    Key: {
-                                        server: { S: message.channel.guild.id },
-                                        tokenId: { S: token.id }
-                                    }
-                                }).promise();
-
-                                if (!redeemablesForThisServer) {
-                                    return message.channel.send("Failed to redeem the NFT");
-                                }
-
-                                // TODO:
-                                // 2. Check if any are this token id
-                                // 3. if they are, get their role
-                                let tokenRedeemableRole = "Genesis";
-
-
-                                if (token.id >= genesisNftStartId && token.id <= genesisNftEndId) {
-                                    const redeemableRole = message.guild.roles.cache.cache.find(role => role.name === tokenRedeemableRole);
-                                    if (!message.member.roles.cache.has(redeemableRole.id)) {
-                                        message.member.roles.add(redeemableRole).catch(console.error);
-                                        roleRedeemed = tokenRedeemableRole;
+                                docClient.query(params, async (err, data) => {
+                                    if (err) {
+                                        console.error("Unable to read item. Error JSON:", JSON.stringify(err,
+                                            null, 2));
                                     } else {
-                                        roleRedeemed = "You already had this role!";
+                                        console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
                                     }
-                                }
-                            }
-                            const mainnetTokens = await Promise.all(mainnetPromises);
 
-                            if (roleRedeemed) {
-                                message.channel.send('<@!' + message.author.id + '>: redeemed role: ' + roleRedeemed);
-                            } else {
-                                message.channel.send('<@!' + message.author.id + '>: no role redeemed.');
+                                    const redeemablesForThisServer = data.Items;
+
+                                    if (redeemablesForThisServer.length < 1) {
+                                        return message.channel.send("Failed to redeem the NFT");
+                                    }
+
+
+                                    message.channel.send('redeemablesForThisServer is ', redeemablesForThisServer);
+
+                                    // TODO:
+                                    // Make sure this works
+                                    let tokenRedeemableRole = redeemablesForThisServer.find(r => r.tokenId.S.includes(token.id)).Items[0];
+                                    message.channel.send('tokenRedeemableRole is ', tokenRedeemableRole);
+
+                                    if (tokenRedeemableRole && tokenRedeemableRole.includes(token.id)) {
+                                        const redeemableRole = message.guild.roles.cache.cache.find(role => role.name === tokenRedeemableRole).Items[0];
+                                        if (!message.member.roles.cache.has(redeemableRole.id)) {
+                                            message.member.roles.add(redeemableRole).catch(console.error);
+                                            const roleRedeemed = tokenRedeemableRole;
+                                            message.channel.send('<@!' + message.author.id + '>: redeemed role: ' + roleRedeemed);
+
+                                        } else {
+                                            return message.channel.send('<@! You already had this role!');
+                                        }
+                                    } else {
+                                        return message.channel.send('<@!' + message.author.id + '>: no role redeemed.');
+                                    }
+                                });
                             }
+
                         } else if (split[0] === prefix + 'help') {
                             const name = split[1];
                             const exampleEmbed = new Discord.MessageEmbed()
