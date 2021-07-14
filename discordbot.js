@@ -19,8 +19,6 @@ const {
     tradeMnemonic,
     treasuryMnemonic,
     infuraProjectId,
-    genesisNftStartId,
-    genesisNftEndId,
     encryptionMnemonic } = require('./config.json');
 
 // Bot will listen to this for role reactions
