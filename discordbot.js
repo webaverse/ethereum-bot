@@ -242,9 +242,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
             return;
         }
 
-        console.log(`Watching message '${discordRoleMessageId}' for reactions...`)
-
-
         // console.log('got', client.guilds.cache.get(guildId).members.cache);
 
         client.on('messageReactionAdd', async (reaction, user) => {
@@ -266,8 +263,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                 }
 
                 const { guild } = message;
-                console.log("emoji.name")
-                console.log(emoji.name);
+
                 const member = guild.members.cache.get(user.id);
                 const role = guild.roles.cache.find((role) => role.name === discordRoles[emoji.name]);
 
@@ -791,8 +787,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                     console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
                                 }
 
-                                const redeemablesForThisServer = data.Items;
-                                const redeemable = redeemablesForThisServer && redeemablesForThisServer[0];
+                                const redeemable = data.Items && data.Items.filter(r => r.tokenId.S === tokenId)[0];
 
                                 if (redeemable) {
                                     return message.channel.send("Token ID already exists in the database as a redeemable");
@@ -854,70 +849,160 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 message.channel.send("Removed redeemable on token " + tokenId);
                             });
                         } else if (split[0] === prefix + 'redeem') {
-                            let { mnemonic } = await _getUser();
+                            // Get user inventory
+                            let mnemonic;
+                            const spec = await _getUser(message.author.id);
+                            mnemonic = spec.mnemonic;
                             if (!mnemonic) {
-                                const spec = await _genKey();
+                                const spec = await _genKey(message.author.id);
                                 mnemonic = spec.mnemonic;
                             }
 
                             const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                             const address = wallet.getAddressString();
 
-                            const rinkebyWeb3 = new Web3(new Web3.providers.HttpProvider(`https://rinkeby.infura.io/v3/${infuraProjectId}`));
-                            const signature = await contracts.Account.methods.getMetadata(address, 'mainnetAddress').call();
-                            let mainnetAddress;
-                            if (signature !== '') {
-                                mainnetAddress = await rinkebyWeb3.eth.accounts.recover("Connecting mainnet address.", signature);
-                            } else {
-                                message.channel.send('<@!' + message.author.id + '>: no role redeemed.');
-                                return;
-                            }
-
-                            const mainnetNft = new rinkebyWeb3.eth.Contract(abis['NFT'], addresses['mainnet']['NFT']);
-                            const nftMainnetBalance = await mainnetNft.methods.balanceOf(mainnetAddress).call();
-
-                            const mainnetPromises = Array(nftMainnetBalance);
-                            for (let i = 0; i < nftMainnetBalance; i++) {
-                                const token = await mainnetNft.methods.tokenOfOwnerByIndexFull(mainnetAddress, i).call();
-                                mainnetPromises[i] = token;
-
-                                docClient.query(params, async (err, data) => {
-                                    if (err) {
-                                        console.error("Unable to read item. Error JSON:", JSON.stringify(err,
-                                            null, 2));
-                                    } else {
-                                        console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
-                                    }
-
-                                    const redeemablesForThisServer = data.Items;
-
-                                    if (redeemablesForThisServer.length < 1) {
-                                        return message.channel.send("Failed to redeem the NFT");
-                                    }
-
-
-                                    message.channel.send('redeemablesForThisServer is ', redeemablesForThisServer);
-
-                                    // TODO:
-                                    // Make sure this works
-                                    let tokenRedeemableRole = redeemablesForThisServer.find(r => r.tokenId.S.includes(token.id)).Items[0];
-                                    message.channel.send('tokenRedeemableRole is ', tokenRedeemableRole);
-
-                                    if (tokenRedeemableRole && tokenRedeemableRole.includes(token.id)) {
-                                        const redeemableRole = message.guild.roles.cache.cache.find(role => role.name === tokenRedeemableRole).Items[0];
-                                        if (!message.member.roles.cache.has(redeemableRole.id)) {
-                                            message.member.roles.add(redeemableRole).catch(console.error);
-                                            const roleRedeemed = tokenRedeemableRole;
-                                            message.channel.send('<@!' + message.author.id + '>: redeemed role: ' + roleRedeemed);
-
-                                        } else {
-                                            return message.channel.send('<@! You already had this role!');
+                            const { entries } = await _items('NFT', 1)(async (address, startIndex, endIndex) => {
+                                const hashToIds = {};
+                                const promises = [];
+                                for (let i = startIndex; i < endIndex; i++) {
+                                    promises.push((async i => {
+                                        const id = await contracts.NFT.methods.tokenOfOwnerByIndex(address, i).call();
+                                        const hash = await contracts.NFT.methods.getHash(id).call();
+                                        if (!hashToIds[hash]) {
+                                            hashToIds[hash] = [];
                                         }
+                                        hashToIds[hash].push(id);
+                                    })(i));
+                                }
+                                await Promise.all(promises);
+
+                                const entries = [];
+                                await Promise.all(Object.keys(hashToIds).map(async hash => {
+                                    const ids = hashToIds[hash].sort();
+                                    const id = ids[0];
+                                    const [
+                                        name,
+                                        ext,
+                                        totalSupply,
+                                    ] = await Promise.all([
+                                        contracts.NFT.methods.getMetadata(hash, 'name').call(),
+                                        contracts.NFT.methods.getMetadata(hash, 'ext').call(),
+                                        contracts.NFT.methods.totalSupplyOfHash(hash).call(),
+                                    ]);
+                                    const balance = ids.length;
+                                    entries.push({
+                                        id,
+                                        ids,
+                                        hash,
+                                        name,
+                                        ext,
+                                        balance,
+                                        totalSupply,
+                                    });
+                                }));
+                                entries.sort((a, b) => a.id - b.id);
+                                return entries;
+                            }).catch(console.warn);
+
+                            const userTokenIds = entries.map (entry => entry.id);
+
+                            // entries.map(entry => {
+                            //     return {
+                            //         name: `${entry.id}) ${entry.name}.${entry.ext}`,
+                            //         value: ` ${entry.hash} (${entry.balance}/${entry.totalSupply}) [${entry.ids.join(',')}]`,
+                            //         // inline: true,
+                            //     };
+                            // })
+
+                            // Get redeemables for server
+                            var params = {
+                                TableName: redeemablesTableName,
+                                KeyConditionExpression: 'server = :hkey',
+                                ExpressionAttributeValues: {
+                                    ':hkey': { S: message.channel.guild.id }
+                                }
+                            };
+
+                            docClient.query(params, async (err, data) => {
+                                if (err) {
+                                    console.error("Unable to read item. Error JSON:", JSON.stringify(err,
+                                        null, 2));
+                                } else {
+                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
+                                }
+
+                                const redeemablesForThisServer = data.Items;
+
+                                if (redeemablesForThisServer.length < 1) {
+                                    return message.channel.send("No redeemables were located for this server");
+                                }
+
+                                let redeemablesInInventory = [];
+                                userTokenIds.forEach(tokenId => {
+                                    const role = redeemablesForThisServer.find(r => r.tokenId.S.includes(tokenId));
+                                    if(role != null) redeemablesInInventory.push({ tokenId, role: role })
+                                })
+
+                                redeemablesInInventory = redeemablesInInventory.filter(r => {
+                                    return !message.member.roles.cache.has(r.role.role.S);
+                                })
+
+                                if (redeemablesInInventory.length > 0) {
+                                    redeemablesInInventory.forEach(r => {
+                                        try {
+                                            const role = message.channel.guild.roles.cache.find((role) => role.name === r.role.role.S);
+
+                                            message.member.roles.add(role.id);
+                                        } catch (err) {
+                                            console.error('Error adding role', err);
+                                            return;
+                                        }
+                                    })
+
+                                    let str = ""
+                                    if(redeemablesInInventory.length === 1){
+                                        str = '<@!' + message.author.id + '>: Token ' + redeemablesInInventory[0].tokenId + " redeemed for the role " + redeemablesInInventory[0].role.role.S;
                                     } else {
-                                        return message.channel.send('<@!' + message.author.id + '>: no role redeemed.');
+                                        str = '<@!' + message.author.id + '>: Redeeming tokens:\n';
+                                        redeemablesInInventory.forEach(r => {
+                                            str += "Token " + r.tokenId + " redeemed for the role " + r.role.role.S + "\n";
+                                        })
                                     }
-                                });
-                            }
+
+                                    message.channel.send(str);
+
+                                } else {
+                                    return message.channel.send('<@!' + message.author.id + '>: no roles redeemed.');
+                                }
+                            });
+
+                            // let { mnemonic } = await _getUser();
+                            // if (!mnemonic) {
+                            //     const spec = await _genKey();
+                            //     mnemonic = spec.mnemonic;
+                            // }
+
+                            // const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
+                            // const address = wallet.getAddressString();
+
+                            // const rinkebyWeb3 = new Web3(new Web3.providers.HttpProvider(`https://rinkeby.infura.io/v3/${infuraProjectId}`));
+                            // const signature = await contracts.Account.methods.getMetadata(address, 'mainnetAddress').call();
+                            // let mainnetAddress;
+                            // if (signature !== '') {
+                            //     mainnetAddress = await rinkebyWeb3.eth.accounts.recover("Connecting mainnet address.", signature);
+                            // } else {
+                            //     message.channel.send('<@!' + message.author.id + '>: no role redeemed.');
+                            //     return;
+                            // }
+
+                            // const mainnetNft = new rinkebyWeb3.eth.Contract(abis['NFT'], addresses['mainnet']['NFT']);
+                            // const nftMainnetBalance = await mainnetNft.methods.balanceOf(mainnetAddress).call();
+
+                            // const mainnetPromises = Array(nftMainnetBalance);
+                            // for (let i = 0; i < nftMainnetBalance; i++) {
+                            //     const token = await mainnetNft.methods.tokenOfOwnerByIndexFull(mainnetAddress, i).call();
+                            //     mainnetPromises[i] = token;
+                            // }
 
                         } else if (split[0] === prefix + 'help') {
                             const name = split[1];
@@ -2810,6 +2895,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                     numPages,
                                     entries,
                                 } = o;
+                                
                                 const exampleEmbed = _renderMessage({
                                     userName,
                                     avatarPreview,
