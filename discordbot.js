@@ -13,7 +13,6 @@ const prettyBytes = require('pretty-bytes');
 const { encodeSecret, decodeSecret } = require('./encryption.js');
 const {
     discordEmbedContent,
-    discordRoleChannel,
     discordRoles,
     discordApiToken,
     tradeMnemonic,
@@ -239,18 +238,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
         console.log(`the client becomes ready to start`);
         console.log(`I am ready! Logged in as ${client.user.tag}!`);
         console.log(`Bot has started, with ${client.users.cache.size} users, in ${client.channels.cache.size} channels of ${client.guilds.cache.size} guilds.`);
-
-        const channel = client.channels.cache.find((channel) => channel.name === discordRoleChannel);
-
-        // channel will not contain messages after it is found
-        try {
-            await channel.messages.fetch();
-        } catch (err) {
-            console.error('Error fetching channel messages', err);
-            return;
-        }
-
-        // console.log('got', client.guilds.cache.get(guildId).members.cache);
 
         client.on('messageReactionAdd', async (reaction, user) => {
             const { data, message, emoji } = reaction;

@@ -13,7 +13,6 @@
     "twitterId": null,
     "twitterWebhookPort": 3002,
     "serverPort": 3001,
-    "discordRoleChannel": "welcome",
     "ngrokToken": "",
     "bearer_token": "",
   
