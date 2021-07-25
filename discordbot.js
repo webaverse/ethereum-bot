@@ -18,12 +18,12 @@ const {
     discordApiToken,
     tradeMnemonic,
     treasuryMnemonic,
-    infuraProjectId,
-    encryptionMnemonic } = require('./config.json');
+    encryptionMnemonic
+} = require('./config.json');
 
 // Bot will listen to this for role reactions
 // Bot will embed this message for reaction roles (in config)
-const roleEmbed = new Discord.MessageEmbed(discordEmbedContent)
+let roleEmbed = new Discord.MessageEmbed(discordEmbedContent)
 
 var discordRoleMessageId;
 
@@ -33,7 +33,7 @@ var discordRoleMessageId;
 
 const { jsonParse } = require('./utilities.js');
 const { prefix, storageHost, previewHost, previewExt, treasurerRoleName } = require('./constants.js');
-const { usersTableName, serverRolesTableName, serverRolesTable, redeemablesTable, redeemablesTableName } = require('./tables.js');
+const { usersTableName, serverWelcomeMessageTableName, serverWelcomeMessageTable, serverRolesTableName, serverRolesTable, redeemablesTable, redeemablesTableName } = require('./tables.js');
 
 const embedColor = '#000000';
 const _commandToValue = ([name, args, description]) =>
@@ -200,11 +200,19 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
     ddb.listTables({}, function (err, data) {
         if (err) console.log(err, err.stack); // an error occurred
         else console.log(data);           // successful response
-        console.log("data tablenames")
-        console.log(data.TableNames);
         if (!data.TableNames.includes(serverRolesTableName)) {
             console.log("serverRolesTable not found, creating", serverRolesTable);
             ddb.createTable(serverRolesTable, function (err, data) {
+                if (err) {
+                    console.log("Error", err);
+                } else {
+                    console.log("Table Created", data);
+                }
+            });
+        }
+        if (!data.TableNames.includes(serverWelcomeMessageTableName)) {
+            console.log("serverRolesTable not found, creating", serverWelcomeMessageTableName);
+            ddb.createTable(serverWelcomeMessageTable, function (err, data) {
                 if (err) {
                     console.log("Error", err);
                 } else {
@@ -556,7 +564,76 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             console.warn('invalid command name', commandName);
                         }
                     } else {
-                        if (split[0] === prefix + 'addrole') {
+                        if (split[0] === prefix + 'setwelcomemessage') {
+                            if (!message.member.hasPermission("ADMINISTRATOR")) {
+                                return message.channel.send("You do not have permission to add roles");
+                            }
+
+                            const textToRemove = prefix + 'setwelcomemessage ';
+                            const messageText = message.content.replace(textToRemove, '');
+
+                            var params = {
+                                TableName: serverWelcomeMessageTableName,
+                                KeyConditionExpression: 'server = :hkey',
+                                ExpressionAttributeValues: {
+                                    ':hkey': { S: message.channel.guild.id }
+                                }
+                            };
+
+                            docClient.query(params, async (err, data) => {
+                                let success = false;
+                                if (err) {
+                                    // console.error("Unable to read item. Error JSON:", JSON.stringify(err,
+                                    //     null, 2));
+                                } else {
+                                    success = true;
+                                }
+
+                                const messagesForThisServer = success && data.Items;
+
+                                const messageExists = messagesForThisServer && messagesForThisServer[0];
+
+                                if (messageExists) {
+                                    var p = {
+                                        TableName: serverWelcomeMessageTableName,
+                                        Key: {
+                                            "server": { S: message.channel.guild.id }
+                                        },
+                                        UpdateExpression: "set message = :m",
+                                        ExpressionAttributeValues: {
+                                            ":m": { S: messageText }
+                                        },
+                                        ReturnValues: "UPDATED_NEW"
+                                    };
+
+                                    console.log("Updating the item...");
+                                    docClient.updateItem(p, function (err, data) {
+                                        if (err) {
+                                            console.error("Unable to update item. Error JSON:", JSON.stringify(err, null, 2));
+                                        } else {
+                                            console.log("UpdateItem succeeded:", JSON.stringify(data, null, 2));
+                                            message.channel.send("Updated the welcome message. Try 'setuproles' to show it again");
+
+                                        }
+                                    });
+                                } else {
+
+
+                                    // put item in server roles for this channel
+                                    await ddb.putItem({
+                                        TableName: serverWelcomeMessageTableName,
+                                        Item: {
+                                            server: { S: message.channel.guild.id },
+                                            message: { S: messageText }
+                                        }
+                                    }).promise();
+                                    message.channel.send("Updated the welcome message. Try 'setuproles' to show it again");
+                                }
+
+                            });
+
+                        }
+                        else if (split[0] === prefix + 'addrole') {
                             if (!message.member.hasPermission("ADMINISTRATOR")) {
                                 return message.channel.send("You do not have permission to add roles");
                             }
@@ -585,8 +662,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 if (err) {
                                     console.error("Unable to read item. Error JSON:", JSON.stringify(err,
                                         null, 2));
-                                } else {
-                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
                                 }
 
                                 const rolesForThisServer = data.Items;
@@ -634,8 +709,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 if (err) {
                                     console.error("Unable to read item. Error JSON:", JSON.stringify(err,
                                         null, 2));
-                                } else {
-                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
                                 }
 
                                 const rolesForThisServer = data.Items;
@@ -674,8 +747,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 if (err) {
                                     console.error("Unable to read item. Error JSON:", JSON.stringify(err,
                                         null, 2));
-                                } else {
-                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
                                 }
 
                                 const rolesForThisServer = data.Items;
@@ -706,8 +777,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 if (err) {
                                     console.error("Unable to read item. Error JSON:", JSON.stringify(err,
                                         null, 2));
-                                } else {
-                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
                                 }
 
                                 const rolesForThisServer = data.Items;
@@ -720,15 +789,48 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                             m.react(emo.emoji.S);
                                     });
                                 } else {
-                                    const m = await message.channel.send(roleEmbed);
-                                    discordRoleMessageId = m.id;
 
-                                    rolesForThisServer.forEach((emo) => {
-                                        if (emo.permission.S === "public")
-                                            m.react(emo.emoji.S);
+
+
+
+                                    var params = {
+                                        TableName: serverWelcomeMessageTableName,
+                                        KeyConditionExpression: 'server = :hkey',
+                                        ExpressionAttributeValues: {
+                                            ':hkey': { S: message.channel.guild.id }
+                                        }
+                                    };
+
+                                    docClient.query(params, async (err, data) => {
+                                        if (err) {
+                                            return message.channel.send("You need to set a welcome message embed first, using " + prefix + "setwelcomemessage");
+                                        }
+
+                                        const messagesForThisServer = data.Items;
+
+                                        const messageExists = messagesForThisServer && messagesForThisServer[0];
+
+                                        if (messageExists) {
+                                            try {
+                                                const embed = new Discord.MessageEmbed(JSON.parse(messagesForThisServer[0].message.S));
+                                                const m = await message.channel.send(embed);
+                                                // const m = await message.channel.send(roleEmbed);
+                                                discordRoleMessageId = m.id;
+
+                                                rolesForThisServer.forEach((emo) => {
+                                                    if (emo.permission.S === "public")
+                                                        m.react(emo.emoji.S);
+                                                });
+                                            }
+                                            catch (error) {
+                                                const m = await message.channel.send(error);
+                                            }
+
+                                        }
                                     });
                                 }
                             });
+
                         } else if (split[0] === prefix + 'listredeemables') {
                             if (!message.member.hasPermission("ADMINISTRATOR")) {
                                 return message.channel.send("You do not have permission to set the role message");
@@ -746,10 +848,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 if (err) {
                                     console.error("Unable to read item. Error JSON:", JSON.stringify(err,
                                         null, 2));
-                                } else {
-                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
                                 }
-
                                 const redeemablesForThisServer = data.Items;
 
                                 let str = "Redeemables are:";
@@ -783,8 +882,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 if (err) {
                                     console.error("Unable to read item. Error JSON:", JSON.stringify(err,
                                         null, 2));
-                                } else {
-                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
                                 }
 
                                 const redeemable = data.Items && data.Items.filter(r => r.tokenId.S === tokenId)[0];
@@ -825,8 +922,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 if (err) {
                                     console.error("Unable to read item. Error JSON:", JSON.stringify(err,
                                         null, 2));
-                                } else {
-                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
                                 }
 
                                 const redeemablesForThisServer = data.Items;
@@ -904,7 +999,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 return entries;
                             }).catch(console.warn);
 
-                            const userTokenIds = entries.map (entry => entry.id);
+                            const userTokenIds = entries.map(entry => entry.id);
 
                             // entries.map(entry => {
                             //     return {
@@ -927,8 +1022,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 if (err) {
                                     console.error("Unable to read item. Error JSON:", JSON.stringify(err,
                                         null, 2));
-                                } else {
-                                    console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
                                 }
 
                                 const redeemablesForThisServer = data.Items;
@@ -940,7 +1033,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                 let redeemablesInInventory = [];
                                 userTokenIds.forEach(tokenId => {
                                     const role = redeemablesForThisServer.find(r => r.tokenId.S.includes(tokenId));
-                                    if(role != null) redeemablesInInventory.push({ tokenId, role: role })
+                                    if (role != null) redeemablesInInventory.push({ tokenId, role: role })
                                 })
 
                                 redeemablesInInventory = redeemablesInInventory.filter(r => {
@@ -960,7 +1053,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                     })
 
                                     let str = ""
-                                    if(redeemablesInInventory.length === 1){
+                                    if (redeemablesInInventory.length === 1) {
                                         str = '<@!' + message.author.id + '>: Token ' + redeemablesInInventory[0].tokenId + " redeemed for the role " + redeemablesInInventory[0].role.role.S;
                                     } else {
                                         str = '<@!' + message.author.id + '>: Redeeming tokens:\n';
@@ -2895,7 +2988,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                     numPages,
                                     entries,
                                 } = o;
-                                
+
                                 const exampleEmbed = _renderMessage({
                                     userName,
                                     avatarPreview,

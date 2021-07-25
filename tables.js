@@ -2,6 +2,7 @@
 const serverRolesTableName = 'discordroles';
 const redeemablesTableName = 'discordredeemables'
 const usersTableName = 'users';
+const serverWelcomeMessageTableName = 'serverWelcomeMessages';
 
 const serverRolesTable = {
     AttributeDefinitions: [
@@ -29,6 +30,29 @@ const serverRolesTable = {
         WriteCapacityUnits: 1
     },
     TableName: serverRolesTableName,
+    StreamSpecification: {
+        StreamEnabled: false
+    }
+};
+
+const serverWelcomeMessageTable = {
+    AttributeDefinitions: [
+        {
+            AttributeName: 'server',
+            AttributeType: 'S'
+        }
+    ],
+    KeySchema: [
+        {
+            AttributeName: 'server',
+            KeyType: 'HASH'
+        }
+    ],
+    ProvisionedThroughput: {
+        ReadCapacityUnits: 1,
+        WriteCapacityUnits: 1
+    },
+    TableName: serverWelcomeMessageTableName,
     StreamSpecification: {
         StreamEnabled: false
     }
@@ -70,5 +94,7 @@ module.exports = {
     serverRolesTableName,
     redeemablesTable,
     redeemablesTableName,
-    usersTableName
+    usersTableName,
+    serverWelcomeMessageTable,
+    serverWelcomeMessageTableName
 }
