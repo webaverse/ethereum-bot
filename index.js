@@ -198,7 +198,7 @@ if (!devMode) {
   };
 
   createDiscordClient(web3, contracts, getStores, runSidechainTransaction, ddb, docClient, treasuryAddress, abis, fullAddresses);
-  await createTwitterClient(web3, contracts, getStores, runSidechainTransaction, ddb, treasuryAddress);
+  // await createTwitterClient(web3, contracts, getStores, runSidechainTransaction, ddb, treasuryAddress);
   console.log("Bot started successfully");
 })();
 
