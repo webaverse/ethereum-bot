@@ -144,6 +144,20 @@ const helpFields = [
         ],
     },
     {
+        name: 'Server commands (admin only)',
+        shortname: 'server',
+        commands: [
+            ['setwelcomemessage', ['[text]'], 'set the welcome message for the server'],
+            ['setuproles', [], 'add public role options to the welcome message for users to receive self-assigned roles'],
+            ['listroles', [], 'list roles the bot knows about'],
+            ['addrole', ['[role]', '[public|private]'], 'make the bot aware of a server role for claim and redemption'],
+            ['removerole', ['[role]'], 'make the bot unaware of a role'],
+            ['listredeemables', [], 'list redeemable tokens the bot knows about'],
+            ['addredeemable', ['[role]', '[tokenId]'], 'make a token into a redeemable'],
+            ['removeredeemable', ['[tokenId]'], 'remove token as a redeemable']
+        ],
+    },
+    {
         name: 'Help',
         shortname: 'help',
         commands: [
