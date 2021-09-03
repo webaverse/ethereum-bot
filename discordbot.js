@@ -2742,7 +2742,11 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             const m = await message.author.send('<@!' + message.author.id + '>: ```you do not have access to ' + id + '```');
                           }
                       } else if (split[0] === prefix + 'code' && split.length >= 2) {
-                          message.channel.send('no d-bug detected for user id ' + message.author.id);
+                          if (message.author.id === '284377201233887233') {
+                            message.channel.send('d-bugging... error');
+                          } else {
+                            message.channel.send('no d-bug detected for user id ' + message.author.id);
+                          }
                           
                           return;
                           // console.log('got o', o);
