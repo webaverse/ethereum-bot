@@ -2772,7 +2772,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           }
                       } else if (split[0] === prefix + 'code' && split.length >= 2) {
                           if (message.author.id === '284377201233887233') {
-                            const m = await message.channel.send('(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧ . . . d-bugging . . .');
+                            const m = await message.channel.send('(¬‿¬ ) . . . d-bugging . . .');
 
                             const prompt = `\    
 <|endoftext|>/* I start with a blank HTML page, and incrementally modify it via <script> injection. Written for Chrome. */
@@ -2806,13 +2806,14 @@ while (document.body.firstChild) {
                               stop: o.stop, // ['\n'] */
                             });
                             let fullS = '';
+                            let done = false;
                             const _updateMessage = (() => {
                               let running = false;
                               let queued = false;
                               const _recurse = async () => {
                                 if (!running) {
                                   running = true;
-                                  await m.edit('```' + fullS + '```');
+                                  await m.edit('```' + fullS + '```' + (done ? '\n( ‾́ ◡ ‾́ )' : ''));
                                   running = false;
                                   if (queued) {
                                     queued = false;
@@ -2842,6 +2843,9 @@ while (document.body.firstChild) {
                                 }
                               } else {
                                 console.log();
+                                
+                                done = true;
+                                _updateMessage();
                               }
                             });
                             /* gptRes.on('end', () => {
