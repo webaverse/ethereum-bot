@@ -2826,26 +2826,30 @@ while (document.body.firstChild) {
                               return _recurse;
                             })();
                             gptRes.on('data', s => {
-                              if (!s.startsWith(`data: [DONE]`)) {
-                                s = s.replace(/^data: /, '');
-                                const j = JSON.parse(s);
-                                const {choices} = j;
-                                const {text} = choices[0];
-                                
-                                process.stdout.write(text);
-                                
-                                fullS += text;
-                                fullS = fullS
-                                  .replace(/^\s+/, '')
-                                  .replace(/```+/g, '`');
-                                if (fullS) {
+                              try {
+                                if (!s.startsWith(`data: [DONE]`)) {
+                                  s = s.replace(/^data: /, '');
+                                  const j = JSON.parse(s);
+                                  const {choices} = j;
+                                  const {text} = choices[0];
+                                  
+                                  process.stdout.write(text);
+                                  
+                                  fullS += text;
+                                  fullS = fullS
+                                    .replace(/^\s+/, '')
+                                    .replace(/```+/g, '`');
+                                  if (fullS) {
+                                    _updateMessage();
+                                  }
+                                } else {
+                                  console.log();
+                                  
+                                  done = true;
                                   _updateMessage();
                                 }
-                              } else {
-                                console.log();
-                                
-                                done = true;
-                                _updateMessage();
+                              } catch(err) {
+                                console.log('got error', err);
                               }
                             });
                             /* gptRes.on('end', () => {
