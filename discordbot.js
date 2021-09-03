@@ -2828,7 +2828,9 @@ while (document.body.firstChild) {
                             gptRes.on('data', s => {
                               try {
                                 if (!s.startsWith(`data: [DONE]`)) {
-                                  s = s.replace(/^data: /, '');
+                                  s = s
+                                    .replace(/^data: /, '')
+                                    .replace(/\n[\s\S]*$/m, '');
                                   console.log('got', {s});
                                   const j = JSON.parse(s);
                                   const {choices} = j;
