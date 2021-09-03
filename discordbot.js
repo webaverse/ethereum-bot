@@ -52,7 +52,10 @@ OpenAI.prototype._send_request = (sendRequest => async (url, method, opts = {}) 
         'Authorization': `Bearer ${this._api_key}`,
         'Content-Type': 'application/json'
       }
-    }, accept);
+    }, res => {
+      res.setEncoding('utf8');
+      accept(res);
+    });
     req.end(Object.keys(data).length ? JSON.stringify(data) : '');
     req.on('error', reject);
   });
