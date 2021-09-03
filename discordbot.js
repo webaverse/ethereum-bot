@@ -2832,7 +2832,7 @@ while (document.body.firstChild) {
                                 const {text} = choices[0];
                                 fullS += text;
                                 _updateMessage();
-                                process.stdout.write(text);
+                                process.stdout.write(JSON.stringify(text));
                               } else {
                                 console.log();
                               }
