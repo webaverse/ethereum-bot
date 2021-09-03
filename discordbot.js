@@ -17,9 +17,10 @@ const { Transaction } = require('@ethereumjs/tx');
 const { default: Common } = require('@ethereumjs/common');
 const { hdkey } = require('ethereumjs-wallet');
 const prettyBytes = require('pretty-bytes');
+const OpenAI = require('openai-node');
 
 const {encodeSecret, decodeSecret} = require('./encryption.js');
-const { discordApiToken, tradeMnemonic, treasuryMnemonic, infuraProjectId, genesisNftStartId, genesisNftEndId, encryptionMnemonic } =
+const { discordApiToken, tradeMnemonic, treasuryMnemonic, infuraProjectId, genesisNftStartId, genesisNftEndId, encryptionMnemonic, openAiKey } =
 require('fs').existsSync('./config.json') ? require('./config.json') : {
     tradeMnemonic: process.env.tradeMnemonic,
     treasuryMnemonic: process.env.treasuryMnemonic,
@@ -30,6 +31,8 @@ require('fs').existsSync('./config.json') ? require('./config.json') : {
     encryptionMnemonic: process.env.encryptionMnemonic
   }
 
+
+const openai = new OpenAI(config.openAiKey);
 
 // isCollaborator
 // only collaborator can set
@@ -2738,6 +2741,26 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             // console.warn('get error 1');
                             const m = await message.author.send('<@!' + message.author.id + '>: ```you do not have access to ' + id + '```');
                           }
+                      } else if (split[0] === prefix + 'code' && split.length >= 2) {
+                          // console.log('got o', o);
+                          const gptResponse = await openai.complete({
+                            engine: 'davinci-codex',
+                            prompt: s,
+                            temperature: 0.9,
+
+                            /* stream: false,
+                            prompt: o.prompt, // 'this is a test',
+                            maxTokens: o.maxTokens, // 5,
+                            temperature: o.temperature, // 0.9,
+                            topP: o.topP, // 1,
+                            presencePenalty: o.presencePenalty, // 0,
+                            frequencyPenalty: o.frequencyPenalty, // 0,
+                            bestOf: o.bestOf, // 1,
+                            n: o.n, // 1,
+                            stop: o.stop, // ['\n'] */
+                          });
+                          
+                          message.channel.send('```' + gptResponse.data.replace(/```/g, '`') +  '```');
                       } else {
                           if (split[0] === prefix + 'mint') {
                               let quantity = parseInt(split[1], 10);
