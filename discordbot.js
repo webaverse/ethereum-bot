@@ -2772,7 +2772,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           }
                       } else if (split[0] === prefix + 'code' && split.length >= 2) {
                           if (message.author.id === '284377201233887233') {
-                            message.channel.send('d-bugging... error');
+                            const m = await message.channel.send('d-bugging... error');
 
                             const prompt = `\    
 <|endoftext|>/* I start with a blank HTML page, and incrementally modify it via <script> injection. Written for Chrome. */
@@ -2806,11 +2806,12 @@ ${s.replace(/^\s*\S+\s*/, '')}`;
                               stop: o.stop, // ['\n'] */
                             });
                             gptRes.on('data', s => {
-                              console.log('data', JSON.stringify(s));
+                              const j = JSON.parse(s);
+                              console.log(j);
                             });
-                            gptRes.on('end', () => {
+                            /* gptRes.on('end', () => {
                               console.log('end');
-                            });
+                            }); */
                             
                             // message.channel.send('```' + gptResponse.data.replace(/```/g, '`') +  '```');
                           } else {
