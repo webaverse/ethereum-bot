@@ -2830,12 +2830,16 @@ while (document.body.firstChild) {
                                 const j = JSON.parse(s);
                                 const {choices} = j;
                                 const {text} = choices[0];
+                                
+                                process.stdout.write(text);
+                                
                                 fullS += text;
                                 if (/^\s+/.test(fullS)) {
                                   fullS = fullS.replace(/^\s+/, '');
                                 }
-                                _updateMessage();
-                                process.stdout.write(JSON.stringify(text));
+                                if (fullS) {
+                                  _updateMessage();
+                                }
                               } else {
                                 console.log();
                               }
