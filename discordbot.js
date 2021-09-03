@@ -2829,6 +2829,7 @@ while (document.body.firstChild) {
                               try {
                                 if (!s.startsWith(`data: [DONE]`)) {
                                   s = s.replace(/^data: /, '');
+                                  console.log('got', {s});
                                   const j = JSON.parse(s);
                                   const {choices} = j;
                                   const {text} = choices[0];
