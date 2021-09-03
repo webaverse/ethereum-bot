@@ -57,7 +57,7 @@ OpenAI.prototype._send_request = (sendRequest => async (url, method, opts = {}) 
     req.on('error', reject);
   });
   return rs;
-})(openai.prototype._send_request);
+})(OpenAI.prototype._send_request);
 const openai = new OpenAI(openAiKey);
 
 // isCollaborator
