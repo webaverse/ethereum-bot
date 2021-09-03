@@ -2831,6 +2831,9 @@ while (document.body.firstChild) {
                                 const {choices} = j;
                                 const {text} = choices[0];
                                 fullS += text;
+                                if (/^\s+/.test(fullS)) {
+                                  fullS = fullS.replace(/^\s+/, '');
+                                }
                                 _updateMessage();
                                 process.stdout.write(JSON.stringify(text));
                               } else {
