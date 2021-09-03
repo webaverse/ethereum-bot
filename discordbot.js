@@ -2750,9 +2750,10 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           
                           return;
                           // console.log('got o', o);
+                          const prompt = s.replace(/^\s*\S+\s*/, '');
                           const gptResponse = await openai.complete({
                             engine: 'davinci-codex',
-                            prompt: s,
+                            prompt,
                             temperature: 0.9,
 
                             /* stream: false,
