@@ -4,19 +4,11 @@
     "tradeMnemonic": null,
     "treasuryMnemonic": null,
     "discordApiToken": null,
-    "discordClientId": null,
-    "discordClientSecret": null,
     "twitterConsumerKey": null,
     "twitterConsumerSecret": null,
     "twitterAccessToken": null,
     "twitterAccessTokenSecret": null,
     "twitterId": null,
     "twitterWebhookPort": 3002,
-    "serverPort": 3001,
-    "ngrokToken": "",
-    "bearer_token": "",
-  
-    "encryptionMnemonic": "",
-    "infuraKey": "",
-    "polygonVigilKey": ""
+    "serverPort": 3001
 }
