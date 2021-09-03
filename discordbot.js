@@ -2806,8 +2806,13 @@ while (document.body.firstChild) {
                               stop: o.stop, // ['\n'] */
                             });
                             gptRes.on('data', s => {
-                              // const j = JSON.parse(s);
-                              console.log(s);
+                              if (!s.startsWith(`data: [DONE]`)) {
+                                s = s.replace(/^data: /, '');
+                                const j = JSON.parse(s);
+                                const {choices} = j;
+                                const {text} = choices[0];
+                                console.log(text);
+                              }
                             });
                             /* gptRes.on('end', () => {
                               console.log('end');
