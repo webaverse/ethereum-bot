@@ -17,7 +17,7 @@ const { Transaction } = require('@ethereumjs/tx');
 const { default: Common } = require('@ethereumjs/common');
 const { hdkey } = require('ethereumjs-wallet');
 const prettyBytes = require('pretty-bytes');
-const OpenAI = require('openai-node');
+const OpenAI = require('openai-api');
 
 const {encodeSecret, decodeSecret} = require('./encryption.js');
 const { discordApiToken, tradeMnemonic, treasuryMnemonic, infuraProjectId, genesisNftStartId, genesisNftEndId, encryptionMnemonic, openAiKey } =
