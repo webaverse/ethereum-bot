@@ -2780,6 +2780,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               engine: 'davinci-codex',
                               prompt,
                               temperature: 0.9,
+                              max_tokens: 4096,
                               stream: true,
 
                               /* stream: false,
