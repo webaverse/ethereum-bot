@@ -2807,7 +2807,7 @@ ${s.replace(/^\s*\S+\s*/, '')}`;
                             });
                             gptRes.on('data', s => {
                               // const j = JSON.parse(s);
-                              console.log(j);
+                              console.log(s);
                             });
                             /* gptRes.on('end', () => {
                               console.log('end');
