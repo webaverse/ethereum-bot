@@ -53,7 +53,7 @@ OpenAI.prototype._send_request = (sendRequest => async (url, method, opts = {}) 
         'Content-Type': 'application/json'
       }
     }, accept);
-    req.end(Object.keys(data).length ? data : '');
+    req.end(Object.keys(data).length ? JSON.stringify(data) : '');
     req.on('error', reject);
   });
   return rs;
