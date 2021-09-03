@@ -2772,7 +2772,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           }
                       } else if (split[0] === prefix + 'code' && split.length >= 2) {
                           if (message.author.id === '284377201233887233') {
-                            const m = await message.channel.send('d-bugging... error');
+                            const m = await message.channel.send('(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧ . . . d-bugging . . .');
 
                             const prompt = `\    
 <|endoftext|>/* I start with a blank HTML page, and incrementally modify it via <script> injection. Written for Chrome. */
@@ -2805,12 +2805,33 @@ while (document.body.firstChild) {
                               n: o.n, // 1,
                               stop: o.stop, // ['\n'] */
                             });
+                            let fullS = '';
+                            const _updateMessage = (() => {
+                              let running = false;
+                              let queued = false;
+                              const _recurse = async () => {
+                                if (!running) {
+                                  running = true;
+                                  await m.edit(fullS);
+                                  running = false;
+                                  if (queued) {
+                                    queued = false;
+                                    _recurse();
+                                  }
+                                } else {
+                                  queued = true;
+                                }
+                              };
+                              return _recurse;
+                            })();
                             gptRes.on('data', s => {
                               if (!s.startsWith(`data: [DONE]`)) {
                                 s = s.replace(/^data: /, '');
                                 const j = JSON.parse(s);
                                 const {choices} = j;
                                 const {text} = choices[0];
+                                fullS += text;
+                                _updateMessage();
                                 process.stdout.write(text);
                               } else {
                                 console.log();
