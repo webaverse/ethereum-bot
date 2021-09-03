@@ -38,7 +38,7 @@ OpenAI.prototype._send_request = (sendRequest => async function(url, method, opt
     return result.split(' ').join('_').toLowerCase();
   }
   
-  console.log('got req', url, method, opts);
+  // console.log('got req', url, method, opts);
 
   const data = {};
   for (const key in opts) {
@@ -2811,7 +2811,9 @@ while (document.body.firstChild) {
                                 const j = JSON.parse(s);
                                 const {choices} = j;
                                 const {text} = choices[0];
-                                console.log(text);
+                                process.stdout.write(text);
+                              } else {
+                                console.log();
                               }
                             });
                             /* gptRes.on('end', () => {
