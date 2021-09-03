@@ -32,8 +32,7 @@ require('fs').existsSync('./config.json') ? require('./config.json') : {
   }
 
 
-const openai = new OpenAI(openAiKey);
-openai.prototype._send_request = (sendRequest => async (url, method, opts = {}) => {
+OpenAI.prototype._send_request = (sendRequest => async (url, method, opts = {}) => {
   let camelToUnderscore = (key) => {
     let result = key.replace(/([A-Z])/g, " $1");
     return result.split(' ').join('_').toLowerCase();
@@ -59,6 +58,7 @@ openai.prototype._send_request = (sendRequest => async (url, method, opts = {}) 
   });
   return rs;
 })(openai.prototype._send_request);
+const openai = new OpenAI(openAiKey);
 
 // isCollaborator
 // only collaborator can set
