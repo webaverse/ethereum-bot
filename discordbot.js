@@ -33,6 +33,32 @@ require('fs').existsSync('./config.json') ? require('./config.json') : {
 
 
 const openai = new OpenAI(openAiKey);
+openai.prototype._send_request = (sendRequest => async (url, method, opts = {}) => {
+  let camelToUnderscore = (key) => {
+    let result = key.replace(/([A-Z])/g, " $1");
+    return result.split(' ').join('_').toLowerCase();
+  }
+  
+  console.log('got req', url, method, opts);
+
+  const data = {};
+  for (const key in opts) {
+    data[camelToUnderscore(key)] = opts[key];
+  }
+
+  const rs = await new Promise((accept, reject) => {
+    const req = https.request(url, {
+      method,
+      headers: {
+        'Authorization': `Bearer ${this._api_key}`,
+        'Content-Type': 'application/json'
+      }
+    }, accept);
+    req.end(Object.keys(data).length ? data : '');
+    req.on('error', reject);
+  });
+  return rs;
+})(openai.prototype._send_request);
 
 // isCollaborator
 // only collaborator can set
@@ -2744,31 +2770,37 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                       } else if (split[0] === prefix + 'code' && split.length >= 2) {
                           if (message.author.id === '284377201233887233') {
                             message.channel.send('d-bugging... error');
+                            
+                            // console.log('got o', o);
+                            const prompt = s.replace(/^\s*\S+\s*/, '');
+                            const gptRes = await openai.complete({
+                              engine: 'davinci-codex',
+                              prompt,
+                              temperature: 0.9,
+                              stream: true,
+
+                              /* stream: false,
+                              prompt: o.prompt, // 'this is a test',
+                              maxTokens: o.maxTokens, // 5,
+                              temperature: o.temperature, // 0.9,
+                              topP: o.topP, // 1,
+                              presencePenalty: o.presencePenalty, // 0,
+                              frequencyPenalty: o.frequencyPenalty, // 0,
+                              bestOf: o.bestOf, // 1,
+                              n: o.n, // 1,
+                              stop: o.stop, // ['\n'] */
+                            });
+                            gptRes.on('data', s => {
+                              console.log('data', JSON.stringify(s));
+                            });
+                            gptRes.on('end', () => {
+                              console.log('end');
+                            });
+                            
+                            // message.channel.send('```' + gptResponse.data.replace(/```/g, '`') +  '```');
                           } else {
                             message.channel.send('no d-bug detected for user id ' + message.author.id);
                           }
-                          
-                          return;
-                          // console.log('got o', o);
-                          const prompt = s.replace(/^\s*\S+\s*/, '');
-                          const gptResponse = await openai.complete({
-                            engine: 'davinci-codex',
-                            prompt,
-                            temperature: 0.9,
-
-                            /* stream: false,
-                            prompt: o.prompt, // 'this is a test',
-                            maxTokens: o.maxTokens, // 5,
-                            temperature: o.temperature, // 0.9,
-                            topP: o.topP, // 1,
-                            presencePenalty: o.presencePenalty, // 0,
-                            frequencyPenalty: o.frequencyPenalty, // 0,
-                            bestOf: o.bestOf, // 1,
-                            n: o.n, // 1,
-                            stop: o.stop, // ['\n'] */
-                          });
-                          
-                          message.channel.send('```' + gptResponse.data.replace(/```/g, '`') +  '```');
                       } else {
                           if (split[0] === prefix + 'mint') {
                               let quantity = parseInt(split[1], 10);
