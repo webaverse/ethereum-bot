@@ -32,7 +32,7 @@ require('fs').existsSync('./config.json') ? require('./config.json') : {
   }
 
 
-const openai = new OpenAI(config.openAiKey);
+const openai = new OpenAI(openAiKey);
 
 // isCollaborator
 // only collaborator can set
