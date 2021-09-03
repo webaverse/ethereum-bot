@@ -32,7 +32,7 @@ require('fs').existsSync('./config.json') ? require('./config.json') : {
   }
 
 
-OpenAI.prototype._send_request = (sendRequest => async (url, method, opts = {}) => {
+OpenAI.prototype._send_request = (sendRequest => async function(url, method, opts = {}) {
   let camelToUnderscore = (key) => {
     let result = key.replace(/([A-Z])/g, " $1");
     return result.split(' ').join('_').toLowerCase();
