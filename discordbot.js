@@ -2785,11 +2785,11 @@ while (document.body.firstChild) {
   document.body.removeChild(document.body.firstChild);
 }
 
-/* Command: Write a function that returns a unicorn. */
-${s.replace(/^\s*\S+\s*/, '')}`;
+/* Command: ${s.replace(/^\s*\S+\s*/, '')} */`;
                             const gptRes = await openai.complete({
                               engine: 'davinci-codex',
                               prompt,
+                              stop: `/* Command:`,
                               temperature: 0,
                               max_tokens: 4096 - prompt.length,
                               stream: true,
