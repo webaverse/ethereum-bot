@@ -2812,7 +2812,7 @@ while (document.body.firstChild) {
                               const _recurse = async () => {
                                 if (!running) {
                                   running = true;
-                                  await m.edit(fullS);
+                                  await m.edit('```' + fullS + '```');
                                   running = false;
                                   if (queued) {
                                     queued = false;
@@ -2834,9 +2834,9 @@ while (document.body.firstChild) {
                                 process.stdout.write(text);
                                 
                                 fullS += text;
-                                if (/^\s+/.test(fullS)) {
-                                  fullS = fullS.replace(/^\s+/, '');
-                                }
+                                fullS = fullS
+                                  .replace(/^\s+/, '')
+                                  .replace(/```+/g, '`');
                                 if (fullS) {
                                   _updateMessage();
                                 }
