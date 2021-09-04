@@ -2870,24 +2870,60 @@ while (document.body.firstChild) {
                           _openAiCodex(message, `\
 <|endoftext|>/* I start with a blank HTML page, and incrementally modify it via <script> injection. Written for Chrome. */
 
-# HTML (JS console)
+/***
+  JavaScript
+***/
+
 /* Command: Add "Hello World", by adding an HTML DOM node */
 var helloWorld = document.createElement('div');
 helloWorld.innerHTML = 'Hello World';
 document.body.appendChild(helloWorld);
 /* EOF */
+
 /* Command: Clear the page. */
 while (document.body.firstChild) {
   document.body.removeChild(document.body.firstChild);
 }
 /* EOF */
 
-# GLSL (shadertoy.com mainImage API)
+/***
+  GLSL (Shader Toy API)
+***/
+
 /* Command: Solid red color. */
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
   fragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }
 /* EOF */
+
+/* Command: */
+#define S(a, b, t) smoothstep(a, b, t)
+float Circle(vec2 point, vec2 centre, float radius,float width){
+  float a = -abs(length(point-centre)-radius)+width;
+
+  float blur = (width*1000./iResolution.y);
+
+  float b = S(0.-blur,0.+blur,a);
+  return b;
+}
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{
+  vec2 uv = (fragCoord-iResolution.xy*.5)/iResolution.y;
+  uv = (uv-.5)*5.;
+
+  vec2 coords = fract(uv);
+  vec2 id = floor(uv);
+
+  float m = 0.;
+
+  m += Circle(coords,vec2(0.5,0.5),.45,.01);
+
+  vec3 col = vec3(m);
+
+  fragColor = vec4(col,1);
+}
+/* EOF */
+
 /* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* EOF:`);
                       } else {
                           if (split[0] === prefix + 'mint') {
