@@ -2930,7 +2930,7 @@ var helloWorld = document.createElement('div');
 helloWorld.innerHTML = 'Hello World';
 document.body.appendChild(helloWorld);
 /* Explanation:
-- Add "Hello World", by adding an HTML DOM node.
+- Prints "Hello World", by adding an HTML DOM node to the document.
 */
 
 /* Code */
@@ -2938,7 +2938,7 @@ while (document.body.firstChild) {
   document.body.removeChild(document.body.firstChild);
 }
 /* Explanation:
-- Clear the document.
+- Clears the document.
 */
 
 /* Code */
@@ -2949,10 +2949,22 @@ div.addEventListener('drop', e => {
 });
 document.body.appendChild(div);
 /* Explanation:
-- Create a DOM node, .drop-zone
-- Listen for the 'drop' event on the node.
-- Add the node to the document
-- You will get an error if you run this since the code is not complete.
+- You get an error if you run this, since the code is not complete.
+*/
+
+/* Code */
+#version 330 core
+layout (location = 0) in vec3 aPos;
+  
+out vec4 vertexColor; // specify a color output to the fragment shader
+
+void main() {
+  gl_Position = vec4(aPos, 1.0); // see how we directly give a vec3 to vec4's constructor
+  vertexColor = vec4(0.5, 0.0, 0.0, 1.0); // set the output variable to a dark-red color
+}
+/* Explanation:
+- A vertex shader that draws red triangles.
+- You also need the fragment shader.
 */
 
 /* Code */
