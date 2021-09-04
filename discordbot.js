@@ -2868,7 +2868,7 @@ while (document.body.firstChild) {
 /* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`);
                       } else if (split[0] === prefix + 'glsl' && split.length >= 2) {
                           _openAiCodex(message, `\    
-<|endoftext|>/* Hi folks! I am a professional shader developer; I have been writing GLSL code in shadertoy for over 10 years now. I have an hour of free time so I will gladly write any shader if you post your requests in a comment! I alwaut run this code on https://shadertoy.com/ to make sure it just works when you paste it in! */
+<|endoftext|>/* Hi folks! I am a professional shader developer; I have been writing GLSL code in shadertoy for over 10 years now. I have an hour of free time so I will gladly write any shader if you post your requests in a comment! Paste the reslt into https://shadertoy.com/ and it will run! */
 /* Request: A shader that looks like a circle (a moon) with a gradient color animation in the background. */
 float circle(vec2 uv,vec2 pos,float radius,float feather) {
   vec2 uvDist=uv-pos;
