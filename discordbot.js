@@ -2868,44 +2868,22 @@ while (document.body.firstChild) {
 /* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`);
                       } else if (split[0] === prefix + 'glsl' && split.length >= 2) {
                           _openAiCodex(message, `\
-<|endoftext|>/* I will write some shader toy GLSL code. I start by opening https://shadertoy.com/. Then I copy one of the codes below and paste it into the box. Then I hit the play button and it works! */
-
-// Command: Solid red color.
-// --- copy/paste this ---
+<|endoftext|>/* I start with a blank HTML page, and incrementally modify it via <script> injection. Written for Chrome. */
+# HTML (JS console)
+/* Command: Add "Hello World", by adding an HTML DOM node */
+var helloWorld = document.createElement('div');
+helloWorld.innerHTML = 'Hello World';
+document.body.appendChild(helloWorld);
+/* Command: Clear the page. */
+while (document.body.firstChild) {
+  document.body.removeChild(document.body.firstChild);
+}
+# GLSL (shadertoy.com mainImage API)
+/* Command: Solid red color. */
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
   fragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }
-
-// Command: Animated scrolling noise pattern. It looks a little bit like a heightmap.
-// --- copy/paste this ---
-float N21(vec2 p) {
-  return fract(sin(p.x * 100. + p.y * 6574.) * 5647.);
-}
-float SmoothNoise(vec2 uv){
-  vec2 lv = fract(uv * 10.);
-  vec2 id = floor(uv * 10.);
-  
-  lv = lv * lv * (3. -2. * lv);
-  
-  float bl = N21(id);
-  float br = N21(id + vec2(1,0));
-  float b = mix(bl, br, lv.x);
-  
-  float tl = N21(id+vec2(0,1));
-  float tr = N21(id+vec2(1,1));
-  float t = mix(tl, tr, lv.x);
-  
-  return mix(b, t, lv.y);
-}
-void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
-  vec2 uv = fragCoord/iResolution.xy;
-  uv += iTime * .1;
-  vec3 col = vec3(SmoothNoise(uv));
-  fragColor = vec4(col, 1.0);
-}
-
-// Command: ${s.replace(/^\s*\S+\s*/, '')}
-// -- copy/paste this --`, `// Command:`);
+/* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`);
                       } else {
                           if (split[0] === prefix + 'mint') {
                               let quantity = parseInt(split[1], 10);
