@@ -2896,7 +2896,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 }
 /* EOF */
 
-/* Command: */
+/* Command: A bunch of white circles. */
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
   vec2 uv = (fragCoord-iResolution.xy*.5)/iResolution.y;
