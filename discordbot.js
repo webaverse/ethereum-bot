@@ -2973,6 +2973,28 @@ CMD ["node", "src/index.js"]
 */
 
 /* Code */
+var importObject = {
+  imports: {
+    imported_func: function(arg) {
+      console.log(arg);
+    }
+  }
+};
+
+fetch('simple.wasm').then(response =>
+  response.arrayBuffer()
+).then(bytes =>
+  WebAssembly.instantiate(bytes, importObject)
+).then(result =>
+  result.instance.exports.exported_func()
+);
+/* Explanation:
+- Load a WebAssembly binary (simple.wasm)
+- Instantiate with imports
+- Call the exported function, exported_func()
+*/
+
+/* Code */
 ${s.replace(/^\s*\S+\s*/, '')}
 /* Explanation:`, `*/
 
