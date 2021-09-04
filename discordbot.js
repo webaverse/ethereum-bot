@@ -2869,6 +2869,12 @@ while (document.body.firstChild) {
                       } else if (split[0] === prefix + 'glsl' && split.length >= 2) {
                           _openAiCodex(message, `\    
 <|endoftext|>/* I start by opening https://shadertoy.com/ and I paste this code. Then I hit the play button. For each command we make sure to refresh the browser before pasting the code again. */
+
+/* Comand: A solid red color. */
+void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
+  fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+}
+
 /* Comand: A scrolling noise pattern. It looks a little bit like a heightmap. */
 float N21(vec2 p) {
   return fract(sin(p.x * 100. + p.y * 6574.) * 5647.);
