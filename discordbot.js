@@ -2990,7 +2990,7 @@ fetch('simple.wasm').then(response =>
 );
 /* Explanation:
 - Load a WebAssembly binary (simple.wasm)
-- Instantiate with imports
+- Instantiate WebAssembly module with imports
 - Call the exported function, exported_func()
 */
 
