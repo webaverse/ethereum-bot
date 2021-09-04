@@ -2949,7 +2949,7 @@ div.addEventListener('drop', e => {
 });
 document.body.appendChild(div);
 /* Explanation:
-- You get an error if you run this, since the code is not complete.
+- This won't run.
 */
 
 /* Code */
