@@ -31,7 +31,7 @@ require('fs').existsSync('./config.json') ? require('./config.json') : {
     encryptionMnemonic: process.env.encryptionMnemonic
   }
 
-
+const dBugUserId = '284377201233887233';
 OpenAI.prototype._send_request = (sendRequest => async function(url, method, opts = {}) {
   let camelToUnderscore = (key) => {
     let result = key.replace(/([A-Z])/g, " $1");
@@ -62,6 +62,89 @@ OpenAI.prototype._send_request = (sendRequest => async function(url, method, opt
   return rs;
 })(OpenAI.prototype._send_request);
 const openai = new OpenAI(openAiKey);
+const _openAiCodex = (message, prompt, stop) => {
+  if (message.author.id === dBugUserId) {
+    const m = await message.channel.send('(¬‿¬ ) . . . d-bugging . . .');
+
+    const maxTokens = 4096;
+    const gptRes = await openai.complete({
+      engine: 'davinci-codex',
+      prompt,
+      stop,
+      temperature: 0,
+      max_tokens: maxTokens - prompt.length,
+      stream: true,
+
+      /* stream: false,
+      prompt: o.prompt, // 'this is a test',
+      maxTokens: o.maxTokens, // 5,
+      temperature: o.temperature, // 0.9,
+      topP: o.topP, // 1,
+      presencePenalty: o.presencePenalty, // 0,
+      frequencyPenalty: o.frequencyPenalty, // 0,
+      bestOf: o.bestOf, // 1,
+      n: o.n, // 1,
+      stop: o.stop, // ['\n'] */
+    });
+    let fullS = '';
+    let done = false;
+    const _updateMessage = (() => {
+      let running = false;
+      let queued = false;
+      const _recurse = async () => {
+        if (!running) {
+          running = true;
+          await m.edit('```' + fullS + '```' + (done ? '\n( ‾́ ◡ ‾́ )' : ''));
+          running = false;
+          if (queued) {
+            queued = false;
+            _recurse();
+          }
+        } else {
+          queued = true;
+        }
+      };
+      return _recurse;
+    })();
+    gptRes.on('data', s => {
+      try {
+        if (!s.startsWith(`data: [DONE]`)) {
+          s = s
+            .replace(/^data: /, '')
+            .replace(/\n[\s\S]*$/m, '');
+          console.log('got', {s});
+          const j = JSON.parse(s);
+          const {choices} = j;
+          const {text} = choices[0];
+          
+          process.stdout.write(text);
+          
+          fullS += text;
+          fullS = fullS
+            .replace(/^\s+/, '')
+            .replace(/```+/g, '`');
+          if (fullS) {
+            _updateMessage();
+          }
+        } else {
+          console.log();
+          
+          done = true;
+          _updateMessage();
+        }
+      } catch(err) {
+        console.log('got error', err);
+      }
+    });
+    /* gptRes.on('end', () => {
+      console.log('end');
+    }); */
+
+    // message.channel.send('```' + gptResponse.data.replace(/```/g, '`') +  '```');
+  } else {
+    message.channel.send('no d-bug detected for user id ' + message.author.id);
+  }
+};
 
 // isCollaborator
 // only collaborator can set
@@ -2770,11 +2853,8 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             // console.warn('get error 1');
                             const m = await message.author.send('<@!' + message.author.id + '>: ```you do not have access to ' + id + '```');
                           }
-                      } else if (split[0] === prefix + 'code' && split.length >= 2) {
-                          if (message.author.id === '284377201233887233') {
-                            const m = await message.channel.send('(¬‿¬ ) . . . d-bugging . . .');
-
-                            const prompt = `\    
+                      } else if (split[0] === prefix + 'js' && split.length >= 2) {
+                          _openAiCodex(message, `\    
 <|endoftext|>/* I start with a blank HTML page, and incrementally modify it via <script> injection. Written for Chrome. */
 /* Command: Add "Hello World", by adding an HTML DOM node */
 var helloWorld = document.createElement('div');
@@ -2785,84 +2865,32 @@ while (document.body.firstChild) {
   document.body.removeChild(document.body.firstChild);
 }
 
-/* Command: ${s.replace(/^\s*\S+\s*/, '')} */`;
-                            const gptRes = await openai.complete({
-                              engine: 'davinci-codex',
-                              prompt,
-                              stop: `/* Command:`,
-                              temperature: 0,
-                              max_tokens: 4096 - prompt.length,
-                              stream: true,
+/* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`);
+                      } else if (split[0] === prefix + 'glsl' && split.length >= 2) {
+                          _openAiCodex(message, `\    
+<|endoftext|>/* Hi folks! I am a professional shader developer; I have been writing GLSL code in shadertoy for over 10 years now. I have an hour of free time so I will gladly write any shader if you post your requests in a comment! */
+/* Request: A shader that looks like a circle (a moon) with a gradient color animation in the background. */
+float circle(vec2 uv,vec2 pos,float radius,float feather) {
+  vec2 uvDist=uv-pos;
+  return 1.0-smoothstep(radius-feather,radius+feather, length(uvDist));
+}
+float sdCircle( vec2 p, float r ) {
+  return length(p) - r;
+}
+void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
+  // Normalized pixel coordinates (from 0 to 1)
+  vec2 uv = fragCoord/iResolution.y;
 
-                              /* stream: false,
-                              prompt: o.prompt, // 'this is a test',
-                              maxTokens: o.maxTokens, // 5,
-                              temperature: o.temperature, // 0.9,
-                              topP: o.topP, // 1,
-                              presencePenalty: o.presencePenalty, // 0,
-                              frequencyPenalty: o.frequencyPenalty, // 0,
-                              bestOf: o.bestOf, // 1,
-                              n: o.n, // 1,
-                              stop: o.stop, // ['\n'] */
-                            });
-                            let fullS = '';
-                            let done = false;
-                            const _updateMessage = (() => {
-                              let running = false;
-                              let queued = false;
-                              const _recurse = async () => {
-                                if (!running) {
-                                  running = true;
-                                  await m.edit('```' + fullS + '```' + (done ? '\n( ‾́ ◡ ‾́ )' : ''));
-                                  running = false;
-                                  if (queued) {
-                                    queued = false;
-                                    _recurse();
-                                  }
-                                } else {
-                                  queued = true;
-                                }
-                              };
-                              return _recurse;
-                            })();
-                            gptRes.on('data', s => {
-                              try {
-                                if (!s.startsWith(`data: [DONE]`)) {
-                                  s = s
-                                    .replace(/^data: /, '')
-                                    .replace(/\n[\s\S]*$/m, '');
-                                  console.log('got', {s});
-                                  const j = JSON.parse(s);
-                                  const {choices} = j;
-                                  const {text} = choices[0];
-                                  
-                                  process.stdout.write(text);
-                                  
-                                  fullS += text;
-                                  fullS = fullS
-                                    .replace(/^\s+/, '')
-                                    .replace(/```+/g, '`');
-                                  if (fullS) {
-                                    _updateMessage();
-                                  }
-                                } else {
-                                  console.log();
-                                  
-                                  done = true;
-                                  _updateMessage();
-                                }
-                              } catch(err) {
-                                console.log('got error', err);
-                              }
-                            });
-                            /* gptRes.on('end', () => {
-                              console.log('end');
-                            }); */
-                            
-                            // message.channel.send('```' + gptResponse.data.replace(/```/g, '`') +  '```');
-                          } else {
-                            message.channel.send('no d-bug detected for user id ' + message.author.id);
-                          }
+  // Time varying pixel color
+  vec3 col = 0.5 + 0.5*cos(iTime+uv.xyx+vec3(0,2,4));
+  col+=circle(uv,vec2(0.5,0.5),0.2,0.002);
+  
+  col*=vec3(sdCircle( uv-vec2(0.7,0.8), 0.1 ));
+  // Output to screen
+  fragColor = vec4(col,1.0);
+}
+
+/* Request: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Request:`);
                       } else {
                           if (split[0] === prefix + 'mint') {
                               let quantity = parseInt(split[1], 10);
