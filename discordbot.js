@@ -2868,11 +2868,8 @@ while (document.body.firstChild) {
 /* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`);
                       } else if (split[0] === prefix + 'glsl' && split.length >= 2) {
                           _openAiCodex(message, `\    
-# Hello
-Hi folks! I am a professional shader developer; I have been writing GLSL code in shadertoy for over 10 years now. I have an hour of free time so I will gladly write any shader if you post your requests in a comment! Paste the reslt into https://shadertoy.com/ and hit play!
-
-# Request: A scrolling noise pattern. It looks a little bit like a heightmap.
-# Shader:
+<|endoftext|>/* I start by opening https://shadertoy.com/ and I paste this code. Then I hit the play button. For each command we make sure to refresh the browser before pasting the code again. */
+/* Comand: A scrolling noise pattern. It looks a little bit like a heightmap. */
 float N21(vec2 p) {
   return fract(sin(p.x * 100. + p.y * 6574.) * 5647.);
 }
@@ -2899,25 +2896,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
   fragColor = vec4(col, 1.0);
 }
 
-# Request: A circle with an animated gradient based on the iTime uniform.
-# Shader:
-float circle(vec2 uv,vec2 pos,float radius,float feather) {
-  vec2 uvDist=uv-pos;
-  return 1.0-smoothstep(radius-feather,radius+feather, length(uvDist));
-}
-float sdCircle( vec2 p, float r ) {
-  return length(p) - r;
-}
-void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
-  vec2 uv = fragCoord/iResolution.y;
-  vec3 col = 0.5 + 0.5*cos(iTime+uv.xyx+vec3(0,2,4));
-  col+=circle(uv,vec2(0.5,0.5),0.2,0.002);
-  col*=vec3(sdCircle( uv-vec2(0.7,0.8), 0.1 ));
-  fragColor = vec4(col,1.0);
-}
-
-# Request: ${s.replace(/^\s*\S+\s*/, '')}
-# Shader: `, `# Request: `);
+/* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`);
                       } else {
                           if (split[0] === prefix + 'mint') {
                               let quantity = parseInt(split[1], 10);
