@@ -2925,7 +2925,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 /* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* EOF`);
                       } else if (split[0] === prefix + 'explain' && split.length >= 2) {
                         _openAiCodex(message, `\
-/* JavaScript code */
+/* Code */
 var helloWorld = document.createElement('div');
 helloWorld.innerHTML = 'Hello World';
 document.body.appendChild(helloWorld);
@@ -2933,7 +2933,7 @@ document.body.appendChild(helloWorld);
 - Add "Hello World", by adding an HTML DOM node.
 */
 
-/* JavaScript code */
+/* Code */
 while (document.body.firstChild) {
   document.body.removeChild(document.body.firstChild);
 }
@@ -2941,7 +2941,7 @@ while (document.body.firstChild) {
 - Clear the document.
 */
 
-/* JavaScript code */
+/* Code */
 const div = document.createElement('div');
 div.classList.add('drop-zone');
 div.addEventListener('drop', e => {
@@ -2955,11 +2955,11 @@ document.body.appendChild(div);
 - You will get an error if you run this since the code is not complete.
 */
 
-/* JavaScript code */
+/* Code */
 ${s.replace(/^\s*\S+\s*/, '')}
 /* Explanation:`, `*/
 
-/* JavaScript code`);
+/* Code`);
                       } else {
                           if (split[0] === prefix + 'mint') {
                               let quantity = parseInt(split[1], 10);
