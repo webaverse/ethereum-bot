@@ -2888,7 +2888,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
   fragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }
 /* EOF */
-/* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`);
+/* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* EOF:`);
                       } else {
                           if (split[0] === prefix + 'mint') {
                               let quantity = parseInt(split[1], 10);
