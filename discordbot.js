@@ -2949,7 +2949,7 @@ div.addEventListener('drop', e => {
 });
 document.body.appendChild(div);
 /* Explanation:
-- This will error
+- Add a .drop-zone DOM node and listen for drop events
 */
 
 /* Code */
