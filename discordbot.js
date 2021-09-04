@@ -2868,15 +2868,15 @@ while (document.body.firstChild) {
 /* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`);
                       } else if (split[0] === prefix + 'glsl' && split.length >= 2) {
                           _openAiCodex(message, `\    
-<|endoftext|>/* I start by opening https://shadertoy.com/ and I paste this code. Then I hit the play button. For each command we make sure to refresh the browser before pasting the code again. */
+<|endoftext|>/* I will write some shader toy GLSL code. I start by opening https://shadertoy.com/. Then I copy one of the codes below and paste it into the box. Then I hit the play button and it works! */
 
-// Comand: Solid red color.
+// Command: Solid red color.
 // --- copy/paste this ---
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
   fragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }
 
-// Comand: Animated scrolling noise pattern. It looks a little bit like a heightmap.
+// Command: Animated scrolling noise pattern. It looks a little bit like a heightmap.
 // --- copy/paste this ---
 float N21(vec2 p) {
   return fract(sin(p.x * 100. + p.y * 6574.) * 5647.);
