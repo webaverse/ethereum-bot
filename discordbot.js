@@ -2867,7 +2867,7 @@ while (document.body.firstChild) {
 
 /* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`);
                       } else if (split[0] === prefix + 'glsl' && split.length >= 2) {
-                          _openAiCodex(message, `\    
+                          _openAiCodex(message, `\
 <|endoftext|>/* I will write some shader toy GLSL code. I start by opening https://shadertoy.com/. Then I copy one of the codes below and paste it into the box. Then I hit the play button and it works! */
 
 // Command: Solid red color.
