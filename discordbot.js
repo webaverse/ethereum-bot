@@ -2897,15 +2897,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 /* EOF */
 
 /* Command: */
-#define S(a, b, t) smoothstep(a, b, t)
-float Circle(vec2 point, vec2 centre, float radius,float width){
-  float a = -abs(length(point-centre)-radius)+width;
-
-  float blur = (width*1000./iResolution.y);
-
-  float b = S(0.-blur,0.+blur,a);
-  return b;
-}
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
   vec2 uv = (fragCoord-iResolution.xy*.5)/iResolution.y;
@@ -2916,7 +2907,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
   float m = 0.;
 
-  m += Circle(coords,vec2(0.5,0.5),.45,.01);
+  vec2 point = coords;
+  vec2 centre = vec2(0.5, 0.5);
+  float radius = .45;
+  float width = .01;
+  float a = -abs(length(point-centre)-radius)+width;
+  float blur = (width*1000./iResolution.y);
+  float b = smoothstep(0.-blur,0.+blur,a);
+  m += b;
 
   vec3 col = vec3(m);
 
