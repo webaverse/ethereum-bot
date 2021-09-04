@@ -2869,20 +2869,25 @@ while (document.body.firstChild) {
                       } else if (split[0] === prefix + 'glsl' && split.length >= 2) {
                           _openAiCodex(message, `\
 <|endoftext|>/* I start with a blank HTML page, and incrementally modify it via <script> injection. Written for Chrome. */
+
 # HTML (JS console)
 /* Command: Add "Hello World", by adding an HTML DOM node */
 var helloWorld = document.createElement('div');
 helloWorld.innerHTML = 'Hello World';
 document.body.appendChild(helloWorld);
+/* EOF */
 /* Command: Clear the page. */
 while (document.body.firstChild) {
   document.body.removeChild(document.body.firstChild);
 }
+/* EOF */
+
 # GLSL (shadertoy.com mainImage API)
 /* Command: Solid red color. */
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
   fragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }
+/* EOF */
 /* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`);
                       } else {
                           if (split[0] === prefix + 'mint') {
