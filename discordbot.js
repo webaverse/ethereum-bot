@@ -2870,12 +2870,14 @@ while (document.body.firstChild) {
                           _openAiCodex(message, `\    
 <|endoftext|>/* I start by opening https://shadertoy.com/ and I paste this code. Then I hit the play button. For each command we make sure to refresh the browser before pasting the code again. */
 
-/* Comand: A solid red color. */
+// Comand: Solid red color.
+// --- copy/paste this ---
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
   fragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }
 
-/* Comand: A scrolling noise pattern. It looks a little bit like a heightmap. */
+// Comand: Animated scrolling noise pattern. It looks a little bit like a heightmap.
+// --- copy/paste this ---
 float N21(vec2 p) {
   return fract(sin(p.x * 100. + p.y * 6574.) * 5647.);
 }
@@ -2902,7 +2904,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
   fragColor = vec4(col, 1.0);
 }
 
-/* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`);
+// Command: ${s.replace(/^\s*\S+\s*/, '')}
+// -- copy/paste this --`, `// Command:`);
                       } else {
                           if (split[0] === prefix + 'mint') {
                               let quantity = parseInt(split[1], 10);
