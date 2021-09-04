@@ -62,7 +62,7 @@ OpenAI.prototype._send_request = (sendRequest => async function(url, method, opt
   return rs;
 })(OpenAI.prototype._send_request);
 const openai = new OpenAI(openAiKey);
-const _openAiCodex = (message, prompt, stop) => {
+const _openAiCodex = async (message, prompt, stop) => {
   if (message.author.id === dBugUserId) {
     const m = await message.channel.send('(¬‿¬ ) . . . d-bugging . . .');
 
