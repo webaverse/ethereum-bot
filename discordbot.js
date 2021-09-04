@@ -2855,7 +2855,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           }
                       } else if (split[0] === prefix + 'js' && split.length >= 2) {
                           _openAiCodex(message, `\    
-<|endoftext|>/* I start with a blank HTML page, and incrementally modify it via <script> injection. Written for Chrome. */
 /* Command: Add "Hello World", by adding an HTML DOM node */
 var helloWorld = document.createElement('div');
 helloWorld.innerHTML = 'Hello World';
