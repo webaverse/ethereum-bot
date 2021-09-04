@@ -2869,10 +2869,38 @@ while (document.body.firstChild) {
                       } else if (split[0] === prefix + 'glsl' && split.length >= 2) {
                           _openAiCodex(message, `\    
 # Hello
-Hi folks! I am a professional shader developer; I have been writing GLSL code in shadertoy for over 10 years now. I have an hour of free time so I will gladly write any shader if you post your requests in a comment! Paste the reslt into https://shadertoy.com/ and it will run!
+Hi folks! I am a professional shader developer; I have been writing GLSL code in shadertoy for over 10 years now. I have an hour of free time so I will gladly write any shader if you post your requests in a comment! Paste the reslt into https://shadertoy.com/ and hit play!
 
-# Requests
-/* Request: A shader that looks like a circle (a moon) with a gradient color animation in the background. */
+# Request: A scrolling noise pattern. It looks a little bit like a heightmap.
+# Shader:
+float N21(vec2 p) {
+  return fract(sin(p.x * 100. + p.y * 6574.) * 5647.);
+}
+float SmoothNoise(vec2 uv){
+  vec2 lv = fract(uv * 10.);
+  vec2 id = floor(uv * 10.);
+  
+  lv = lv * lv * (3. -2. * lv);
+  
+  float bl = N21(id);
+  float br = N21(id + vec2(1,0));
+  float b = mix(bl, br, lv.x);
+  
+  float tl = N21(id+vec2(0,1));
+  float tr = N21(id+vec2(1,1));
+  float t = mix(tl, tr, lv.x);
+  
+  return mix(b, t, lv.y);
+}
+void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
+  vec2 uv = fragCoord/iResolution.xy;
+  uv += iTime * .1;
+  vec3 col = vec3(SmoothNoise(uv));
+  fragColor = vec4(col, 1.0);
+}
+
+# Request: A circle with an animated gradient based on the iTime uniform.
+# Shader:
 float circle(vec2 uv,vec2 pos,float radius,float feather) {
   vec2 uvDist=uv-pos;
   return 1.0-smoothstep(radius-feather,radius+feather, length(uvDist));
@@ -2881,19 +2909,15 @@ float sdCircle( vec2 p, float r ) {
   return length(p) - r;
 }
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
-  // Normalized pixel coordinates (from 0 to 1)
   vec2 uv = fragCoord/iResolution.y;
-
-  // Time varying pixel color
   vec3 col = 0.5 + 0.5*cos(iTime+uv.xyx+vec3(0,2,4));
   col+=circle(uv,vec2(0.5,0.5),0.2,0.002);
-  
   col*=vec3(sdCircle( uv-vec2(0.7,0.8), 0.1 ));
-  // Output to screen
   fragColor = vec4(col,1.0);
 }
 
-/* Request: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Request:`);
+# Request: ${s.replace(/^\s*\S+\s*/, '')}
+# Shader: `, `# Request: `);
                       } else {
                           if (split[0] === prefix + 'mint') {
                               let quantity = parseInt(split[1], 10);
