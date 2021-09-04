@@ -2854,7 +2854,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             const m = await message.author.send('<@!' + message.author.id + '>: ```you do not have access to ' + id + '```');
                           }
                       } else if (split[0] === prefix + 'js' && split.length >= 2) {
-                          _openAiCodex(message, `\    
+                          _openAiCodex(message, `\
 /* Command: Add "Hello World", by adding an HTML DOM node */
 var helloWorld = document.createElement('div');
 helloWorld.innerHTML = 'Hello World';
