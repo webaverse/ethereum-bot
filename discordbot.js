@@ -109,7 +109,7 @@ const _openAiCodex = async (message, prompt, stop, blob = false) => {
             await m.delete();
             
             const buffer = Buffer.from(fullS, 'utf8');
-            const attachment = new Discord.MessageAttachment(buffer, 'code.js'));
+            const attachment = new Discord.MessageAttachment(buffer, 'code.js');
             const m2 = await message.channel.send(`(人^▽')～ ☆`, attachment);
           }
         }
