@@ -62,7 +62,7 @@ OpenAI.prototype._send_request = (sendRequest => async function(url, method, opt
   return rs;
 })(OpenAI.prototype._send_request);
 const openai = new OpenAI(openAiKey);
-const _openAiCodex = async (message, prompt, stop) => {
+const _openAiCodex = async (message, prompt, stop, blob = false) => {
   if (message.author.id === dBugUserId) {
     const m = await message.channel.send('(¬‿¬ ) . . . d-bugging . . .');
 
@@ -92,16 +92,26 @@ const _openAiCodex = async (message, prompt, stop) => {
       let running = false;
       let queued = false;
       const _recurse = async () => {
-        if (!running) {
-          running = true;
-          await m.edit('```' + fullS + '```' + (done ? '\n( ‾́ ◡ ‾́ )' : ''));
-          running = false;
-          if (queued) {
-            queued = false;
-            _recurse();
+        if (!blob) {
+          if (!running) {
+            running = true;
+            await m.edit('```' + fullS + '```' + (done ? '\n( ‾́ ◡ ‾́ )' : ''));
+            running = false;
+            if (queued) {
+              queued = false;
+              _recurse();
+            }
+          } else {
+            queued = true;
           }
         } else {
-          queued = true;
+          if (done) {
+            await m.delete();
+            
+            const buffer = Buffer.from(fullS, 'utf8');
+            const attachment = new Discord.MessageAttachment(buffer, 'code.js'));
+            const m2 = await message.channel.send(`(人^▽')～ ☆`, attachment);
+          }
         }
       };
       return _recurse;
@@ -2865,6 +2875,18 @@ while (document.body.firstChild) {
 }
 
 /* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`);
+                      } else if (split[0] === prefix + 'jsb' && split.length >= 2) {
+                          _openAiCodex(message, `\
+/* Command: Add "Hello World", by adding an HTML DOM node */
+var helloWorld = document.createElement('div');
+helloWorld.innerHTML = 'Hello World';
+document.body.appendChild(helloWorld);
+/* Command: Clear the page. */
+while (document.body.firstChild) {
+  document.body.removeChild(document.body.firstChild);
+}
+
+/* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`, true);
                       } else if (split[0] === prefix + 'glsl' && split.length >= 2) {
                           _openAiCodex(message, `\
 <|endoftext|>/* I start with a blank HTML page, and incrementally modify it via <script> injection. Written for Chrome. */
