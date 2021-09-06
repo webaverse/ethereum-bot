@@ -323,6 +323,15 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
         // console.log('got', client.guilds.cache.get(guildId).members.cache);
 
+        client.user.setPresence({
+            status: 'online',
+            activity: {
+                name: 'Webaverse.com',
+                type: 'PLAYING',
+                url: 'https://webaverse.com'
+            }
+        });
+
         client.on('messageReactionAdd', async (reaction, user) => {
             const { data, message, emoji } = reaction;
             // console.log('emoji identifier', message, data, emoji);
