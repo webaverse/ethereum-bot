@@ -2887,6 +2887,38 @@ while (document.body.firstChild) {
 }
 
 /* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`, true);
+                      } else if (split[0] === prefix + 'sh' && split.length >= 2) {
+                          _openAiCodex(message, `\
+# Command: echo all lines in file "file.txt"
+cat file.txt | while read line; do
+  echo $line
+done
+
+# Command: for loop over the glob /etc/rc.*
+for i in /etc/rc.*; do
+  echo $i
+done
+
+# Command: declare and call a function myfunc() which uses a local variable to return the string 'some value'
+myfunc() {
+    local myresult='some value'
+    echo $myresult
+}
+result="$(myfunc)"
+
+# Command: ${s.replace(/^\s*\S+\s*/, '')}`, `# Command:`);
+                      } else if (split[0] === prefix + 'jsb' && split.length >= 2) {
+                          _openAiCodex(message, `\
+/* Command: Add "Hello World", by adding an HTML DOM node */
+var helloWorld = document.createElement('div');
+helloWorld.innerHTML = 'Hello World';
+document.body.appendChild(helloWorld);
+/* Command: Clear the page. */
+while (document.body.firstChild) {
+  document.body.removeChild(document.body.firstChild);
+}
+
+/* Command: ${s.replace(/^\s*\S+\s*/, '')} */`, `/* Command:`, true);
                       } else if (split[0] === prefix + 'glsl' && split.length >= 2) {
                           _openAiCodex(message, `\
 <|endoftext|>/* I start with a blank HTML page, and incrementally modify it via <script> injection. Written for Chrome. */
