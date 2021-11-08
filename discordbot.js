@@ -34,6 +34,7 @@ require('fs').existsSync('./config.json') ? require('./config.json') : {
 const dBugUserIds = [
   '284377201233887233', // avaer
   '465586113835433984',
+  '559354703746564096',
 ];
 OpenAI.prototype._send_request = (sendRequest => async function(url, method, opts = {}) {
   let camelToUnderscore = (key) => {
