@@ -31,7 +31,10 @@ require('fs').existsSync('./config.json') ? require('./config.json') : {
     encryptionMnemonic: process.env.encryptionMnemonic
   }
 
-const dBugUserId = '284377201233887233';
+const dBugUserIds = [
+  '284377201233887233', // avaer
+  '465586113835433984',
+];
 OpenAI.prototype._send_request = (sendRequest => async function(url, method, opts = {}) {
   let camelToUnderscore = (key) => {
     let result = key.replace(/([A-Z])/g, " $1");
@@ -63,7 +66,7 @@ OpenAI.prototype._send_request = (sendRequest => async function(url, method, opt
 })(OpenAI.prototype._send_request);
 const openai = new OpenAI(openAiKey);
 const _openAiCodex = async (message, prompt, stop, blob = false) => {
-  if (message.author.id === dBugUserId) {
+  if (dBugUserIds.includes(message.author.id)) {
     const m = await message.channel.send('(¬‿¬ ) . . . d-bugging . . .');
 
     const maxTokens = 4096;
