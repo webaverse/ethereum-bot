@@ -707,7 +707,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                         const sizeString = prettyBytes(100 * 1024); // XXX hack
                         const resolutionString = `${1024}x${768}`; // XXX hack
                         
-                        const itemPreview = `https://preview.exokit.org/${token.hash}.${token.ext}/preview.png`;
+                        const itemPreview = `https://preview.webaverse.com/${token.hash}.${token.ext}/preview.png`;
                         
                         const exampleEmbed = new Discord.MessageEmbed()
                           .setColor(embedColor)
@@ -817,7 +817,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           } else if (contentId) {
                               const name = path.basename(contentId);
                               const ext = path.extname(contentId).slice(1);
-                              const avatarPreview = `https://preview.exokit.org/[${contentId}]/preview.jpg`;
+                              const avatarPreview = `https://preview.webaverse.com/[${contentId}]/preview.jpg`;
 
                               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarId', contentId);
                               await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'avatarName', name);
@@ -2613,7 +2613,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
                           if (ext) {
                               if (!raw) {
-                                  const m = await message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash + '.' + ext + '/preview.png');
+                                  const m = await message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.webaverse.com/' + hash + '.' + ext + '/preview.png');
                                   m.react('❌');
                                   m.requester = message.author;
                                   helps.push(m);
@@ -2632,7 +2632,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           const ext = await contracts.NFT.methods.getMetadata(hash, 'ext').call();
 
                           if (ext) {
-                              message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.exokit.org/' + hash + '.' + ext + '/preview.gif');
+                              message.channel.send('<@!' + message.author.id + '>: ' + id + ': https://preview.webaverse.com/' + hash + '.' + ext + '/preview.gif');
                           } else {
                               message.channel.send('<@!' + message.author.id + '>: ' + id + ': cannot preview file type: ' + ext);
                           }
@@ -2673,7 +2673,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                   }
                               }).promise();
 
-                              const m = await message.author.send(`Login: https://webaverse.com/login?id=${id}&code=${code}`);
+                              const m = await message.author.send(`Login: https://app.webaverse.com/?id=${id}&code=${code}`);
                           }
 
                       } else if (split[0] === prefix + 'realm') {
