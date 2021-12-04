@@ -2673,7 +2673,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                   }
                               }).promise();
 
-                              const m = await message.author.send(`Login: https://app.webaverse.com/?id=${id}&code=${code}`);
+                              const m = await message.author.send(`Login: https://app.webaverse.com/login/?id=${id}&code=${code}`);
                           }
 
                       } else if (split[0] === prefix + 'realm') {
@@ -2778,7 +2778,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                                   }
                               }).promise();
 
-                              const m = await message.author.send(`Play: https://app.webaverse.com/?id=${id}&code=${code}&play=true`);
+                              const m = await message.author.send(`Play: https://app.webaverse.com/login/?id=${id}&code=${code}&play=true`);
                           }
                       } else if (split[0] === prefix + 'key') {
                           let { mnemonic } = await _getUser();
