@@ -1027,7 +1027,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               const balance = await contracts.FT.methods.balanceOf(address).call();
 
                               if (balance === "0") {
-                                message.channel.send('<@!' + userId + '> has ' + balance + ' SILK. Want to get some SILK? Ask the Webaverse team: https://discord.gg/R5wqYhvv53');
+                                message.channel.send('<@!' + userId + '> has ' + balance + ' SILK. Want to get some SILK? Ask the Webaverse team: https://discord.gg/HxdjCDyq58');
                               } else {
                                 message.channel.send('<@!' + userId + '> has ' + balance + ' SILK.');
                               }
@@ -1047,7 +1047,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               const balance = await contracts.FT.methods.balanceOf(address).call();
 
                               if (balance === "0") {
-                                message.channel.send('<@!' + message.author.id + '> has ' + balance + ' SILK. Want to get some SILK? Ask the Webaverse team: https://discord.gg/R5wqYhvv53');
+                                message.channel.send('<@!' + message.author.id + '> has ' + balance + ' SILK. Want to get some SILK? Ask the Webaverse team: https://discord.gg/HxdjCDyq58');
                               } else {
                                 message.channel.send('<@!' + message.author.id + '> has ' + balance + ' SILK.');
                               }
@@ -3186,7 +3186,7 @@ ${s.replace(/^\s*\S+\s*/, '')}
                                               } else {
                                                   const balance = await contracts.FT.methods.balanceOf(address).call();
                                                   if (balance < 10) {
-                                                      message.channel.send('<@!' + message.author.id + '>: mint transaction failed: you do not have enough SILK. Ask the Webaverse team for some! https://discord.gg/R5wqYhvv53');
+                                                      message.channel.send('<@!' + message.author.id + '>: mint transaction failed: you do not have enough SILK. Ask the Webaverse team for some! https://discord.gg/HxdjCDyq58');
                                                   } else {
                                                       message.channel.send('<@!' + message.author.id + '>: mint transaction failed: this item has already been minted.');
                                                   }
