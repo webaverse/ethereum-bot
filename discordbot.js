@@ -54,9 +54,9 @@ const helpFields = [
             ['balance', ['[@user|0xaddr]?'], 'show FT balance'],
             ['inventory', ['[@user|0xaddr]?', '[page]?'], 'show NFTs'],
             ['address', ['[@user]?'], 'print address'],
+            ['play', [], 'play link']
             ['key', ['[@user]?'], 'private key (DM)'],
             ['login', [], 'login link (DM)'],
-            ['play', [], 'play link (DM)']
         ],
     },
     {
