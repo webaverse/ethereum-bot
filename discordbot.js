@@ -635,6 +635,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               userId = match[1];
                           } else {
                               userId = message.author.id;
+                              console.log(`Status command received from ${userId}`)
                           }
                           const spec = await _getUser(userId);
                           mnemonic = spec.mnemonic;
