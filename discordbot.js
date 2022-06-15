@@ -452,7 +452,8 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
               }
         });
         client.on('message', async message => {
-            if (!message.author.bot) {
+            if (!message.author.bot) {                
+                console.log(`Message: "${message.content}", User: ${message.author.username}, Server: ${message.guild}`);
                 const _getUser = async (id = message.author.id) => {
                     const tokenItem = await ddb.getItem({
                         TableName: usersTableName,
@@ -635,7 +636,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               userId = match[1];
                           } else {
                               userId = message.author.id;
-                              console.log(`Status command received from ${userId}`)
                           }
                           const spec = await _getUser(userId);
                           mnemonic = spec.mnemonic;
