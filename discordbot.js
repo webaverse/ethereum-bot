@@ -333,7 +333,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
     client.on('ready', async function () {
         console.log(`the client becomes ready to start`);
         console.log(`I am ready! Logged in as ${client.user.tag}!`);
-        console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} guilds.`);
+        console.log(`Bot has started, with ${client.users.cache.size} users, in ${client.channels.cache.size} channels of ${client.guilds.cache.size} guilds.`);
 
         // console.log('got', client.guilds.cache.get(guildId).members.cache);
 
@@ -452,8 +452,8 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
               }
         });
         client.on('message', async message => {
-            if (!message.author.bot) {                
-                console.log(`Message: "${message.content}", User: ${message.author.username}, Server: ${message.guild}`);
+            if (!message.author.bot) {
+		console.log(`Message: "${message.content}", User: "${message.author.tag}", Server: "${message.guild}", Channel: "${message.channel.name}"`);    
                 const _getUser = async (id = message.author.id) => {
                     const tokenItem = await ddb.getItem({
                         TableName: usersTableName,
