@@ -6,6 +6,7 @@
   "scripts": {
     "start": "sudo $(which node) $(which forever) start -a -l forever.log -o stdout.log -e stderr.log index.js",
     "stop": "sudo $(which node) $(which forever) stop index.js",
+    "restart": "npm stop && start",
     "dev": "node ./index.js"
   },
   "repository": {
