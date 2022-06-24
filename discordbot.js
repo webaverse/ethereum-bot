@@ -328,7 +328,13 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
     if (discordApiToken === undefined || discordApiToken === "" || discordApiToken === null)
         return console.warn("*** WARNING: Discord API token is not defined");
 
-    const client = new Discord.Client();
+    const client = new Discord.Client({ intents: [
+            Discord.Intents.FLAGS.GUILD_MESSAGES,
+            Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+            Discord.Intents.FLAGS.DIRECT_MESSAGES,
+            Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS
+            ] 
+        });
 
     client.on('ready', async function () {
         console.log(`the client becomes ready to start`);
@@ -678,7 +684,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             .setImage(avatarPreview)
                             .setTimestamp()
                             .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
-                          const m = await message.channel.send(exampleEmbed);
+                          const m = await message.channel.send({ embeds: [exampleEmbed]});
                           m.react('❌');
                           m.requester = message.author;
                           helps.push(m);
