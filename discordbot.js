@@ -333,8 +333,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
             Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
             Discord.Intents.FLAGS.DIRECT_MESSAGES,
             Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS
-            ] 
-        });
+            ] });
 
     client.on('ready', async function () {
         console.log(`the client becomes ready to start`);
