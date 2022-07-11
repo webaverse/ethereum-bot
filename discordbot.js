@@ -456,7 +456,12 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                   }
               }
         });
-        client.on('message', async message => {
+        client.on('interactionCreate', async interaction => {
+            if (!interaction.isCommand()) return;
+
+            const { commandName } = interaction;
+
+            const message = interaction.message;
             if (!message.author.bot) {
 		console.log(`Message: "${message.content}", User: "${message.author.tag}", Server: "${message.guild}", Channel: "${message.channel.name}"`);    
                 const _getUser = async (id = message.author.id) => {
@@ -635,7 +640,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                         m.react('❌');
                         m.requester = message.author;
                         helps.push(m);
-                      } else if (split[0] === prefix + 'status') {
+                      } else if (commandName === 'status') {
                           let userId, mnemonic;
                           if (split.length >= 2 && (match = split[1].match(/<@!?([0-9]+)>/))) {
                               userId = match[1];
@@ -683,7 +688,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                             .setImage(avatarPreview)
                             .setTimestamp()
                             .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
-                          const m = await message.channel.send({ embeds: [exampleEmbed]});
+                          const m = await interaction.reply({ embeds: [exampleEmbed]});
                           m.react('❌');
                           m.requester = message.author;
                           helps.push(m);
