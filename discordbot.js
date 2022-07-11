@@ -461,9 +461,9 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
             const { commandName } = interaction;
 
-            if (commandName === 'status') {
-                await interaction.reply('Status received');
-            }
+            // if (commandName === 'status') {
+            //     await interaction.reply('Status received');
+            // }
 
             const message = interaction.message;
             if (!message.author.bot) {
@@ -675,6 +675,8 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               contracts.Account.methods.getMetadata(address, 'monetizationPointer').call(),
                               contracts.Account.methods.getMetadata(address, 'avatarPreview').call(),
                           ]);
+
+                          await interaction.reply('Status received');
 
                           const exampleEmbed = new Discord.MessageEmbed()
                             .setColor(embedColor)
