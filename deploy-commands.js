@@ -4,7 +4,10 @@ const { Routes } = require('discord-api-types/v9');
 const { discordClientId, webaverseGuildId, discordApiToken } = require('./config.json');
 
 const commands = [
-	new SlashCommandBuilder().setName('status').setDescription('Shows account details'),
+	new SlashCommandBuilder()
+		.setName('status')
+		.setDescription('Shows account details')
+		.addUserOption(option => option.setName('target').setDescription('Select a user'))
 ]
 	.map(command => command.toJSON());
 
