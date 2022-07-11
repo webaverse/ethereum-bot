@@ -461,6 +461,10 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
             const { commandName } = interaction;
 
+            if (commandName === 'status') {
+                await interaction.reply('Status received');
+            }
+
             const message = interaction.message;
             if (!message.author.bot) {
 		console.log(`Message: "${message.content}", User: "${message.author.tag}", Server: "${message.guild}", Channel: "${message.channel.name}"`);    
