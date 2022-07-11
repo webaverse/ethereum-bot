@@ -466,7 +466,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                           let userId, mnemonic;
                           if (interaction.options.getUser('target')){
                               userId = interaction.options.getUser('target');
-                          }
                           } else {
                               userId = interaction.user.id;
                           }
