@@ -462,10 +462,33 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
             const { commandName } = interaction;
 
             if (commandName === 'status') {
+                const _getUser = async (id = interaction.user.id) => {
+                    const tokenItem = await ddb.getItem({
+                        TableName: usersTableName,
+                        Key: {
+                            email: { S: id + '.discordtoken' },
+                        }
+                    }).promise();
+
+                    let mnemonic = (tokenItem.Item && tokenItem.Item.mnemonic) ? tokenItem.Item.mnemonic.S : null;
+                    return { mnemonic };
+                };
+                const _genKey = async (id = interaction.user.id) => {
+                    const mnemonic = bip39.generateMnemonic();
+
+                    await ddb.putItem({
+                        TableName: usersTableName,
+                        Item: {
+                            email: { S: id + '.discordtoken' },
+                            mnemonic: { S: mnemonic },
+                        }
+                    }).promise();
+                    return { mnemonic };
+                };
             //     await interaction.reply('Status received');
                           let userId, mnemonic;
                           if (interaction.options.getUser('target')){
-                              userId = interaction.options.getUser('target');
+                              userId = interaction.options.getUser('target').id;
                           } else {
                               userId = interaction.user.id;
                           }
