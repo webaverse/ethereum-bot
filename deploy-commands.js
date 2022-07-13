@@ -7,7 +7,10 @@ const commands = [
 	new SlashCommandBuilder()
 		.setName('status')
 		.setDescription('Shows account details')
-		.addUserOption(option => option.setName('target').setDescription('Select a user'))
+		.addUserOption(option => option.setName('target').setDescription('Select a user')),
+	new SlashCommandBuilder()
+		.setName('help')
+		.setDescription('Lists available commands')
 ]
 	.map(command => command.toJSON());
 
