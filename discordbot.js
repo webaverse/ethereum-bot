@@ -335,6 +335,16 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
             Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS
             ] });
 
+    client.commands = new Discord.Collection();
+    const commandsPath = path.join(__dirname, 'commands');
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+
+    for (const file of commandFiles) {
+        const filePath = path.join(commandsPath, file);
+        const command = require(filePath);
+        client.commands.set(command.data.name, command);
+    }
+
     client.on('ready', async function () {
         console.log(`the client becomes ready to start`);
         console.log(`I am ready! Logged in as ${client.user.tag}!`);
@@ -461,83 +471,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
 
             const { commandName } = interaction;
 
-            if (commandName === 'status') {
-                const _getUser = async (id = interaction.user.id) => {
-                    const tokenItem = await ddb.getItem({
-                        TableName: usersTableName,
-                        Key: {
-                            email: { S: id + '.discordtoken' },
-                        }
-                    }).promise();
-
-                    let mnemonic = (tokenItem.Item && tokenItem.Item.mnemonic) ? tokenItem.Item.mnemonic.S : null;
-                    return { mnemonic };
-                };
-                const _genKey = async (id = interaction.user.id) => {
-                    const mnemonic = bip39.generateMnemonic();
-
-                    await ddb.putItem({
-                        TableName: usersTableName,
-                        Item: {
-                            email: { S: id + '.discordtoken' },
-                            mnemonic: { S: mnemonic },
-                        }
-                    }).promise();
-                    return { mnemonic };
-                };
-            //     await interaction.reply('Status received');
-                          let userId, mnemonic;
-                          if (interaction.options.getUser('target')){
-                              userId = interaction.options.getUser('target').id;
-                          } else {
-                              userId = interaction.user.id;
-                          }
-                          const spec = await _getUser(userId);
-                          mnemonic = spec.mnemonic;
-                          if (!mnemonic) {
-                              const spec = await _genKey(userId);
-                              mnemonic = spec.mnemonic;
-                          }
-
-                          const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                          const address = wallet.getAddressString();
-                          const [
-                              name,
-                              description,
-                              avatarId,
-                              homeSpaceId,
-                              monetizationPointer,
-                              avatarPreview,
-                          ] = await Promise.all([
-                              contracts.Account.methods.getMetadata(address, 'name').call(),
-                              contracts.Account.methods.getMetadata(address, 'description').call(),
-                              contracts.Account.methods.getMetadata(address, 'avatarId').call(),
-                              contracts.Account.methods.getMetadata(address, 'homeSpaceId').call(),
-                              contracts.Account.methods.getMetadata(address, 'monetizationPointer').call(),
-                              contracts.Account.methods.getMetadata(address, 'avatarPreview').call(),
-                          ]);
-
-                           const exampleEmbed = new Discord.MessageEmbed()
-                            .setColor(embedColor)
-                            .setTitle(name)
-                            .setURL(`https://webaverse.com/creators/${address}`)
-                            // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
-                            .setDescription(description || 'This person is a noob without a description.')
-                            .setThumbnail(avatarPreview)
-                            .addFields(
-                              { name: 'avatar id', value: avatarId || '<none>' },
-                              { name: 'homespace id', value: homeSpaceId || '<none>' },
-                              { name: 'monetization pointer', value: monetizationPointer || '<none>' },
-                            )
-                            // .addField('Inline field title', 'Some value here', true)
-                            .setImage(avatarPreview)
-                            .setTimestamp()
-                            .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
-                          const m = await interaction.reply({ embeds: [exampleEmbed]});
-                          m.react('❌');
-                          m.requester = message.author;
-                          helps.push(m);
-            }
+            if (commandName === 'status') {}
 
             const message = interaction.message;
             if (!message.author.bot) {
