@@ -9,7 +9,7 @@ module.exports = {
         .setName('monetizationpointer')
         .setDescription('Sets monetization pointer')
         .addStringOption(option =>
-            option.setName('Monetization Pointer Name')
+            option.setName('monetizationpointer')
                 .setDescription('Where you want people to send you money')),
 	async execute(interaction,ddb, contracts,runSidechainTransaction) {
                   //const m = await interaction.reply('Inspector!');
