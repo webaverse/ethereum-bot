@@ -21,7 +21,7 @@ module.exports = {
             };
             const tokenItem = await ddb.getItem(params, function(err, data) {
                 if (err) console.log(err, err.stack); // an error occurred
-                else     console.log(data);
+                else     console.log("Retrieved Database Item");
             }).promise();
 
             let mnemonic = (tokenItem.Item && tokenItem.Item.mnemonic) ? tokenItem.Item.mnemonic.S : null;
@@ -38,7 +38,7 @@ module.exports = {
             }
             await ddb.putItem(params, function(err, data) {
                 if (err) console.log(err, err.stack); // an error occurred
-                else     console.log(data);
+                else     console.log("Saved Database Item");
             }).promise();
             return { mnemonic };
         };
