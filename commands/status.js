@@ -7,11 +7,15 @@ module.exports = {
 		.addUserOption(option => option.setName('target').setDescription('Select a user')),
 	async execute(interaction,ddb) {
         const _getUser = async (id = interaction.user.id) => {
-            const tokenItem = await ddb.getItem({
+            var params = {
                 TableName: usersTableName,
                 Key: {
                     email: { S: id + '.discordtoken' },
                 }
+            };
+            const tokenItem = await ddb.getItem(params, function(err, data) {
+                if (err) console.log(err, err.stack); // an error occurred
+                else     console.log(data);
             }).promise();
 
             let mnemonic = (tokenItem.Item && tokenItem.Item.mnemonic) ? tokenItem.Item.mnemonic.S : null;
