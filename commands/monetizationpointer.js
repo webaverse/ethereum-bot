@@ -7,10 +7,12 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 module.exports = {
 	data: new SlashCommandBuilder()
         .setName('monetizationpointer')
-        .setDescription('Sets monetization pointer'),
+        .setDescription('Sets monetization pointer')
+        .addStringOption(option =>
+            option.setName('Monetization Pointer Name')
+                .setDescription('Where you want people to send you money')),
 	async execute(interaction,ddb, contracts,runSidechainTransaction) {
                   //const m = await interaction.reply('Inspector!');
-        const split = words.map(word => word[0]);
         const _getUser = async (id = interaction.user.id) => {
             var params = {
                 TableName: usersTableName,
@@ -50,8 +52,8 @@ module.exports = {
             mnemonic = spec.mnemonic;
         }
 
-                  if (split[1]) {
-                      const monetizationPointer = split[1];
+                  if (interaction.options.getString('input')) {
+                      const monetizationPointer = interaction.options.getString('input');
 
                       const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
                       const address = wallet.getAddressString();
