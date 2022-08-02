@@ -1,4 +1,5 @@
 
+const {usersTableName, prefix, storageHost, previewHost, previewExt, treasurerRoleName} = require('../constants.js');
 const { hdkey } = require('ethereumjs-wallet');
 const bip39 = require('bip39');
 const { SlashCommandBuilder } = require('@discordjs/builders');
