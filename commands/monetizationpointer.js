@@ -38,11 +38,14 @@ module.exports = {
             }).promise();
             return { mnemonic };
         };
-                  let { mnemonic } = await _getUser();
-                  if (!mnemonic) {
-                      const spec = await _genKey();
-                      mnemonic = spec.mnemonic;
-                  }
+        let userId, mnemonic;
+        userId = interaction.user.id;
+        const spec = await _getUser(userId);
+        mnemonic = spec.mnemonic;
+        if (!mnemonic) {
+            const spec = await _genKey(userId);
+            mnemonic = spec.mnemonic;
+        }
 
                   if (split[1]) {
                       const monetizationPointer = split[1];
