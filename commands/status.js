@@ -1,3 +1,5 @@
+
+const {usersTableName, prefix, storageHost, previewHost, previewExt, treasurerRoleName} = require('../constants.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
