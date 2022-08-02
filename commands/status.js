@@ -5,7 +5,7 @@ module.exports = {
 		.setName('status')
 		.setDescription('Shows account details')
 		.addUserOption(option => option.setName('target').setDescription('Select a user')),
-	async execute(interaction) {
+	async execute(interaction,ddb) {
         const _getUser = async (id = interaction.user.id) => {
             const tokenItem = await ddb.getItem({
                 TableName: usersTableName,
