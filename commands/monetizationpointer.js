@@ -10,6 +10,7 @@ module.exports = {
         .setDescription('Sets monetization pointer'),
 	async execute(interaction,ddb, contracts,runSidechainTransaction) {
                   //const m = await interaction.reply('Inspector!');
+        const split = words.map(word => word[0]);
         const _getUser = async (id = interaction.user.id) => {
             var params = {
                 TableName: usersTableName,
