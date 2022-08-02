@@ -6,8 +6,8 @@ module.exports = {
 	data: new SlashCommandBuilder()
         .setName('monetizationpointer')
         .setDescription('Sets monetization pointer'),
-	async execute(interaction,ddb, contracts) {
-                  const m = await interaction.reply('Inspector!');
+	async execute(interaction,ddb, contracts,runSidechainTransaction) {
+                  //const m = await interaction.reply('Inspector!');
                   let { mnemonic } = await _getUser();
                   if (!mnemonic) {
                       const spec = await _genKey();

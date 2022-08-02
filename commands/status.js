@@ -10,7 +10,7 @@ module.exports = {
 		.setName('status')
 		.setDescription('Shows account details')
 		.addUserOption(option => option.setName('target').setDescription('Select a user')),
-	async execute(interaction,ddb,contracts) {
+	async execute(interaction,ddb,contracts,runSidechainTransaction) {
         const embedColor = '#000000';
         const _getUser = async (id = interaction.user.id) => {
             var params = {

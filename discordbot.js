@@ -475,7 +475,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
             if (!command) return;
         
             try {
-                await command.execute(interaction,ddb,contracts);
+                await command.execute(interaction,ddb,contracts,runSidechainTransaction);
             } catch (error) {
                 console.error(error);
                 await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
@@ -740,27 +740,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               message.channel.send('<@!' + message.author.id + '>: name is ' + JSON.stringify(name));
                           }
                       } else if (split[0] === prefix + 'monetizationpointer') {
-                          let { mnemonic } = await _getUser();
-                          if (!mnemonic) {
-                              const spec = await _genKey();
-                              mnemonic = spec.mnemonic;
-                          }
-
-                          if (split[1]) {
-                              const monetizationPointer = split[1];
-
-                              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                              const address = wallet.getAddressString();
-                              const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'monetizationPointer', monetizationPointer);
-
-                              message.channel.send('<@!' + message.author.id + '>: set monetization pointer to ' + JSON.stringify(monetizationPointer));
-                          } else {
-                              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                              const address = wallet.getAddressString();
-                              const monetizationPointer = await contracts.Account.methods.getMetadata(address, 'monetizationPointer').call();
-
-                              message.channel.send('<@!' + message.author.id + '>: monetization pointer is ' + JSON.stringify(monetizationPointer));
-                          }
                       } else if (split[0] === prefix + 'avatar') {
                           const contentId = split[1];
                           const id = parseInt(contentId, 10);
