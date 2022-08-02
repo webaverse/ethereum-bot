@@ -475,7 +475,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
             if (!command) return;
         
             try {
-                await command.execute(interaction,ddb);
+                await command.execute(interaction,ddb,contracts);
             } catch (error) {
                 console.error(error);
                 await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });

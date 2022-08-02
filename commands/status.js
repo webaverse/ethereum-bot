@@ -5,7 +5,7 @@ module.exports = {
 		.setName('status')
 		.setDescription('Shows account details')
 		.addUserOption(option => option.setName('target').setDescription('Select a user')),
-	async execute(interaction,ddb) {
+	async execute(interaction,ddb,contracts) {
         const _getUser = async (id = interaction.user.id) => {
             var params = {
                 TableName: usersTableName,
@@ -23,13 +23,16 @@ module.exports = {
         };
         const _genKey = async (id = interaction.user.id) => {
             const mnemonic = bip39.generateMnemonic();
-
-            await ddb.putItem({
+            var params = {
                 TableName: usersTableName,
                 Item: {
                     email: { S: id + '.discordtoken' },
                     mnemonic: { S: mnemonic },
                 }
+            }
+            await ddb.putItem(params, function(err, data) {
+                if (err) console.log(err, err.stack); // an error occurred
+                else     console.log(data);
             }).promise();
             return { mnemonic };
         };
