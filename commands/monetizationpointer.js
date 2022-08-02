@@ -8,6 +8,36 @@ module.exports = {
         .setDescription('Sets monetization pointer'),
 	async execute(interaction,ddb, contracts,runSidechainTransaction) {
                   //const m = await interaction.reply('Inspector!');
+        const _getUser = async (id = interaction.user.id) => {
+            var params = {
+                TableName: usersTableName,
+                Key: {
+                    email: { S: id + '.discordtoken' },
+                }
+            };
+            const tokenItem = await ddb.getItem(params, function(err, data) {
+                if (err) console.log(err, err.stack); // an error occurred
+                else     console.log("Retrieved Database Item");
+            }).promise();
+
+            let mnemonic = (tokenItem.Item && tokenItem.Item.mnemonic) ? tokenItem.Item.mnemonic.S : null;
+            return { mnemonic };
+        };
+        const _genKey = async (id = interaction.user.id) => {
+            const mnemonic = bip39.generateMnemonic();
+            var params = {
+                TableName: usersTableName,
+                Item: {
+                    email: { S: id + '.discordtoken' },
+                    mnemonic: { S: mnemonic },
+                }
+            }
+            await ddb.putItem(params, function(err, data) {
+                if (err) console.log(err, err.stack); // an error occurred
+                else     console.log("Saved Database Item");
+            }).promise();
+            return { mnemonic };
+        };
                   let { mnemonic } = await _getUser();
                   if (!mnemonic) {
                       const spec = await _genKey();
