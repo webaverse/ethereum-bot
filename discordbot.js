@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const url = require('url');
 const http = require('http');
 const https = require('https');
@@ -328,12 +329,27 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
     if (discordApiToken === undefined || discordApiToken === "" || discordApiToken === null)
         return console.warn("*** WARNING: Discord API token is not defined");
 
-    const client = new Discord.Client();
+    const client = new Discord.Client({ intents: [
+            Discord.Intents.FLAGS.GUILD_MESSAGES,
+            Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+            Discord.Intents.FLAGS.DIRECT_MESSAGES,
+            Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS
+            ] });
+
+    client.commands = new Discord.Collection();
+    const commandsPath = path.join(__dirname, 'commands');
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+
+    for (const file of commandFiles) {
+        const filePath = path.join(commandsPath, file);
+        const command = require(filePath);
+        client.commands.set(command.data.name, command);
+    }
 
     client.on('ready', async function () {
         console.log(`the client becomes ready to start`);
         console.log(`I am ready! Logged in as ${client.user.tag}!`);
-        console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} guilds.`);
+        console.log(`Bot has started, with ${client.users.cache.size} users, in ${client.channels.cache.size} channels of ${client.guilds.cache.size} guilds.`);
 
         // console.log('got', client.guilds.cache.get(guildId).members.cache);
 
@@ -451,8 +467,23 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                   }
               }
         });
-        client.on('message', async message => {
+        client.on('interactionCreate', async interaction => {
+            if (!interaction.isCommand()) return;
+
+            const command = client.commands.get(interaction.commandName);
+        
+            if (!command) return;
+        
+            try {
+                await command.execute(interaction,ddb,contracts,runSidechainTransaction);
+            } catch (error) {
+                console.error(error);
+                await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+            }
+
+            const message = interaction.message;
             if (!message.author.bot) {
+		console.log(`Message: "${message.content}", User: "${message.author.tag}", Server: "${message.guild}", Channel: "${message.channel.name}"`);    
                 const _getUser = async (id = message.author.id) => {
                     const tokenItem = await ddb.getItem({
                         TableName: usersTableName,
@@ -629,58 +660,7 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                         m.react('❌');
                         m.requester = message.author;
                         helps.push(m);
-                      } else if (split[0] === prefix + 'status') {
-                          let userId, mnemonic;
-                          if (split.length >= 2 && (match = split[1].match(/<@!?([0-9]+)>/))) {
-                              userId = match[1];
-                          } else {
-                              userId = message.author.id;
-                          }
-                          const spec = await _getUser(userId);
-                          mnemonic = spec.mnemonic;
-                          if (!mnemonic) {
-                              const spec = await _genKey(userId);
-                              mnemonic = spec.mnemonic;
-                          }
-
-                          const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                          const address = wallet.getAddressString();
-                          const [
-                              name,
-                              description,
-                              avatarId,
-                              homeSpaceId,
-                              monetizationPointer,
-                              avatarPreview,
-                          ] = await Promise.all([
-                              contracts.Account.methods.getMetadata(address, 'name').call(),
-                              contracts.Account.methods.getMetadata(address, 'description').call(),
-                              contracts.Account.methods.getMetadata(address, 'avatarId').call(),
-                              contracts.Account.methods.getMetadata(address, 'homeSpaceId').call(),
-                              contracts.Account.methods.getMetadata(address, 'monetizationPointer').call(),
-                              contracts.Account.methods.getMetadata(address, 'avatarPreview').call(),
-                          ]);
-
-                          const exampleEmbed = new Discord.MessageEmbed()
-                            .setColor(embedColor)
-                            .setTitle(name)
-                            .setURL(`https://webaverse.com/creators/${address}`)
-                            // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
-                            .setDescription(description || 'This person is a noob without a description.')
-                            .setThumbnail(avatarPreview)
-                            .addFields(
-                              { name: 'avatar id', value: avatarId || '<none>' },
-                              { name: 'homespace id', value: homeSpaceId || '<none>' },
-                              { name: 'monetization pointer', value: monetizationPointer || '<none>' },
-                            )
-                            // .addField('Inline field title', 'Some value here', true)
-                            .setImage(avatarPreview)
-                            .setTimestamp()
-                            .setFooter('.help for help', 'https://app.webaverse.com/assets/logo-flat.svg');
-                          const m = await message.channel.send(exampleEmbed);
-                          m.react('❌');
-                          m.requester = message.author;
-                          helps.push(m);
+                      } else if (commandName === 'status') {
 
                           // message.channel.send('<@!' + message.author.id + '>: ' + `\`\`\`Name: ${name}\nAvatar: ${avatarId}\nHome Space: ${homeSpaceId}\nMonetization Pointer: ${monetizationPointer}\n\`\`\``);
                       } else if (split[0] === prefix + 'inspect' && !isNaN(split[1])) {
@@ -760,27 +740,6 @@ exports.createDiscordClient = (web3, contracts, getStores, runSidechainTransacti
                               message.channel.send('<@!' + message.author.id + '>: name is ' + JSON.stringify(name));
                           }
                       } else if (split[0] === prefix + 'monetizationpointer') {
-                          let { mnemonic } = await _getUser();
-                          if (!mnemonic) {
-                              const spec = await _genKey();
-                              mnemonic = spec.mnemonic;
-                          }
-
-                          if (split[1]) {
-                              const monetizationPointer = split[1];
-
-                              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                              const address = wallet.getAddressString();
-                              const result = await runSidechainTransaction(mnemonic)('Account', 'setMetadata', address, 'monetizationPointer', monetizationPointer);
-
-                              message.channel.send('<@!' + message.author.id + '>: set monetization pointer to ' + JSON.stringify(monetizationPointer));
-                          } else {
-                              const wallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
-                              const address = wallet.getAddressString();
-                              const monetizationPointer = await contracts.Account.methods.getMetadata(address, 'monetizationPointer').call();
-
-                              message.channel.send('<@!' + message.author.id + '>: monetization pointer is ' + JSON.stringify(monetizationPointer));
-                          }
                       } else if (split[0] === prefix + 'avatar') {
                           const contentId = split[1];
                           const id = parseInt(contentId, 10);

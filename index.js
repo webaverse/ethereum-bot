@@ -45,6 +45,12 @@ if (!devMode) {
   });
 
   ddb = new AWS.DynamoDB(awsConfig);
+  var params = {
+  };
+  ddb.describeEndpoints(params, function(err, data) {
+    if (err) console.log(err, err.stack); // an error occurred
+    else     console.log(data);           // successful response
+  });
 
   treasuryWallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic)).derivePath(`m/44'/60'/0'/0/0`).getWallet();
   treasuryAddress = treasuryWallet.getAddressString();
