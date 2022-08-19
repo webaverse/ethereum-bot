@@ -22,7 +22,7 @@ module.exports = {
 
     const id = parseInt(data.interaction.options.getString("id"), 10);
     const key = data.unlockableKey;
-    let value = data.interaction.option.getString("value");
+    let value = data.interaction.options.getString("value");
 
     // console.log('do set', id, key, value);
 

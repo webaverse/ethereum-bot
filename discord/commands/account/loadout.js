@@ -25,8 +25,7 @@ module.exports = {
     }
 
     const index = parseInt(data.interaction.options.getString("number"), 10);
-    const contentId = split[2];
-    const id = parseInt(data.interaction.options.getString("id"), 10);
+    const contentId = parseInt(data.interaction.options.getString("id"), 10);
 
     async function getLoadout(address) {
       const loadoutString = await data.contracts.Account.methods
@@ -55,8 +54,8 @@ module.exports = {
         .getWallet();
       const address = wallet.getAddressString();
 
-      if (!isNaN(id)) {
-        const hash = await data.contracts.NFT.methods.getHash(id).call();
+      if (!isNaN(contentId)) {
+        const hash = await data.contracts.NFT.methods.getHash(contentId).call();
         const [name, ext] = await Promise.all([
           data.contracts.NFT.methods.getMetadata(hash, "name").call(),
           data.contracts.NFT.methods.getMetadata(hash, "ext").call(),
@@ -67,7 +66,7 @@ module.exports = {
         }/preview.${previewExt}`;
 
         const loadout = await getLoadout(address);
-        loadout.splice(index - 1, 1, [id + "", name, ext, itemPreview]);
+        loadout.splice(index - 1, 1, [contentId + "", name, ext, itemPreview]);
 
         await data.runSidechainTransaction(mnemonic)(
           "Account",

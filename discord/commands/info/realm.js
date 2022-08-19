@@ -3,7 +3,6 @@ const bip39 = require("bip39");
 const crypto = require("crypto");
 const { hdkey } = require("ethereumjs-wallet");
 
-
 module.exports = {
   isHidden: false,
   data: new SlashCommandBuilder()
@@ -61,18 +60,22 @@ module.exports = {
         .promise();
 
       if (isNaN(realmId)) {
-       data.interaction.editReply({
+        data.interaction.editReply({
           content:
             "<@!" + data.interaction.user.id + ">: must add realm id. (1-5)",
           ephemeral: this.isHidden,
         });
       } else {
         if (realmId >= 1 && realmId <= 5) {
+          await data.interaction.deleteReply();
           const m = await data.interaction.user.send(
             `Play: https://webaverse.com/login?id=${id}&code=${code}&play=true&realmId=${realmId}`
           );
         } else {
-         data.interaction.editReply({ content: "Realm", ephemeral: this.isHidden });
+          data.interaction.editReply({
+            content: "Realm",
+            ephemeral: this.isHidden,
+          });
           message.channel.send(
             "<@!" +
               data.interaction.user.id +
@@ -104,18 +107,19 @@ module.exports = {
         .promise();
 
       if (isNaN(realmId)) {
-       data.interaction.editReply({
+        data.interaction.editReply({
           content:
             "<@!" + data.interaction.user.id + ">: must add realm id. (1-5)",
           ephemeral: this.isHidden,
         });
       } else {
         if (realmId >= 1 && realmId <= 5) {
+          await data.interaction.deleteReply();
           const m = await data.interaction.user.send(
             `Play: https://webaverse.com/login?id=${id}&code=${code}&play=true&realmId=${realmId}`
           );
         } else {
-         data.interaction.editReply({
+          data.interaction.editReply({
             content:
               "<@!" +
               data.interaction.user.id +

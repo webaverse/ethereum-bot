@@ -20,7 +20,7 @@ module.exports = {
     if (!data.interaction.isChatInputCommand()) return;
 
     const id = parseInt(data.interaction.options.getString("id"), 10);
-    const raw = data.interaction.option.getString("show_type") === "raw";
+    const raw = data.interaction.options.getString("show_type") === "raw";
 
     const hash = await data.contracts.NFT.methods.getHash(id).call();
     const ext = await data.contracts.NFT.methods

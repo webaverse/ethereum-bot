@@ -34,6 +34,7 @@ module.exports = {
     );
     if (isUser) {
       let mnemonic, mnemonic2;
+      const userId = user?.id;
       if (userId !== data.interaction.user.id) {
         {
           const userSpec = await data._getUser();
@@ -95,7 +96,7 @@ module.exports = {
           ephemeral: this.isHidden,
         });
       }
-    } else if ((match = address.match(/(0x[0-9a-f]+)/i))) {
+    } else if ((match = address?.match(/(0x[0-9a-f]+)/i))) {
       let { mnemonic } = await data._getUser();
       if (!mnemonic) {
         const spec = await data._genKey();

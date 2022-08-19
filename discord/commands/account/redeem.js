@@ -26,7 +26,7 @@ module.exports = {
 
     const rinkebyWeb3 = new Web3(
       new Web3.providers.HttpProvider(
-        `https://rinkeby.infura.io/v3/${infuraProjectId}`
+        `https://rinkeby.infura.io/v3/${data.infuraProjectId}`
       )
     );
     const signature = await data.contracts.Account.methods

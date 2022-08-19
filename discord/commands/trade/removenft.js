@@ -1,7 +1,6 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { trades } = require("../../discordbot");
 
-
 module.exports = {
   isHidden: false,
   data: new SlashCommandBuilder()
@@ -17,7 +16,10 @@ module.exports = {
     if (!data.interaction.isChatInputCommand()) return;
 
     const tradeId = parseInt(data.interaction.options.getString("tradeid"), 10);
-    const itemNumber = parseInt(data.interaction.options.getString(index), 10);
+    const itemNumber = parseInt(
+      data.interaction.options.getString("index"),
+      10
+    );
     const trade = trades.find((trade) => trade.tradeId === tradeId);
     if (trade) {
       const index = trade.userIds.indexOf(data.interaction.user.id);
@@ -41,7 +43,7 @@ module.exports = {
             console.error("Failed to remove reactions.", error.stack);
           }
         } else {
-         data.interaction.editReply({
+          data.interaction.editReply({
             content:
               "<@!" +
               data.interaction.user.id +
@@ -51,14 +53,14 @@ module.exports = {
           });
         }
       } else {
-       data.interaction.editReply({
+        data.interaction.editReply({
           content:
             "<@!" + data.interaction.user.id + ">: not your trade: " + tradeId,
           ephemeral: this.isHidden,
         });
       }
     } else {
-     data.interaction.editReply({
+      data.interaction.editReply({
         content:
           "<@!" + data.interaction.user.id + ">: invalid trade: " + tradeId,
         ephemeral: this.isHidden,

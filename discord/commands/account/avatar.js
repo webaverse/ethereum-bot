@@ -15,7 +15,7 @@ module.exports = {
     if (!data.interaction.isChatInputCommand()) return;
 
     const contentId = data.interaction.options.getString("id");
-    const id = parseInt(contentId, 10);
+    const avatarId = parseInt(contentId, 10);
 
     let { mnemonic } = await data._getUser();
     if (!mnemonic) {
@@ -29,8 +29,8 @@ module.exports = {
       .getWallet();
     const address = wallet.getAddressString();
 
-    if (!isNaN(id)) {
-      const hash = await data.contracts.NFT.methods.getHash(id).call();
+    if (!isNaN(avatarId)) {
+      const hash = await data.contracts.NFT.methods.getHash(avatarId).call();
       const [name, ext] = await Promise.all([
         data.contracts.NFT.methods.getMetadata(hash, "name").call(),
         data.contracts.NFT.methods.getMetadata(hash, "ext").call(),
@@ -47,7 +47,7 @@ module.exports = {
         "setMetadata",
         address,
         "avatarId",
-        id + ""
+        avatarId + ""
       );
       await data.runSidechainTransaction(mnemonic)(
         "Account",

@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const bip39 = require("bip39");
 const crypto = require("crypto");
-
+const { hdkey } = require("ethereumjs-wallet");
 
 module.exports = {
   isHidden: false,
@@ -32,7 +32,7 @@ module.exports = {
       const code = new Uint32Array(crypto.randomBytes(4).buffer, 0, 1)
         .toString(10)
         .slice(-6);
-      await ddb
+      await data.ddb
         .putItem({
           TableName: data.usersTableName,
           Item: {
@@ -42,6 +42,7 @@ module.exports = {
         })
         .promise();
 
+      await data.interaction.deleteReply();
       const m = await data.interaction.user.send(
         `Login: https://webaverse.com/login?id=${id}&code=${code}`
       );
@@ -68,9 +69,9 @@ module.exports = {
         })
         .promise();
 
-      const m = await data.interaction.user.send(
-        `Login: https://app.webaverse.com/login?id=${id}&code=${code}`
-      );
+      await data.interaction.deleteReply();
+      const m =
+        await `Login: https://app.webaverse.com/login?id=${id}&code=${code}`;
     }
   },
 };

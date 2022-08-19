@@ -6,8 +6,8 @@ module.exports = {
   data: new SlashCommandBuilder()
   .setName("inspect")
   .setDescription("Inspects nft"),
-  async execute(interaction) {
-    if (!interaction.isChatInputCommand()) return;
+  async execute(data) {
+    if (!data.interaction.isChatInputCommand()) return;
 
    data.interaction.editReply({ content: "Inspector", ephemeral: this.isHidden });
   },

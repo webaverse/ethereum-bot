@@ -1,8 +1,9 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { hdkey } = require("ethereumjs-wallet");
 const { https, http } = require("follow-redirects");
-const path = require('path');
-
+const path = require("path");
+const { storageHost } = require("../../../constants");
+const bip39 = require('bip39');
 
 module.exports = {
   isHidden: false,
@@ -23,6 +24,8 @@ module.exports = {
 
     let quantity = data.interaction.options.getInteger("count");
     const isUrl = data.interaction.options.getString("url")?.length > 0;
+    const _url = data.interaction.options.getString("url");
+    const attachment = data.interaction.options.getAttachment("file");
 
     let manualUrl;
     if (isNaN(quantity)) {
@@ -32,10 +35,10 @@ module.exports = {
         isUrl &&
         /^https?:\/\//.test(data.interaction.options.getString("url"))
       ) {
-        manualUrl = split[1];
+        manualUrl = _url;
       }
     } else {
-      manualUrl = split[2];
+      manualUrl = _url;
     }
 
     let { mnemonic } = await data._getUser();
@@ -68,8 +71,7 @@ module.exports = {
         });
         files.push(proxyRes);
       }
-    } else if (message.attachments.size > 0) {
-      const attachment = data.interaction.options.getAttachment("file");
+    } else if (attachment) {
       const { name, url } = attachment;
 
       const proxyRes = await new Promise((accept, reject) => {
@@ -180,7 +182,7 @@ module.exports = {
                 // console.log('minted 1', status);
 
                 if (status) {
-                 data.interaction.editReply({
+                  data.interaction.editReply({
                     content:
                       "<@!" +
                       data.interaction.user.id +
@@ -200,7 +202,7 @@ module.exports = {
                     .balanceOf(address)
                     .call();
                   if (balance < 10) {
-                   data.interaction.editReply({
+                    data.interaction.editReply({
                       content:
                         "<@!" +
                         data.interaction.user.id +
@@ -208,7 +210,7 @@ module.exports = {
                       ephemeral: this.isHidden,
                     });
                   } else {
-                   data.interaction.editReply({
+                    data.interaction.editReply({
                       content:
                         "<@!" +
                         data.interaction.user.id +
@@ -222,7 +224,7 @@ module.exports = {
               });
               res.on("error", (err) => {
                 console.warn(err.stack);
-               data.interaction.editReply({
+                data.interaction.editReply({
                   content:
                     "<@!" +
                     data.interaction.user.id +
@@ -235,7 +237,7 @@ module.exports = {
           );
           req.on("error", (err) => {
             console.warn(err.stack);
-           data.interaction.editReply({
+            data.interaction.editReply({
               content:
                 "<@!" +
                 data.interaction.user.id +
@@ -248,7 +250,7 @@ module.exports = {
         })
       );
     } else {
-     data.interaction.editReply({
+      data.interaction.editReply({
         content: "<@!" + data.interaction.user.id + ">: no files to mint",
         ephemeral: this.isHidden,
       });

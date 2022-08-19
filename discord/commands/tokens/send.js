@@ -20,14 +20,15 @@ module.exports = {
         .setDescription("Select Address")
     ),
   async execute(data) {
-    if (!data.isChatInputCommand()) return;
+    if (!data.interaction.isChatInputCommand()) return;
 
-    const amount = data.interaction.getNumber("amount");
+    const amount = data.interaction.options.getNumber("amount");
     const user = data.interaction.options.getUser("user");
     const isUser = user && user !== undefined;
     const _address = data.interaction.options.getString("address");
 
     if (isUser) {
+      const userId = user?.id;
       let mnemonic, mnemonic2;
       if (userId !== data.interaction.user.id) {
         {
@@ -47,7 +48,10 @@ module.exports = {
           }
         }
       } else {
-        const treasurer = data.interaction.user.roles.cache.some(
+        const member = await data.interaction.guild.members.fetch(
+          data.interaction.user.id
+        );
+        const treasurer = member.roles.cache.some(
           (role) => role.name === data.treasurerRoleName
         );
         if (treasurer) {
@@ -115,7 +119,7 @@ module.exports = {
           ephemeral: this.isHidden,
         });
       }
-    } else if ((match = _address.match(/(0x[0-9a-f]+)/i))) {
+    } else if ((match = _address?.match(/(0x[0-9a-f]+)/i))) {
       let { mnemonic } = await data._getUser();
       if (!mnemonic) {
         const spec = await data._genKey();
@@ -169,7 +173,7 @@ module.exports = {
       }
 
       const wallet2 = hdkey
-        .fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic))
+        .fromMasterSeed(bip39.mnemonicToSeedSync(data.treasuryMnemonic))
         .derivePath(`m/44'/60'/0'/0/0`)
         .getWallet();
       const address2 = wallet2.getAddressString();

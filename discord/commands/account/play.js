@@ -3,7 +3,6 @@ const bip39 = require("bip39");
 const { hdkey } = require("ethereumjs-wallet");
 const crypto = require("crypto");
 
-
 module.exports = {
   isHidden: false,
   data: new SlashCommandBuilder()
@@ -43,6 +42,7 @@ module.exports = {
         })
         .promise();
 
+      await data.interaction.deleteReply();
       const m = await data.interaction.user.send(
         `Play: https://webaverse.com/login?id=${id}&code=${code}&play=true`
       );
@@ -69,6 +69,7 @@ module.exports = {
         })
         .promise();
 
+      await data.interaction.deleteReply();
       const m = await data.interaction.user.send(
         `Play: https://app.webaverse.com/login?id=${id}&code=${code}&play=true`
       );

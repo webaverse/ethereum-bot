@@ -9,18 +9,23 @@ const bip39 = require("bip39");
 const { hdkey } = require("ethereumjs-wallet");
 const OpenAI = require("openai-api");
 
-const { discordApiToken, treasuryMnemonic, encryptionMnemonic, openAiKey } =
-  require("fs").existsSync("config.json")
-    ? JSON.parse(require("fs").readFileSync("config.json"))
-    : {
-        tradeMnemonic: process.env.tradeMnemonic,
-        treasuryMnemonic: process.env.treasuryMnemonic,
-        discordApiToken: process.env.discordApiToken,
-        infuraProjectId: process.env.infuraProjectId,
-        genesisNftStartId: process.env.genesisNftStartId,
-        genesisNftEndId: process.env.genesisNftEndId,
-        encryptionMnemonic: process.env.encryptionMnemonic,
-      };
+const {
+  discordApiToken,
+  treasuryMnemonic,
+  encryptionMnemonic,
+  openAiKey,
+  infuraProjectId,
+} = require("fs").existsSync("config.json")
+  ? JSON.parse(require("fs").readFileSync("config.json"))
+  : {
+      tradeMnemonic: process.env.tradeMnemonic,
+      treasuryMnemonic: process.env.treasuryMnemonic,
+      discordApiToken: process.env.discordApiToken,
+      infuraProjectId: process.env.infuraProjectId,
+      genesisNftStartId: process.env.genesisNftStartId,
+      genesisNftEndId: process.env.genesisNftEndId,
+      encryptionMnemonic: process.env.encryptionMnemonic,
+    };
 
 const dBugUserIds = [
   "284377201233887233", // avaer
@@ -173,6 +178,15 @@ const unlockableKey = "unlockable";
 exports.trades = [];
 exports.helps = [];
 exports.inventories = [];
+let nextTradeId = 0;
+exports.updateTradeId = (increase) => {
+  if (increase) {
+    nextTradeId++;
+  } else {
+    nextTradeId--;
+  }
+  return nextTradeId;
+};
 
 exports.createDiscordClient = (
   web3,
@@ -182,7 +196,6 @@ exports.createDiscordClient = (
   ddb,
   treasuryAddress
 ) => {
-  console.log("discordApiToken:", discordApiToken);
   if (
     discordApiToken === undefined ||
     discordApiToken === "" ||
@@ -394,6 +407,7 @@ exports.createDiscordClient = (
             unlockableKey,
             _openAiCodex: _openAiCodex_Interaction,
             encryptionMnemonic,
+            infuraProjectId,
           });
         } catch (e) {
           console.log(e);

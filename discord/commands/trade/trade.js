@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { hdkey } = require("ethereumjs-wallet");
 const bip39 = require("bip39");
-const { trades } = require("../../discordbot");
+const { trades, updateTradeId } = require("../../discordbot");
 
 module.exports = {
   isHidden: false,
@@ -19,7 +19,7 @@ module.exports = {
     const userId = user?.id;
 
     if (isUser) {
-      const tradeId = ++nextTradeId;
+      const tradeId = updateTradeId(true);
       const headerLeft =
         "   Trade #" +
         tradeId +

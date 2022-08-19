@@ -37,6 +37,7 @@ module.exports = {
       let quantity = data.interaction.options.getInteger("quantity") ?? 1;
       if (!isNaN(quantity)) {
         if (isUser) {
+          const userId = user?.id
           let mnemonic, mnemonic2;
           if (userId !== data.interaction.user.id) {
             {
@@ -57,7 +58,7 @@ module.exports = {
             }
           } else {
             const member = data.interaction.guild.members.cache.get(user.id);
-            const treasurer = user.member.roles.cache.some(
+            const treasurer = member.roles.cache.some(
               (role) => role.name === data.treasurerRoleName
             );
             if (treasurer) {

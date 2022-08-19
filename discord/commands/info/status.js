@@ -80,7 +80,7 @@ module.exports = {
             .setImage(avatarPreview)
             .setTimestamp()
             .setFooter({
-              text: ".help for help\nhttps://app.webaverse.com/assets/logo-flat.svg",
+              text: "/help for help\nhttps://app.webaverse.com/assets/logo-flat.svg",
             })
         : new EmbedBuilder()
             .setColor(embedColor)

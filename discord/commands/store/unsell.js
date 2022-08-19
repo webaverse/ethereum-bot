@@ -53,7 +53,7 @@ module.exports = {
     } else {
      data.interaction.editReply({
         content:
-          "<@!" + data.interaction.user.id + ">: invalid sell id: " + split[1],
+          "<@!" + data.interaction.user.id + ">: invalid sell id: " + buyId,
         ephemeral: this.isHidden,
       });
     }

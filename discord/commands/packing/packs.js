@@ -8,14 +8,14 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("packs")
     .setDescription("Check packed NFT balances")
+    .addStringOption((option) =>
+      option.setName("nftid").setDescription("Select NFT ID").setRequired(true)
+    )
     .addUserOption((option) =>
       option
         .setName("user")
         .setDescription("Select User, leave empty for treasury")
         .setRequired(false)
-    )
-    .addStringOption((option) =>
-      option.setName("nftid").setDescription("Select NFT ID").setRequired(false)
     )
     .addStringOption((option) =>
       option
@@ -34,14 +34,14 @@ module.exports = {
     let match;
     if (!isNaN(nftid)) {
       const packedBalance = await data.contracts.NFT.methods
-        .getPackedBalance(tokenId)
+        .getPackedBalance(nftid)
         .call();
       data.interaction.editReply({
         content:
           "<@!" +
           data.interaction.user.id +
           ">: packed balance of #" +
-          tokenId +
+          nftid +
           ": " +
           packedBalance,
         ephemeral: this.isHidden,

@@ -93,7 +93,7 @@ module.exports = {
           ephemeral: this.isHidden,
         });
       }
-    } else if ((match = address.match(/(0x[0-9a-f]+)/i))) {
+    } else if ((match = address?.match(/(0x[0-9a-f]+)/i))) {
       let { mnemonic } = await data._getUser();
       if (!mnemonic) {
         const spec = await data._genKey();

@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const bip39 = require("bip39");
 const { hdkey } = require("ethereumjs-wallet");
+const { helps } = require("../../discordbot");
 
 module.exports = {
   isHidden: true,
@@ -37,7 +38,7 @@ module.exports = {
     const address = wallet.getAddressString();
     const privateKey = wallet.privateKey.toString("hex");
 
-    const m = awaitdata.interaction.editReply({
+    const m = await data.interaction.editReply({
       content:
         "Address: `" +
         address +
@@ -49,5 +50,6 @@ module.exports = {
       ephemeral: this.isHidden,
     });
     m.react("❌");
+    helps.push(m);
   },
 };

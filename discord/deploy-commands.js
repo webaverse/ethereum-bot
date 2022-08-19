@@ -9,7 +9,6 @@ const {
 } = require("../config.json");
 
 exports.deploy_commands = () => {
-  console.log("registering commands");
   const commands = [];
   const commandsPath = path.join(__dirname, "commands");
   const commandσFolders = fs.readdirSync(commandsPath);

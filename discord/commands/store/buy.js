@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const bip39 = require("bip39");
+const { hdkey } = require("ethereumjs-wallet");
 
 
 module.exports = {
