@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { hdkey } = require("ethereumjs-wallet");
 const bip39 = require("bip39");
+const { previewHost, previewExt } = require("../../../constants");
 
 module.exports = {
   isHidden: false,

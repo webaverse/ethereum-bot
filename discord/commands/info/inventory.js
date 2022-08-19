@@ -90,10 +90,10 @@ module.exports = {
           for (let i = startIndex; i < endIndex; i++) {
             promises.push(
               (async (i) => {
-                const id = await contracts.NFT.methods
+                const id = await data.contracts.NFT.methods
                   .tokenOfOwnerByIndex(address, i)
                   .call();
-                const hash = await contracts.NFT.methods.getHash(id).call();
+                const hash = await data.contracts.NFT.methods.getHash(id).call();
                 if (!hashToIds[hash]) {
                   hashToIds[hash] = [];
                 }

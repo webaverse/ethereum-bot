@@ -69,7 +69,7 @@ module.exports = {
             .isApprovedForAll(address, data.contracts["Trade"]._address)
             .call();
           if (!isApproved) {
-            await runSidechainTransaction(mnemonic)(
+            await data.runSidechainTransaction(mnemonic)(
               "NFT",
               "setApprovalForAll",
               data.contracts["Trade"]._address,

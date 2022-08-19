@@ -27,7 +27,7 @@ module.exports = {
     const address = data.interaction.options.getString("address");
 
     const tokenId = parseInt(data.interaction.options.getString("tokenid"));
-    const hash = await contracts.NFT.methods.getHash(tokenId).call();
+    const hash = await data.contracts.NFT.methods.getHash(tokenId).call();
     if (isUser) {
       let mnemonic, mnemonic2;
       if (user.id !== data.interaction.user.id) {

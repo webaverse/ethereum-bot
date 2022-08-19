@@ -58,8 +58,8 @@ module.exports = {
       if (!isNaN(id)) {
         const hash = await data.contracts.NFT.methods.getHash(id).call();
         const [name, ext] = await Promise.all([
-          contracts.NFT.methods.getMetadata(hash, "name").call(),
-          contracts.NFT.methods.getMetadata(hash, "ext").call(),
+          data.contracts.NFT.methods.getMetadata(hash, "name").call(),
+          data.contracts.NFT.methods.getMetadata(hash, "ext").call(),
         ]);
 
         const itemPreview = `${previewHost}/${hash}${

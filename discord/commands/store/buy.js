@@ -48,7 +48,7 @@ module.exports = {
           .call();
         allowance = new data.web3.utils.BN(allowance, 10);
         if (allowance.lt(fullAmountD2.v)) {
-          await runSidechainTransaction(mnemonic)(
+          await data.runSidechainTransaction(mnemonic)(
             "FT",
             "approve",
             data.contracts["Trade"]._address,
@@ -56,7 +56,7 @@ module.exports = {
           );
         }
       }
-      await runSidechainTransaction(mnemonic)("Trade", "buy", buyId);
+      await data.runSidechainTransaction(mnemonic)("Trade", "buy", buyId);
 
       const store = await data.contracts.Trade.methods
         .getStoreByIndex(buyId)
