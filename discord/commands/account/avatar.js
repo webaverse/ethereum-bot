@@ -13,7 +13,7 @@ module.exports = {
   async execute(data) {
     if (!data.interaction.isChatInputCommand()) return;
 
-    const contentId = interaction.options.getString("id");
+    const contentId = data.interaction.options.getString("id");
     const id = parseInt(contentId, 10);
 
     let { mnemonic } = await data._getUser();
@@ -29,10 +29,10 @@ module.exports = {
     const address = wallet.getAddressString();
 
     if (!isNaN(id)) {
-      const hash = await contracts.NFT.methods.getHash(id).call();
+      const hash = await data.contracts.NFT.methods.getHash(id).call();
       const [name, ext] = await Promise.all([
-        contracts.NFT.methods.getMetadata(hash, "name").call(),
-        contracts.NFT.methods.getMetadata(hash, "ext").call(),
+        data.contracts.NFT.methods.getMetadata(hash, "name").call(),
+        data.contracts.NFT.methods.getMetadata(hash, "ext").call(),
       ]);
 
       // const avatarUrl = `${storageHost}/${hash.slice(2)}${ext ? ('.' + ext) : ''}`;
@@ -126,7 +126,7 @@ module.exports = {
         .derivePath(`m/44'/60'/0'/0/0`)
         .getWallet();
       const address = wallet.getAddressString();
-      const avatarId = await contracts.Account.methods
+      const avatarId = await data.contracts.Account.methods
         .getMetadata(address, "avatarId")
         .call();
 

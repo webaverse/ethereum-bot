@@ -4,7 +4,7 @@ const bip39 = require("bip39");
 
 
 module.exports = {
-  isHidden: false,
+  isHidden: true,
   data: new SlashCommandBuilder()
     .setName("address")
     .setDescription("Print address")
