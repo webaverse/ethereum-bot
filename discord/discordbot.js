@@ -205,14 +205,11 @@ exports.createDiscordClient = (
 
   const client = new Client({
     intents: [
-      GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMembers,
       GatewayIntentBits.GuildMessageReactions,
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.DirectMessageReactions,
       GatewayIntentBits.DirectMessages,
-      GatewayIntentBits.GuildIntegrations,
-      GatewayIntentBits.GuildWebhooks,
     ],
     presence: {
       status: "online",
