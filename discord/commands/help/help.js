@@ -24,7 +24,7 @@ module.exports = {
   async execute(data) {
     if (!data.interaction.isChatInputCommand()) return;
 
-    const option = interaction.options.getString("command");
+    const option = data.interaction.options.getString("command");
     if (option && option?.length > 0) {
       const command = _findCommand(option);
       if (command) {
