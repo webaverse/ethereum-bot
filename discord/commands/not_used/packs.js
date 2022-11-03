@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const bip39 = require("bip39");
 const { hdkey } = require("ethereumjs-wallet");
-const { helps } = require("../../discordbot");
+const { helps } = require("../../../discordbot");
 
 module.exports = {
   isHidden: false,
@@ -118,7 +118,9 @@ module.exports = {
         content: s,
         ephemeral: this.isHidden,
       });
-      m.react("❌");
+      if (data.client.channels.cache.has(m.channelId)) {
+        m.react("❌");
+      }
       m.requester = data.interaction.user;
       helps.push(m);
     }

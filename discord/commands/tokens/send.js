@@ -29,6 +29,15 @@ module.exports = {
 
     if (isUser) {
       const userId = user?.id;
+      if (userId === data.interaction.user.id) {
+        data.interaction.editReply({
+          content: "Can't send silk to self",
+          ephemeral: this.isHidden,
+        });
+
+        return;
+      }
+
       let mnemonic, mnemonic2;
       if (userId !== data.interaction.user.id) {
         {

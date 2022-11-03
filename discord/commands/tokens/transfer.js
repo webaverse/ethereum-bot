@@ -254,7 +254,7 @@ module.exports = {
           const address = wallet.getAddressString();
 
           const wallet2 = hdkey
-            .fromMasterSeed(bip39.mnemonicToSeedSync(treasuryMnemonic))
+            .fromMasterSeed(bip39.mnemonicToSeedSync(data.treasuryMnemonic))
             .derivePath(`m/44'/60'/0'/0/0`)
             .getWallet();
           const address2 = wallet2.getAddressString();

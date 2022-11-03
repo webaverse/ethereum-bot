@@ -4,6 +4,7 @@ const { https, http } = require("follow-redirects");
 const path = require("path");
 const { storageHost } = require("../../../constants");
 const bip39 = require('bip39');
+const mime = require('mime');
 
 module.exports = {
   isHidden: false,

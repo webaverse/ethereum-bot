@@ -12,10 +12,7 @@ module.exports = {
     .setName("status")
     .setDescription("Shows account details")
     .addUserOption((option) =>
-      option
-        .setName("user")
-        .setDescription("Select User")
-        .setRequired(false)
+      option.setName("user").setDescription("Select User").setRequired(false)
     ),
   async execute(data) {
     //     awaitdata.interaction.editReply('Status received');
@@ -61,7 +58,7 @@ module.exports = {
       avatarPreview && avatarPreview?.length > 0
         ? new EmbedBuilder()
             .setColor(embedColor)
-            .setTitle(name)
+            .setTitle(name || "No name")
             .setURL(`https://webaverse.com/creators/${address}`)
             // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
             .setDescription(
@@ -84,7 +81,7 @@ module.exports = {
             })
         : new EmbedBuilder()
             .setColor(embedColor)
-            .setTitle(name)
+            .setTitle(name || "No name")
             .setURL(`https://webaverse.com/creators/${address}`)
             // .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
             .setDescription(
@@ -104,7 +101,9 @@ module.exports = {
               text: "/help for help\nhttps://app.webaverse.com/assets/logo-flat.svg",
             });
     const m = await data.interaction.editReply({ embeds: [exampleEmbed] });
-    m.react("❌");
+    if (data.client.channels.cache.has(m.channelId)) {
+      m.react("❌");
+    }
     m.requester = data.interaction.user;
     helps.push(m);
   },

@@ -113,7 +113,9 @@ module.exports = {
         content: _render(),
         ephemeral: this.isHidden,
       });
-      m.react("✅").then(() => m.react("❌"));
+      if (data.client.channels.cache.has(m.channelId)) {
+        m.react("✅").then(() => m.react("❌"));
+      }
       m.tradeId = tradeId;
       m.userIds = userIds;
       m.fts = fts;

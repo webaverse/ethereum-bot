@@ -1,7 +1,6 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { helps } = require("../../discordbot");
 
-
 module.exports = {
   isHidden: false,
   data: new SlashCommandBuilder()
@@ -43,7 +42,9 @@ module.exports = {
           ephemeral: this.isHidden,
         });
 
-        m.react("❌");
+        if (data.client.channels.cache.has(m.channelId)) {
+          m.react("❌");
+        }
         m.requester = data.interaction.user;
         helps.push(m);
       } else {

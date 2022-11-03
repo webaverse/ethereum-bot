@@ -18,6 +18,9 @@ module.exports = {
         .setName("address")
         .setRequired(false)
         .setDescription("Select Address")
+    )
+    .addIntegerOption((option) =>
+      option.setName("page").setRequired(false).setDescription("Select Page")
     ),
   async execute(data) {
     if (!data.interaction.isChatInputCommand()) return;
@@ -40,7 +43,12 @@ module.exports = {
       .getWallet();
     const address = wallet.getAddressString();
 
-    let pageIndex = 1;
+    let _page = 1;
+    if (data.interaction.options.getInteger("page")) {
+      _page = data.interaction.options.getInteger("page");
+    }
+    const addressToUse = isUser ? user.id : _address ? _address : address;
+    let pageIndex = _page;
     let m = null;
     const _renderMessage = ({
       userName,
@@ -93,7 +101,9 @@ module.exports = {
                 const id = await data.contracts.NFT.methods
                   .tokenOfOwnerByIndex(address, i)
                   .call();
-                const hash = await data.contracts.NFT.methods.getHash(id).call();
+                const hash = await data.contracts.NFT.methods
+                  .getHash(id)
+                  .call();
                 if (!hashToIds[hash]) {
                   hashToIds[hash] = [];
                 }
@@ -143,8 +153,10 @@ module.exports = {
           embeds: [exampleEmbed],
           ephemeral: this.isHidden,
         });
-        m.react("◀️");
-        m.react("▶️");
+        if (data.client.channels.cache.has(m.channelId)) {
+          m.react("◀️");
+          m.react("▶️");
+        }
         m.requester = data.interaction.user;
         m.left = () => {
           pageIndex--;
@@ -162,7 +174,9 @@ module.exports = {
         };
         inventories.push(m);
 
-        m.react("❌");
+        if (data.client.channels.cache.has(m.channelId)) {
+          m.react("❌");
+        }
         m.requester = data.interaction.user;
         helps.push(m);
       } else {

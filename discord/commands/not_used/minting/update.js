@@ -3,15 +3,15 @@ const { hdkey } = require("ethereumjs-wallet");
 const { https } = require("follow-redirects");
 const path = require("path");
 const { storageHost } = require("../../../constants");
-const bip39 = require('bip39');
-
+const bip39 = require("bip39");
+const mime = require("mime");
 
 module.exports = {
   isHidden: false,
   data: new SlashCommandBuilder()
-    .setName("updated")
+    .setName("update")
     .setDescription("Update NFT content")
-    .addStringOption((option) =>
+    .addIntegerOption((option) =>
       option.setName("id").setRequired(true).setDescription("ID")
     )
     .addStringOption((option) =>
@@ -23,8 +23,8 @@ module.exports = {
   async execute(data) {
     if (!data.interaction.isChatInputCommand()) return;
 
-    const tokenId = parseInt(data.interaction.option.getString("id"), 10);
-    const manualUrl = data.interaction.option.getString("url");
+    const tokenId = data.interaction.options.getInteger("id");
+    const manualUrl = data.interaction.options.getString("url");
     const attachment = data.interaction.options.getAttachment("file");
 
     let { mnemonic } = await data._getUser();
@@ -139,7 +139,7 @@ module.exports = {
                 }
 
                 if (status) {
-                 data.interaction.editReply({
+                  data.interaction.editReply({
                     content:
                       "<@!" +
                       data.interaction.user.id +
@@ -150,7 +150,7 @@ module.exports = {
                     ephemeral: this.isHidden,
                   });
                 } else {
-                 data.interaction.editReply({
+                  data.interaction.editReply({
                     content:
                       "<@!" +
                       data.interaction.user.id +
@@ -162,7 +162,7 @@ module.exports = {
               });
               res.on("error", (err) => {
                 console.warn(err.stack);
-               data.interaction.editReply({
+                data.interaction.editReply({
                   content:
                     "<@!" +
                     data.interaction.user.id +
@@ -175,7 +175,7 @@ module.exports = {
           );
           req.on("error", (err) => {
             console.warn(err.stack);
-           data.interaction.editReply({
+            data.interaction.editReply({
               content:
                 "<@!" +
                 data.interaction.user.id +
@@ -188,7 +188,7 @@ module.exports = {
         })
       );
     } else {
-     data.interaction.editReply({
+      data.interaction.editReply({
         content: "<@!" + data.interaction.user.id + ">: no files to update",
         ephemeral: this.isHidden,
       });
