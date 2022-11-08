@@ -205,7 +205,6 @@ exports.createDiscordClient = (
 
   const client = new Client({
     intents: [
-      GatewayIntentBits.GuildMembers,
       GatewayIntentBits.GuildMessageReactions,
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.DirectMessageReactions,
